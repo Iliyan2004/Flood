@@ -1,0 +1,43 @@
+# Large data files -- not source, never tracked
+Pak_srtm.tif
+landcover_masks.nc
+*.tif
+*.tiff
+*.nc
+
+# Generated media / ad-hoc screenshots -- not source
+*.mp4
+flood_animation.mp4
+*.png
+*.jpg
+*.jpeg
+
+# Runtime artifacts (only ever present in the working copy, not this
+# source mirror, but excluded defensively in case this repo is ever
+# initialized from that copy instead)
+venv/
+.venv/
+vendor/
+lisflood-fp-8.2/
+lisflood-fp-bmi/
+fis_cache/
+fis_protect_cache/
+fis_uploads/
+fis_aoi3d_cache/
+fis_area3d_buildings_cache/
+numa_stub/
+run_*/
+
+# Secrets -- never committed
+.env
+*.env
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Editor/session config -- machine-specific, not project source
+.vscode/
+.claude/
+.DS_Store
