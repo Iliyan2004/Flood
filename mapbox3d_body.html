@@ -1,0 +1,79 @@
+<div id="map"></div>
+<canvas id="rainCanvas"></canvas>
+<button id="fsBtn" title="Full screen">&#9974;</button>
+<div id="panel" class="glass">
+  <div class="ph">
+    <div class="t"><h1>__TITLE__</h1><div class="sub" id="panelSub"></div></div>
+    <button class="iconbtn" id="resetBtn" title="Reset view">&#8634;</button>
+    <button class="iconbtn" id="collapseBtn" title="Collapse panel">&#8963;</button>
+  </div>
+  <div class="body">
+    <div id="modeSection">
+      <div class="sec" style="margin-top:0">What to show</div>
+      <div class="cards">
+        <button class="card c-depth active" data-mode="depth"><span>Depth over time</span></button>
+        <button class="card c-max" data-mode="max"><span>Maximum depth</span></button>
+        <button class="card c-speed" data-mode="speed" id="cardSpeed"><span>Flow speed</span></button>
+        <button class="card c-paths" data-mode="paths" id="cardPaths"><span>Flow paths</span></button>
+      </div>
+      <div class="legendbar" id="legendBar"></div>
+      <div class="legendlbl" id="legendLbl"></div>
+      <div class="legendnote" id="legendNote"></div>
+    </div>
+    <div class="sec">Map style</div>
+    <div class="tiles">
+      <button class="tile t-dark" data-style="dark"><span>Dark</span></button>
+      <button class="tile t-light" data-style="light"><span>Light</span></button>
+      <button class="tile t-satellite" data-style="satellite"><span>Satellite</span></button>
+      <button class="tile t-streets" data-style="streets"><span>Streets</span></button>
+      <button class="tile t-terrain active" data-style="terrain"><span>Terrain</span></button>
+      <button class="tile t-night" data-style="night"><span>Night</span></button>
+    </div>
+    <div class="sec">On the map</div>
+    <div class="pills">
+      <button class="pill on" id="pillBuildings">Buildings</button>
+      <button class="pill on" id="pillTerrain">Terrain <span id="exagVal">__ZEXAG__</span>&times;</button>
+      <button class="pill" id="pillLabels">Labels</button>
+      <button class="pill on" id="pillFlow">Flow lines</button>
+    </div>
+    <details class="fine" id="fineBox">
+      <summary><span>Fine-tune water and terrain</span><span id="fineSummary" style="color:var(--ink-2);font-weight:500"></span></summary>
+      <div class="in">
+        <div class="row">Terrain<input type="range" id="exagSlider" min="0.5" max="4" step="0.1" value="__ZEXAG__"><output id="exagOut"></output></div>
+        <div class="row" data-water>Cutoff<input type="range" id="cutSlider" min="1" max="30" step="1" value="5"><output id="cutOut"></output></div>
+        <div class="row" data-water>Opacity<input type="range" id="opSlider" min="30" max="100" step="5" value="92"><output id="opOut"></output></div>
+        <div class="row" data-water>Particles<input type="range" id="partSlider" min="200" max="4000" step="100" value="1800"><output id="partOut"></output></div>
+      </div>
+    </details>
+    <details class="fine" id="aboutBox" style="__ABOUT_STYLE__">
+      <summary><span>Legend &amp; method</span></summary>
+      <div class="about">__LEGEND__</div>
+    </details>
+    <div class="hint">Right-drag (or Ctrl+drag) to rotate &amp; tilt &middot; scroll to zoom &middot; <b style="color:var(--ink)">click the water</b> to pin a depth probe</div>
+  </div>
+</div>
+<div id="probe" class="glass">
+  <div class="hd"><span class="d" id="probeDepth">-</span><span class="u" id="probeWhen"></span><button class="iconbtn" id="probeClose">&#10005;</button></div>
+  <div class="grid"><div><div class="k">Velocity</div><div class="v" id="probeVel">-</div></div>
+  <div><div class="k">Peak here</div><div class="v" id="probePeak">-</div></div>
+  <div><div class="k">Ground</div><div class="v" id="probeGround">-</div></div></div>
+  <canvas id="probeChart"></canvas><div class="cap">depth here over the event</div>
+</div>
+<div class="glass" id="timelineBar" style="display:none">
+  <div class="tl-top">
+    <button id="playPauseBtn" title="Play/pause">&#10074;&#10074;</button>
+    <div><div class="big" id="timeBig">0:00</div><div class="mut" id="timeSub">since start</div></div>
+    <div class="stat" data-flood><div class="mut" style="margin:0 0 3px">Flooded area</div><div class="v" id="stArea">-</div></div>
+    <div class="stat" data-flood><div class="mut" style="margin:0 0 3px">Deepest water</div><div class="v" id="stDeep">-</div></div>
+    <div class="stat" data-flood><div class="mut" style="margin:0 0 3px">Water on surface</div><div class="v" id="stVol">-</div></div>
+    <div class="sp"></div>
+    <button class="tbtn on" id="rainBtn">&#9730; Rain</button>
+    <div style="position:relative"><button class="tbtn" id="exportToggle">&#9635; Export &#9662;</button>
+      <div id="exportMenu"><button id="exportBtn">Image (PNG)</button><button id="exportVideoBtn3d">Video (MP4)</button></div></div>
+  </div>
+  <div id="chartWrap"><canvas id="chart"></canvas><div id="chartTip"></div></div>
+  <div class="tl-bot"><span id="timeLabel" style="font-variant-numeric:tabular-nums;min-width:80px"></span>
+    <input type="range" id="timeSlider" min="0" max="1000" value="0" step="1" aria-label="Timeline position">
+    <span>Playback</span>
+    <select id="speedSelect"><option value="0.25">0.25&times;</option><option value="0.5">0.5&times;</option><option value="1" selected>1&times;</option><option value="2">2&times;</option><option value="4">4&times;</option></select></div>
+</div>

@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SAILAB Technical Reference</title>
+<style>
+@page {
+  size: A4;
+  margin: 20mm 18mm 20mm 18mm;
+  @bottom-right { content: "SAILAB Technical Reference \2022  Page " counter(page); font: 8.5pt "DejaVu Sans", sans-serif; color: #5b7177; }
+}
+@page cover { margin: 0; @bottom-right { content: none; } }
+:root { --teal: #0e5c66; --teal-2: #13808c; --ink: #17262a; --muted: #50666c; --rule: #cfdadc; --tint: #eef5f6; --amber: #8a5a00; --amber-bg: #fff6e3; }
+html { font-family: "DejaVu Sans", "Liberation Sans", sans-serif; font-size: 9.6pt; line-height: 1.5; color: var(--ink); }
+body { margin: 0; }
+.cover { page: cover; height: 297mm; box-sizing: border-box; padding: 62mm 24mm 24mm; background: linear-gradient(160deg, #0b3f47 0%, #0e5c66 55%, #13808c 100%); color: #fff; }
+.cover .eyebrow { letter-spacing: 0.32em; font-size: 9pt; text-transform: uppercase; opacity: 0.85; }
+.cover h1 { font-size: 46pt; margin: 18mm 0 4mm; letter-spacing: 0.04em; font-weight: bold; }
+.cover .expand { font-size: 13pt; max-width: 140mm; opacity: 0.95; }
+.cover .lede { font-size: 12pt; margin-top: 10mm; max-width: 140mm; }
+.cover .scope { margin-top: 26mm; font-size: 10pt; max-width: 150mm; line-height: 1.6; opacity: 0.92; }
+.cover .date { margin-top: 10mm; font-size: 10pt; opacity: 0.85; }
+h1.chapter { page-break-before: always; font-size: 19pt; color: var(--teal); margin: 0 0 4mm; border-bottom: 2px solid var(--teal); padding-bottom: 2mm; }
+h2 { font-size: 11.5pt; color: var(--teal); margin: 6mm 0 2mm; padding-left: 3mm; border-left: 3px solid var(--teal-2); page-break-after: avoid; }
+h3 { font-size: 10pt; margin: 4mm 0 1.5mm; color: var(--ink); page-break-after: avoid; }
+p { margin: 0 0 2.4mm; text-align: left; }
+ul, ol { margin: 0 0 2.6mm; padding-left: 6mm; }
+li { margin-bottom: 1.2mm; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; background: var(--tint); padding: 0 1mm; border-radius: 1mm; }
+.formula { font-family: "DejaVu Sans Mono", monospace; font-size: 9pt; background: var(--tint); border-left: 3px solid var(--teal-2); padding: 2.5mm 4mm; margin: 2mm 0 3mm; white-space: pre-wrap; page-break-inside: avoid; }
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 8.6pt; page-break-inside: auto; }
+th { text-align: left; background: var(--teal); color: #fff; font-weight: bold; padding: 1.6mm 2mm; font-size: 8.2pt; text-transform: uppercase; letter-spacing: 0.03em; }
+td { padding: 1.5mm 2mm; border-bottom: 1px solid var(--rule); vertical-align: top; }
+tr:nth-child(even) td { background: #f6fafa; }
+tr { page-break-inside: avoid; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.note { background: var(--amber-bg); border-left: 3px solid #d39a2a; padding: 2.5mm 4mm; margin: 2mm 0 4mm; color: #3d2c00; page-break-inside: avoid; }
+.new { display: inline-block; font-size: 7pt; font-weight: bold; color: #fff; background: var(--teal-2); padding: 0.3mm 1.6mm; border-radius: 1mm; vertical-align: 1pt; margin-left: 1.5mm; letter-spacing: 0.04em; }
+.toc { page-break-before: always; }
+.toc h1 { font-size: 19pt; color: var(--teal); border-bottom: 2px solid var(--teal); padding-bottom: 2mm; margin: 0 0 4mm; }
+.toc .part { font-weight: bold; color: var(--teal); margin: 3.5mm 0 1mm; }
+.toc .item { margin: 0 0 0.8mm 5mm; }
+.toc .item a { color: var(--ink); text-decoration: none; }
+.toc .item a::after { content: leader('.') target-counter(attr(href), page); color: var(--muted); }
+.changes td:first-child { white-space: nowrap; font-weight: bold; color: var(--teal); }
+.bug h3 { color: var(--teal); }
+.refs li { font-size: 8.6pt; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="eyebrow">Technical Reference &amp; System Documentation</div>
+  <h1>SAILAB</h1>
+  <div class="expand">Simulation &amp; Analytics for Inundation, Loss, Assets &amp; Built Environment</div>
+  <div class="lede">A tiered, physics-grounded flood intelligence platform for Pakistan</div>
+  <div class="scope">Complete technical reference covering system architecture, the physics engine, every mathematical model and formula in use, every data source, every feature, the validation record, the major bugs found and fixed, and the stated limitations.</div>
+  <div class="date">Final second-edition update, 14 October 2026 (supersedes the September 2026 edition and the 12 October revision).</div>
+</section>
+
+<section class="toc">
+  <h1>Contents</h1>
+  <div class="part">Part I — Overview</div>
+  <div class="item"><a href="#c0">What changed in this edition</a></div>
+  <div class="item"><a href="#c1">1. Executive Summary</a></div>
+  <div class="item"><a href="#c2">2. System Architecture</a></div>
+  <div class="item"><a href="#c3">3. Data Sources</a></div>
+  <div class="part">Part II — The Physics Engine</div>
+  <div class="item"><a href="#c4">4. Shallow Water Hydrodynamics &amp; LISFLOOD-FP</a></div>
+  <div class="item"><a href="#c5">5. Solvers: ACC, DG2, and the GPU/CUDA Port</a></div>
+  <div class="item"><a href="#c6">6. Boundary Conditions &amp; Forcing</a></div>
+  <div class="item"><a href="#c7">7. Numerical Stability Findings</a></div>
+  <div class="part">Part III — The Prediction Tiers</div>
+  <div class="item"><a href="#c8">8. The Tiered Workflow</a></div>
+  <div class="item"><a href="#c9">9. Tier 2: Instant HAND-Based Flood Preview</a></div>
+  <div class="item"><a href="#c10">10. Tier 3: Full Physics Simulation</a></div>
+  <div class="part">Part IV — Rainfall &amp; Climate</div>
+  <div class="item"><a href="#c11">11. Rainfall Forcing &amp; Design Storms</a></div>
+  <div class="item"><a href="#c12">12. Real Recorded IDF Curves</a></div>
+  <div class="item"><a href="#c13">13. Climate Change Scaling</a></div>
+  <div class="item"><a href="#c14">14. Antecedent Moisture, Infiltration &amp; Friction</a></div>
+  <div class="part">Part V — Hazard-Specific Modules</div>
+  <div class="item"><a href="#c15">15. Fluvial Flooding</a></div>
+  <div class="item"><a href="#c16">16. Glacial Lake Outburst Floods (GLOF)</a></div>
+  <div class="item"><a href="#c17">17. Dams &amp; Reservoirs</a></div>
+  <div class="item"><a href="#c18">18. Snow &amp; Glacier Melt</a></div>
+  <div class="item"><a href="#c19">19. Coastal &amp; Tidal Flooding</a></div>
+  <div class="item"><a href="#c20">20. Pluvial / Flash-Flood Risk Tiering</a></div>
+  <div class="item"><a href="#c21">21. Geomorphology, Landslides &amp; Sediment</a></div>
+  <div class="part">Part VI — Impact, Risk &amp; Economics</div>
+  <div class="item"><a href="#c22">22. Buildings &amp; Infrastructure Risk</a></div>
+  <div class="item"><a href="#c23">23. Land-Use Damage &amp; Hotspot Analysis</a></div>
+  <div class="item"><a href="#c24">24. Estimated Monetary Loss</a></div>
+  <div class="item"><a href="#c25">25. Average Annual Loss (AAL)</a></div>
+  <div class="part">Part VII — Mitigation &amp; Decision Support</div>
+  <div class="item"><a href="#c26">26. Nature-based Solutions (NbS)</a></div>
+  <div class="item"><a href="#c27">27. Grey Infrastructure Protection Scenarios</a></div>
+  <div class="item"><a href="#c28">28. Mystic-Driven Auto-Optimization</a></div>
+  <div class="part">Part VIII — Monitoring &amp; Discovery</div>
+  <div class="item"><a href="#c29">29. Live Continuous Monitoring &amp; Alerts</a></div>
+  <div class="item"><a href="#c30">30. Glacier SAR Displacement Monitoring</a></div>
+  <div class="item"><a href="#c31">31. Storm-Motion Nowcasting</a></div>
+  <div class="item"><a href="#c32">32. Discovery Tools: Basins, Tehsils, Rainfall Hotspots</a></div>
+  <div class="part">Part IX — Validation</div>
+  <div class="item"><a href="#c33">33. Validation &amp; Accuracy Record</a></div>
+  <div class="part">Part X — Visualization &amp; Reporting</div>
+  <div class="item"><a href="#c34">34. 3D Visualization</a></div>
+  <div class="item"><a href="#c35">35. Reports, Comparisons &amp; Exports</a></div>
+  <div class="item"><a href="#c36">36. User Interface Design System</a></div>
+  <div class="part">Part XI — Engineering History &amp; Operations</div>
+  <div class="item"><a href="#c37">37. Chronicle of Major Bugs Found and Fixed</a></div>
+  <div class="item"><a href="#c38">38. Considered and Declined</a></div>
+  <div class="item"><a href="#c39">39. Known Limitations</a></div>
+  <div class="item"><a href="#c40">40. Operations &amp; Testing</a></div>
+  <div class="item"><a href="#c41">41. References</a></div>
+</section>
+
+<!-- ===================================================== PART I -->
+<h1 class="chapter" id="c0">What changed in this edition</h1>
+<p>The September 2026 edition was compiled before a month of further work, and several of its statements are no longer true. This table lists every substantive change; the chapters themselves have been rewritten to match the code as of 14 October 2026.</p>
+<table class="changes">
+<tr><th>Area</th><th>Change</th></tr>
+<tr><td>Tier 1</td><td>The Tier 1 ML discharge estimator (Caravan-trained LSTM) has been retired; its code and model are gone and the UI now has Tier 2, Tier 3 and Coastal tabs. Discharge for Tier 2 now comes from manual entry, a GLOF estimate, a dam event or the melt model (Ch. 8).</td></tr>
+<tr><td>GPU inflow</td><td>River, GLOF, snowmelt and dam inflows now run on the GPU. The earlier "CUDA silently drops boundary inflow" finding was a misdiagnosis caused by inlets placed on NODATA cells (Ch. 5, §37.25).</td></tr>
+<tr><td>Coastal on GPU</td><td>A local patch to LISFLOOD-FP's CUDA kernel makes coastal stage (HVAR) boundaries work on the GPU (Ch. 5, §37.26).</td></tr>
+<tr><td>Solver choice</td><td>ACC is now used everywhere (<code>FORCE_ACC_ONLY</code>) with an empirical depth correction on steep terrain; the steep-terrain starting timestep is 1.0 s, not 0.2 s (Ch. 5, 7).</td></tr>
+<tr><td>Formula fix</td><td>The Popov (1991) GLOF formula was printed incorrectly in the previous edition. The code uses Q = 0.0048 · V<sup>0.896</sup> (Ch. 16).</td></tr>
+<tr><td>Correction</td><td>The "dormant 1000× rainfall-column bug" fix described previously was itself wrong for this build and has been reversed (§37.14, §37.21).</td></tr>
+<tr><td>New chapters</td><td>Dams &amp; reservoirs (17), Snow &amp; glacier melt with IceBoost ice thickness and a debris factor (18), Geomorphology, landslides &amp; sediment (21), Validation (33), Operations (40).</td></tr>
+<tr><td>Data paths</td><td>All shared-drive paths now live in one module (<code>data_paths.py</code>), checked at start-up; the Pakistan DEM moved and the silent Bahawalpur fallback was removed (Ch. 3, §37.22).</td></tr>
+<tr><td>Validation</td><td>2022 Sindh flood re-validated with a corrected storm: CSI 0.659 (48 h) and 0.694 (10-day) (Ch. 33).</td></tr>
+<tr><td>Ops</td><td>GPU throttling/temperature caps removed; the app applies none.</td></tr>
+<tr><td>Coastal data</td><td>42-station GTSM return levels (selectable, disagrees ~2&times; with the gauge anchors at Karachi), sea mask, mangroves, sea-level-rise input, susceptibility index and instant level explorer (Ch. 19.6&ndash;19.9).</td></tr>
+<tr><td>Run control</td><td>Queue position, the run ahead, and a Cancel button; run summaries and reports carry the SAILAB version (6.1); finished runs can download a susceptibility-style map (Ch. 35).</td></tr>
+<tr><td>GLOF</td><td>Documented-event list (HMAGLOFDB), a Popov-vs-observed check with an empirical range on every estimate, and the PMD 2024 lake inventory as a lake source (Ch. 16.2a&ndash;c).</td></tr>
+<tr><td>Glacier speed</td><td>ITS_LIVE recent-versus-same-season glacier speed that needs no Earth Engine account (Ch. 30.1).</td></tr>
+<tr><td>Observed-flood check</td><td>Any finished run can be scored against an uploaded observed flood extent (polygons or GeoTIFF): CSI, POD, FAR, F1, bias. Verified on the real UNOSAT 2022 extent (Ch. 33, 35).</td></tr>
+<tr><td>Earth Engine</td><td>Re-authenticated on 14 October 2026 (Drive and Storage scopes dropped, which Google blocks for the default client). Glacier SAR, the glacier inventory and storm-motion nowcasting all ran live; the project is in Google's "restricted mode" for exceeding its free compute quota (Ch. 30, 31, 39).</td></tr>
+<tr><td>Scene rebuild</td><td>A finished run's 3D page can be redrawn from its saved results with the current viewer, without re-simulating; the depth/velocity stack is now read one timestep at a time (Ch. 34.3, 37.33).</td></tr>
+<tr><td>Solver slot</td><td>The single solver slot now records who holds it and who waits (<code>/solver-status</code>); NbS scenarios, which used to run the solver without waiting, now queue like every other job (Ch. 2.3).</td></tr>
+<tr><td>PDF summaries</td><td>The coastal result and the GLOF estimate can each be exported as a one-page PDF (Ch. 35).</td></tr>
+<tr><td>Access token</td><td>Optional <code>SAILAB_ACCESS_TOKEN</code>: when set, requests from other machines must present it; local requests are exempt (Ch. 40).</td></tr>
+<tr><td>Cache cleanup</td><td><code>cache_cleanup.py</code> lists old runs and deletes only with <code>--apply</code> (Ch. 40).</td></tr>
+<tr><td>Roads</td><td>Road clipping now transforms and tests all vertices in one batch; output is identical to the previous per-vertex method (Ch. 37.34).</td></tr>
+</table>
+
+<h1 class="chapter" id="c1">1. Executive Summary</h1>
+<p>SAILAB (Simulation &amp; Analytics for Inundation, Loss, Assets &amp; Built Environment) is a web-based flood intelligence platform built for Pakistan, with particular depth of testing in Gilgit-Baltistan's high-mountain, glacier-fed terrain. It combines a GPU-accelerated 2D hydrodynamic engine (LISFLOOD-FP 8.2) with free national and global datasets — Google Open Buildings, OpenStreetMap/HOTOSM exports, government infrastructure layers, ESA WorldCover, SoilGrids, HydroSHEDS/HydroLAKES, Global Dam Watch, the PMD glacier and lake inventory, IceBoost glacier thickness, ERA5-Land, GloFAS, GTSR tide-and-surge reanalysis, a Pakistan extreme-rainfall/IDF cube and Open-Meteo's live APIs — to answer one question: if a given amount of rain, river discharge, glacial-lake outburst, dam release, snowmelt or coastal surge occurs over an area, how deep will the water get, which buildings and roads are affected, what will it cost, and what can be done about it?</p>
+<p>The workflow is tiered by speed and fidelity. Tier 2 gives a sub-second terrain-index flood extent for a given discharge; Tier 3 runs the full shallow-water physics on the GPU and is the authoritative answer; a Coastal tab covers tide and storm surge. Every number the system reports is either a measurement, a published formula applied to real inputs, or an explicitly labelled approximation. This document states which, formula by formula and dataset by dataset.</p>
+<h2>1.1 What SAILAB computes</h2>
+<p>Given an area of interest (AOI) in Pakistan — drawn, uploaded, picked by tehsil name or chosen from HydroSHEDS basins — SAILAB:</p>
+<ol>
+<li>crops the national SRTM DEM to the AOI's exact polygon and burns in existing dams and reservoirs;</li>
+<li>conditions real building footprints into the terrain as flow obstacles;</li>
+<li>sets per-cell Manning's roughness from ESA WorldCover and an AOI infiltration rate from a flat value, an antecedent-moisture slider or SoilGrids soil texture;</li>
+<li>drives the terrain with a chosen forcing: a design storm (manual, CMIP6 return period or observed IDF), an uploaded rain-gauge series, a river hydrograph, a GLOF, a dam spillway release or failure, a snowmelt hydrograph, or a coastal water-level series;</li>
+<li>solves the 2D shallow-water equations with LISFLOOD-FP on the GPU;</li>
+<li>samples the per-timestep depth and velocity against buildings, roads, hospitals, schools, airports, railways, ports and power lines, using published hazard (DEFRA) and damage (Huizinga et al. 2017) curves;</li>
+<li>converts damage into an estimated loss in PKR and, across return periods, an Average Annual Loss;</li>
+<li>tests nature-based and grey-infrastructure mitigation with full physics re-runs; and</li>
+<li>renders an animated 3D scene and shareable HTML/PDF reports.</li>
+</ol>
+
+<h1 class="chapter" id="c2">2. System Architecture</h1>
+<h2>2.1 Components</h2>
+<table>
+<tr><th>Layer</th><th>Technology</th><th>Role</th></tr>
+<tr><td>Web application</td><td>Flask (Python), one long-lived process, no auto-reload</td><td>Routes every action, orchestrates async jobs, serves the single-page UI (<code>fis_app.py</code>, 90 routes).</td></tr>
+<tr><td>Physics engine</td><td>LISFLOOD-FP 8.2 (C++/CUDA), subprocess per run</td><td>Solves the 2D shallow-water equations on the conditioned DEM (<code>flood_model.py</code> writes inputs and reads outputs). Its own report template still carries the older "PluviSim" name.</td></tr>
+<tr><td>Melt model</td><td><code>hydro_model.py</code> (NumPy), subprocess per basin</td><td>Daily distributed snow/glacier/soil/lake model on ERA5-Land (Ch. 18).</td></tr>
+<tr><td>Geoprocessing</td><td>rasterio, GDAL, shapely 2, geopandas, pyogrio, pysheds</td><td>DEM cropping/reprojection, polygon clipping, HAND and flow direction, vector filtering.</td></tr>
+<tr><td>Map and 3D</td><td>Mapbox GL JS v3.6.0, mapbox-gl-draw</td><td>AOI drawing/upload, basemap, search, native 3D terrain with animated flood overlay.</td></tr>
+<tr><td>Optimization</td><td>mystic (differential evolution)</td><td>Protection-structure placement; every trial a real physics run.</td></tr>
+<tr><td>ML</td><td>PyTorch (GPU)</td><td>Storm-motion nowcasting LSTM.</td></tr>
+<tr><td>Reports</td><td>WeasyPrint, matplotlib, imageio-ffmpeg</td><td>HTML/PDF reports, diff/trend plates, MP4 export.</td></tr>
+</table>
+<h2>2.2 The async job and caching pattern</h2>
+<p>Every expensive action (a physics run, a scenario re-run, a dynamic surge, a melt-model run, an optimization or calibration search) starts a background thread, returns a job id at once, and is polled through a progress endpoint. Physics runs report named stages (<code>dem → buildings → model → postprocess → scene → done</code>). Results are cached on disk, keyed by a hash of the exact polygon geometry plus every parameter that affects the result and, for flood runs, a pipeline signature (pipeline version + dam-data fingerprint) so that results computed before a pipeline change are never served. A cache hit returns in milliseconds; it never regenerates outputs written by older code.</p>
+<h2>2.3 Concurrency and hardware</h2>
+<p>SAILAB runs on a shared NVIDIA GB10 (DGX Spark, CUDA 13, compute capability 12.1). A single solver slot (<code>SIM_SLOT</code>, a one-at-a-time lock that also remembers who holds it and who is waiting) serializes SAILAB's own physics runs, including flood runs, coastal dynamic surges, protection scenarios and optimizer trials, and NbS scenarios. <code>/solver-status</code> reports the holder and the waiters, and a queued run's progress says what the solver is busy with. The slot is released before, and re-acquired after, any nested confirmation run inside the optimizer because it is not re-entrant. The app no longer applies any GPU throttling, temperature monitoring or headroom waits (removed October 2026 at the owner's request). <code>SAILAB_FORCE_CPU=1</code> forces the CPU build when needed.</p>
+
+<h1 class="chapter" id="c3">3. Data Sources</h1>
+<p>Every dataset is real and free/open or licensed for this use; none is synthetic. Shared-drive paths are defined once in <code>data_paths.py</code> (overridable per machine with <code>SAILAB_&lt;NAME&gt;</code>); <code>check_data_paths()</code> runs at start-up and is exposed at <code>/data-status</code>, so a missing required dataset produces a clear error rather than a silent fallback.</p>
+<table>
+<tr><th>Dataset</th><th>Provider</th><th>Used for</th><th>Access</th></tr>
+<tr><td>Pakistan SRTM DEM</td><td>User-supplied, 13.48 GB, EPSG:32642, ~29 m</td><td>Physics terrain for every run</td><td>Shared drive (required)</td></tr>
+<tr><td>Copernicus DEM GLO-30</td><td>ESA / AWS Open Data</td><td>Opt-in terrain outside Pakistan</td><td>Anonymous range reads</td></tr>
+<tr><td>Google Open Buildings</td><td>Google Research</td><td>Footprints, burned in as obstacles and risk-classified</td><td>Local Parquet tiles, network fallback</td></tr>
+<tr><td>HOTOSM roads / buildings</td><td>Humanitarian OSM Team</td><td>1,113,962 roads (indexed GeoPackage); building height tags</td><td>Local</td></tr>
+<tr><td>Hospitals, schools, power lines, airports, sea ports, railway stations and lines</td><td>Government/OSM-derived shapefiles</td><td>Critical and strategic infrastructure risk</td><td>Shared drive</td></tr>
+<tr><td>ESA WorldCover 2021</td><td>ESA, 10 m</td><td>Per-cell Manning's n, land-use damage, NbS</td><td>Windowed HTTP read</td></tr>
+<tr><td>SoilGrids 2.0</td><td>ISRIC</td><td>Sand/clay → USDA texture → Ksat; sediment d<sub>50</sub></td><td>Local Pakistan extract</td></tr>
+<tr><td>HydroSHEDS level-08 basins</td><td>WWF / USGS (Lehner &amp; Grill 2013)</td><td>Basin discovery and melt-model basins (1,131 polygons)</td><td>Local</td></tr>
+<tr><td>HydroLAKES</td><td>Messager et al. 2016</td><td>953 Pakistani lakes for GLOF scenarios</td><td>Shared drive</td></tr>
+<tr><td>Global Dam Watch</td><td>GDW / GOODD</td><td>101 dams, 86 reservoirs burned into every run</td><td>Local</td></tr>
+<tr><td>Spillway events</td><td>Compiled records</td><td>10 Mangla/Tarbela openings (4 with numeric outflow)</td><td>Local CSV</td></tr>
+<tr><td>PMD glacier &amp; lake inventory 2024</td><td>Pakistan Meteorological Department</td><td>Glacier mask and lake nodes for the melt model</td><td>Shared drive</td></tr>
+<tr><td>IceBoost v2.0 ice thickness <span class="new">NEW</span></td><td>RGI v7 region 14, Zenodo 21220985</td><td>Modelled ice thickness (m), 26.6 m grid</td><td>Local</td></tr>
+<tr><td>Debris melt factor <span class="new">NEW</span></td><td>User-supplied, same grid</td><td>Ice-melt multiplier</td><td>Local</td></tr>
+<tr><td>ERA5-Land hourly t2m and precipitation</td><td>ECMWF / Copernicus, 0.1°, 1980–May 2026</td><td>Melt-model forcing</td><td>Shared drive (Zarr)</td></tr>
+<tr><td>GloFAS historical reanalysis</td><td>Copernicus EMS, 0.05°</td><td>Melt-model plausibility check (discharge and runoff)</td><td>Shared drive</td></tr>
+<tr><td>GTSR</td><td>Muis et al. 2016</td><td>Daily-maxima surge 1979–2014, 94 Pakistan-coast stations</td><td>Local (~1.3 GB)</td></tr>
+<tr><td>Pakistan rainfall/IDF cube + tehsils</td><td>ERA5-Land and IMERG V07, sibling task</td><td>Per-cell extreme indices, IDF curves, 578 tehsils</td><td>Local</td></tr>
+<tr><td>CMIP6 (NEX-GDDP)</td><td>NASA, 34 models</td><td>Design storms and climate scaling</td><td>Shared drive</td></tr>
+<tr><td>GLiM lithology</td><td>Hartmann &amp; Moosdorf 2012</td><td>Rock-type erodibility</td><td>Local</td></tr>
+<tr><td>ML landslide susceptibility, valley depth, confinement</td><td>Shared national rasters</td><td>Geomorphology (KPK/GB/AJK for the ML map)</td><td>Shared drive</td></tr>
+<tr><td>Open-Meteo Forecast, Historical, Flood, Marine</td><td>Open-Meteo</td><td>Forecasts, climatology, GloFAS discharge context, waves</td><td>Live HTTPS</td></tr>
+<tr><td>Sentinel-1, GLIMS, IMERG via Earth Engine</td><td>ESA / NSIDC / NASA</td><td>Glacier SAR displacement; storm tracks</td><td>Earth Engine (re-authenticated 14 Oct 2026; project in restricted mode)</td></tr>
+</table>
+<div class="note"><b>Earth Engine.</b> Glacier SAR monitoring (Ch. 30) and storm-motion nowcasting (Ch. 31) need a live Earth Engine OAuth credential. The earlier one had been revoked by Google (<code>invalid_grant</code>); it was renewed on 14 October 2026 with <code>earthengine authenticate --scopes=.../earthengine,.../cloud-platform</code>, because the default request also asks for Drive and Storage access, which Google blocks for the default client. The app caches an initialisation failure for the life of the process, so restart the server after any re-authentication. Cloud project <code>900557213876</code> currently reports "restricted mode" (non-commercial compute quota exceeded); light calls work, heavy jobs may be throttled.</div>
+
+<!-- ===================================================== PART II -->
+<h1 class="chapter" id="c4">4. Shallow Water Hydrodynamics &amp; LISFLOOD-FP</h1>
+<p>All physical flooding in SAILAB is governed by the two-dimensional shallow water (depth-averaged Saint-Venant) equations, in conservative form:</p>
+<div class="formula">∂h/∂t + ∂(hu)/∂x + ∂(hv)/∂y = R − I
+∂(hu)/∂t + ∂(hu² + ½gh²)/∂x + ∂(huv)/∂y = −gh ∂z/∂x − c<sub>f</sub> u √(u²+v²)
+∂(hv)/∂t + ∂(huv)/∂x + ∂(hv² + ½gh²)/∂y = −gh ∂z/∂y − c<sub>f</sub> v √(u²+v²)</div>
+<p>where h is depth, u, v depth-averaged velocities, z bed elevation, g gravity, R the rainfall/inflow source, I infiltration, and c<sub>f</sub> = g n² / h<sup>1/3</sup> from Manning's n. LISFLOOD-FP 8.2 (University of Bristol / Sheffield, GPLv3, DOI 10.5281/zenodo.13121102) integrates these equations; SAILAB implements no shallow-water solver of its own.</p>
+<h2>4.1 Why LISFLOOD-FP, and why GPU</h2>
+<p>SAILAB began on the CPU-only v5.9 binary and was upgraded to the official 8.2 source with its CUDA solvers. On the Bahawalpur benchmark the 8.2 CPU build was bit-identical to v5.9, and the GPU build agreed with it (2.816 vs 2.818 m max depth) at ~10–11× the speed. Building 2022-era code against CUDA 13 on ARM64/Blackwell needed four fixes, each root-caused from the compiler error: a C++17 bump, a Windows-only <code>cbrt</code> macro gated to MSVC, removed <code>cudaDeviceProp</code> fields replaced with <code>cudaDeviceGetAttribute</code>, and a <code>sync()</code> collision with POSIX renamed. NUMA is satisfied by a stub; NetCDF is off in the main build and on in a second build used for spatial rainfall.</p>
+<h2>4.2 Local changes to LISFLOOD-FP</h2>
+<table>
+<tr><th>Change</th><th>File(s)</th><th>Why</th></tr>
+<tr><td>Missing <code>acceleration</code> argument restored in the <code>MaxField</code> constructor call</td><td><code>cuda_dg2/fv1/fv2_simulate.cu</code></td><td>Unpadded buffer, out-of-bounds GPU write, DG2 crash on large domains (§37.18).</td></tr>
+<tr><td>HVAR stage boundary applied when stage − DEM &gt; DepthThresh, not only to already-wet cells <span class="new">NEW</span></td><td><code>cuda/acc/cuda_acc_solver.cu</code> (all four edges)</td><td>A dry coastal edge received no water at all on the GPU (§37.26).</td></tr>
+</table>
+<p>The patched kernel source is kept in the working copy as <code>lisflood_patches/cuda_acc_solver.cu</code> and must be re-applied after any re-extraction of the LISFLOOD-FP source. Both <code>build</code> and <code>build_netcdf</code> are rebuilt after each patch.</p>
+
+<h1 class="chapter" id="c5">5. Solvers: ACC, DG2, and the GPU/CUDA Port</h1>
+<h2>5.1 The local-inertial (ACC) solver</h2>
+<p>ACC drops the convective-acceleration terms from the momentum equation (Bates, Horritt &amp; Fewtrell 2010):</p>
+<div class="formula">q<sup>t+Δt</sup> = [ q<sup>t</sup> − g h Δt ∂(h+z)/∂x ] / [ 1 + g n² |q<sup>t</sup>| Δt / h<sup>7/3</sup> ]</div>
+<p>where q = hu is unit discharge. It is fast and accurate on gentle floodplains but is genuinely wrong on steep terrain, where the dropped terms matter. On a 400×400 crop of Gilgit-Baltistan terrain (92.5% mean slope) DG2 gave 4.65 m maximum depth; ACC gave 140.43 m at a 5.0 s start step and 37.54 m even at 0.2 s.</p>
+<h2>5.2 The second-order discontinuous Galerkin (DG2) solver</h2>
+<p>DG2 solves the full shallow-water system with a piecewise-linear representation of each variable per cell, a Godunov-type flux and a slope limiter. It is the physically correct choice on steep terrain, at 10–60× the wall-clock cost of ACC (higher per-cell cost and smaller stability-limited steps). A measured-scaling estimate puts a 30 m DG2 run of a ~5,600 km² Karakoram basin at about 5 hours.</p>
+<h2>5.3 Solver selection, current setting</h2>
+<p><code>choose_solver_for_terrain</code> computes the DEM's mean slope (nearest-valid-neighbour NODATA fill, then a gradient) and would choose DG2 above <code>DG2_SLOPE_THRESHOLD_PCT</code> = 10 %, with two overrides: any boundary inflow forces ACC (DG2's timestep collapses under an injected flux), and domains above <code>DG2_CUDA_MAX_CELLS</code> = 4,000,000 force ACC (the largest size tested clean after the crash fix).</p>
+<p><b>Current setting: <code>FORCE_ACC_ONLY = True</code>.</b> ACC is used everywhere, trading DG2's accuracy for speed. On terrain above 10 % mean slope the raw ACC depth is divided by an empirical correction factor fitted to a 7-point ACC-vs-DG2 benchmark (15–200 % slope; R² = 0.992; maximum corrected-depth error 4.9 %):</p>
+<div class="formula">correction     = 2.9664 + 0.037 × mean_slope_%
+depth_reported = depth_ACC / correction        (only when mean slope &gt; 10 %)</div>
+<div class="note">The correction fixes depth magnitude only. It cannot fix flow-path errors from ACC's missing momentum terms, and it was fitted on one storm, one synthetic ramp and one domain size. Set <code>FORCE_ACC_ONLY = False</code> to return to slope-based DG2.</div>
+<h2>5.4 GPU and CPU paths <span class="new">UPDATED</span></h2>
+<table>
+<tr><th>Run type</th><th>Build used</th><th>Evidence</th></tr>
+<tr><td>Rain only</td><td>GPU</td><td>~10–11× faster than CPU, same result (Bahawalpur).</td></tr>
+<tr><td>River, GLOF, snowmelt, dam inflow (QVAR)</td><td>GPU when the inlet is on valid terrain; CPU if any inflow cell is NODATA</td><td>Stored volume 1.9672×10⁵ / 1.5746×10⁶ m³ at 1 h / 4 h on both builds; full runs equal to the displayed digit (2.4701 km²/2.38 m constant; 2.8298 km²/2.57 m hydrograph; 6.6365 km²/2.62 m with rain and outlets).</td></tr>
+<tr><td>Constant inflow</td><td>Written as a flat two-point QVAR</td><td>CUDA ACC has no QFIX case and injects zero.</td></tr>
+<tr><td>Coastal stage (HVAR)</td><td>GPU (patched kernel)</td><td>Karachi SRTM crop, 0 → 4 m over 24 h: 41.4370 km² / 4.00 m on both builds; 34 s vs 97 s.</td></tr>
+</table>
+<p>The GPU is not always faster: a 41,000-cell inflow-only run took 62 s on the GPU and 29 s on the CPU; with rain and free outlets it was 105 s vs 180 s. The CPU path pins <code>OMP_NUM_THREADS=1</code> (§7.4).</p>
+<h2>5.5 Diagnostics the GPU path does not write</h2>
+<table>
+<tr><th>Missing under CUDA</th><th>Replacement</th></tr>
+<tr><td><code>res.maxHaz</code> (peak DEFRA hazard)</td><td>Recomputed from the per-timestep depth and de-staggered velocity rasters.</td></tr>
+<tr><td>Cumulative rainfall column in <code>res.mass</code></td><td>Exact integral of the hyetograph actually written.</td></tr>
+<tr><td>River inflow (<code>Qin</code>) column</td><td>Exact integral of the hydrograph actually applied (whole-cell width).</td></tr>
+</table>
+<h2>5.6 The GPU-MWDG2 adaptive solver — evaluated, not adopted</h2>
+<p>LISFLOOD-FP 8.2's multiwavelet DG solver with dynamic mesh refinement (Aureli et al. 2025) compiled and ran, and its mesh genuinely coarsened (97.5 % compression on a steep test). It has no rainfall source; a CUDA rainfall kernel written for it made it slower than DG2 at small scale and produced a physically impossible negative total volume (723 of 4,096 cells negative, one at −0.46 m). Not adopted.</p>
+
+<h1 class="chapter" id="c6">6. Boundary Conditions &amp; Forcing</h1>
+<h2>6.1 Rainfall</h2>
+<p>Rainfall uses LISFLOOD-FP's own mechanism, never a custom source term. A design storm is a triangular hyetograph (linear rise to the peak at half the duration, linear fall to zero by the full duration). An uploaded gauge series drives the solver directly (<code>write_rain_file_from_series</code>; tied timestamps merged keeping the larger rate). Storm-centred or moving rain is written as a per-timestep NetCDF field and run through the NetCDF build.</p>
+<h2>6.2 River, GLOF, snowmelt and dam inflow (QVAR)</h2>
+<p>Discharge is injected over a localized channel-width segment of one AOI edge, not the whole edge (which would dilute it to nothing). Three corrections are built in:</p>
+<ul>
+<li>boundary coordinates are absolute: the DEM's own <code>xllcorner</code>/<code>yllcorner</code> is added (§37.12);</li>
+<li>the segment is clamped to the edge before the per-metre flux is computed (§37.13);</li>
+<li>the segment is snapped to whole cells, because the solver applies a boundary on whole cells — a 40 m channel on a 29 m grid previously delivered 1.46× the requested discharge (§37.27).</li>
+</ul>
+<p>Hydrograph shapes: triangular with the peak at half the duration for rivers, at 10 % for GLOF, or an arbitrary time series (snowmelt, dam events) with its last value held to the end of the run. Delivered volume is checked analytically (2.160047×10⁶ vs 2.16×10⁶ m³ on a real DEM after the width fix).</p>
+<h2>6.3 Coastal water level (HVAR)</h2>
+<p>A time-varying stage boundary on the lowest-elevation edge that has land. The dynamic case uses a GTSR-anchored rise/peak/recede episode (Ch. 19). It now runs on the GPU (§5.4).</p>
+<h2>6.4 Outlets</h2>
+<p>Chosen edges are <code>FREE</code> (slope 0.001) and the rest <code>CLOSED</code>; individual outflow segments can also be placed.</p>
+
+<h1 class="chapter" id="c7">7. Numerical Stability Findings</h1>
+<h2>7.1 Timestep collapse on steep terrain</h2>
+<p>A controlled bisection (fixed synthetic domain, identical storm, varying only slope and starting timestep) showed that at the original 5.0 s start, maximum depth grew unphysically with slope alone (18 → 247 → 387 → 559 m from 15 % to 200 %), while the mass-balance error actually shrank — so mass error alone is not a reliable warning here. At ≤ 0.2 s every slope converged to the same answer.</p>
+<p>The current rule: 5.0 s for rain-only runs on gentle terrain; 0.2 s for any river or GLOF inflow; 5.0 s for coastal-only HVAR (tested at 0.2, 2 and 5 s with matching mass balance, 13–17× faster); and <b>1.0 s</b> whenever a run would otherwise start at 5.0 s and the mean slope exceeds 10 %. The 1.0 s tier is a graduated compromise: at 200 % slope it only partly converged in testing (0.86 m vs 0.56 m at 0.2 s).</p>
+<div class="note"><b>Residual.</b> On the full Gilgit-Baltistan basin (6.6 M cells; 851.8 % max slope, 72.2 % mean) the fix cut maximum depth from 348.40 m to 255.01 m but the mass-balance error grew 3.1×. ACC results on terrain this extreme should not be trusted; DG2 at 116 m gave 0.83 m for the same basin.</div>
+<h2>7.2 The DG2 CUDA crash</h2>
+<p>DG2 crashed (<code>cudaErrorIllegalAddress</code>) above a bisected domain size. compute-sanitizer traced it to an upstream copy-paste defect: the <code>MaxField</code> constructor call in the DG2, FV1 and FV2 simulate files was missing its <code>acceleration</code> argument, so an unpadded buffer was allocated for a padded grid. The correct call survives commented-out in the ACC file. Fixed in all three; a 4,000,000-cell run completed in 606.5 s.</p>
+<h2>7.3 Dead ends tested and rejected</h2>
+<ul>
+<li><b>Single-precision DG2:</b> 2.73× faster, but 2.59 m vs 4.65 m maximum depth on identical input — float32 cancellation between 2,000–5,500 m elevations and centimetre-to-metre depths.</li>
+<li><b>Raising <code>depththresh</code>:</b> tripled flooded area and sextupled mass error; not a stability lever.</li>
+</ul>
+<h2>7.4 CPU threading: more cores were slower</h2>
+<p>Forcing the CPU solver's OpenMP region to use more than one thread made an identical inflow benchmark 6–7× slower, already at two threads. A <code>#pragma omp critical</code> inside the parallel loop serializes most work while every thread pays fork-join overhead each step. <code>OMP_NUM_THREADS</code> is pinned to 1.</p>
+<h2>7.5 Minor levers and checks</h2>
+<ul>
+<li><code>mint_hk</code>: ~8.5 % faster at ~0.2–0.35 % depth difference on a 4 M-cell benchmark; available, off by default.</li>
+<li>Friction floor <code>ABS_MIN_FPFRIC</code> = 0.01; numerical diffusion θ = 0.8 written when the lowest friction in use is below 0.02.</li>
+<li>Mass conservation, measured: closed rain-only synthetic domains at 300 m, 2 km and 6 km conserve mass on both builds (stored/analytic 1.000 CPU, 0.997–0.998 GPU).</li>
+</ul>
+
+<!-- ===================================================== PART III -->
+<h1 class="chapter" id="c8">8. The Tiered Workflow</h1>
+<p>Operational flood systems trade speed against physical fidelity. SAILAB exposes that trade-off directly:</p>
+<table>
+<tr><th>Tier</th><th>Answers</th><th>Speed</th><th>Method</th></tr>
+<tr><td>Tier 2 — Instant Flood</td><td>Where would this discharge go?</td><td>&lt; 1 s</td><td>HAND terrain index + Manning rating curve (Ch. 9)</td></tr>
+<tr><td>Tier 3 — Physics Run</td><td>How deep, how fast, what is hit, what does it cost?</td><td>seconds to hours</td><td>LISFLOOD-FP on the GPU (Ch. 10)</td></tr>
+<tr><td>Coastal / Tidal</td><td>What does a surge or tide do?</td><td>&lt; 1 s to minutes</td><td>Static bathtub, animated preview, dynamic HVAR (Ch. 19)</td></tr>
+</table>
+<div class="note"><b>Tier 1 retired.</b> The previous edition described a Tier 1 discharge estimator: an LSTM trained on 630 Caravan basins (held-out-basin NSE 0.450) with nearest-analog regionalization. It has been removed from the app, together with its model and training sample, and is no longer part of SAILAB. Discharge for Tier 2 and Tier 3 now comes from manual entry, real GloFAS context (Open-Meteo Flood API), a GLOF estimate (Ch. 16), a dam spillway or failure scenario (Ch. 17), or the melt model (Ch. 18).</div>
+
+<h1 class="chapter" id="c9">9. Tier 2: Instant HAND-Based Flood Preview</h1>
+<p>Tier 2 uses the terrain-index technique behind NOAA's CONUS Flood Inundation Mapping (Zheng et al. 2018, GeoFlood), computed per AOI on demand. No freely downloadable HAND dataset covering Pakistan exists (MERIT Hydro's is registration-gated), and per-AOI computation takes well under a second.</p>
+<h2>9.1 HAND</h2>
+<p>pysheds fills pits and depressions, resolves flats, computes D8 flow direction and accumulation, extracts streams where accumulation ≥ 500 cells, and labels every cell with its Height Above Nearest Drainage.</p>
+<h2>9.2 Discharge to depth</h2>
+<p>Channel width follows hydraulic-geometry scaling (Leopold &amp; Maddock 1953):</p>
+<div class="formula">W = max(0.60 · A<sub>km²</sub><sup>0.50</sup>, 0.5) m</div>
+<p>Manning's equation for a trapezoidal channel (side slope 1.5, n = 0.035) is solved by bisection for the stage that carries Q:</p>
+<div class="formula">Q = (1/n) · A<sub>x</sub> · R<sup>2/3</sup> · S<sup>1/2</sup></div>
+<p>Cells whose HAND is below that stage flood. Verified monotonic: 50, 500 and 5,000 m³/s gave 4.0, 10.5 and 26.1 m maximum depth on a test AOI.</p>
+<h2>9.3 Caching and the discharge library</h2>
+<p>HAND is cached per AOI and DEM source (0.337 s cold, 0.014 s cached). A library at 1, 2, 5, 10, 20, 50, 100, 200, 500, 1,000, 2,500 and 5,000 m³/s lets the slider interpolate log-log in the browser with no server round-trip.</p>
+
+<h1 class="chapter" id="c10">10. Tier 3: Full Physics Simulation</h1>
+<h2>10.1 Pipeline stages</h2>
+<ol>
+<li><b>DEM</b> — crop to the exact polygon (cells outside it NODATA), then burn in dams and reservoirs (Ch. 17).</li>
+<li><b>Buildings</b> — fetch Google Open Buildings and rasterize each full footprint onto valid cells as a +6 m obstacle; keep a bare copy for 3D.</li>
+<li><b>Model</b> — write the DEM, rainfall, boundary, friction and infiltration inputs and run LISFLOOD-FP (Ch. 4–7).</li>
+<li><b>Postprocess</b> — read the per-timestep depth/velocity stack (velocity de-staggered from the Arakawa C grid; spatially strided above 5,000,000 frame×cells so the 3D page stays loadable), classify buildings and infrastructure, compute loss, and rewrite <code>summary.json</code> with every enrichment.</li>
+<li><b>Scene</b> — build the animated Mapbox 3D page (Ch. 34).</li>
+</ol>
+<p>Buildings, infrastructure and land cover (for Manning's n) are fetched in parallel background threads and joined only when needed.</p>
+
+<!-- ===================================================== PART IV -->
+<h1 class="chapter" id="c11">11. Rainfall Forcing &amp; Design Storms</h1>
+<h2>11.1 The triangular design storm</h2>
+<p>A peak intensity (mm/hr) and duration become a triangular hyetograph: linear rise to the peak at half the duration, linear fall to zero at the full duration. Its depth is half the peak times the duration, and that analytic total is what the summary reports.</p>
+<h2>11.2 Areal Reduction Factor</h2>
+<p>Opt-in (<code>--enable-arf</code>): Keers &amp; Wescott (1977) / FSR-FEH, ARF = 1 − b·D<sup>−a</sup> with five area bands, 1.0 below 1 km², clamped to (0.05, 1].</p>
+<h2>11.3 Uploaded rain-gauge data</h2>
+<p>A CSV (built against a 17-station, 15-minute network export) becomes one series per station: mm per interval → mm/hr using each interval's own length, negatives clamped to zero, real timestamps carried through to the 3D animation clock. Text locations are geocoded with ", Pakistan" appended (a bounding-box bias alone mis-resolved Islamabad sectors); when no station has coordinates and there is more than one, the user picks the station.</p>
+<h2>11.4 Storm-centred and moving rainfall</h2>
+<p>A weight w = exp(−r/L), normalised to mean 1 over the AOI (L = √(area/π) by default), is written as a per-timestep NetCDF field; the centre may move at a set or LSTM-predicted velocity (Ch. 31).</p>
+<h2>11.5 Running on the live forecast</h2>
+<p>The forecast peak is the maximum future hourly rate; the duration is the contiguous span above 0.1 mm/hr around it, measured in the forecast's own local time (§37.19).</p>
+
+<h1 class="chapter" id="c12">12. Real Recorded IDF Curves</h1>
+<p>A separately built Pakistan extreme-precipitation cube — ERA5-Land (1980–2026, ~9 km) and GPM IMERG V07 30-minute precipitation (2000–2026, ~11 km) — provides per-cell observed alternatives to a statistical design storm.</p>
+<h2>12.1 Per-cell indices (ETCCDI)</h2>
+<table>
+<tr><th>Index</th><th>Meaning</th></tr>
+<tr><td>RX1day / RX5day</td><td>Maximum 1-day / 5-day total in a season or year</td></tr>
+<tr><td>R95p / R99p</td><td>Total precipitation on days above the 95th/99th percentile (a seasonal aggregate)</td></tr>
+<tr><td>SDII</td><td>Mean rate on wet days</td></tr>
+<tr><td>R20mm</td><td>Days above 20 mm</td></tr>
+<tr><td>PRCPTOT</td><td>Total precipitation</td></tr>
+<tr><td>Peak hourly / peak 30-min</td><td>Highest recorded rate</td></tr>
+<tr><td>Trend</td><td>Theil-Sen trend on RX1day</td></tr>
+</table>
+<h2>12.2 The intensity-duration curve</h2>
+<p>Points at 30, 60, 90, 120 and 180 min (IMERG) and 1, 2, 3, 6, 12 and 24 h (ERA5-Land). IMERG is preferred where both exist — the sources can disagree (11.06 vs 15.87 mm/hr at the same 1-hour point) and duplicates would break interpolation. Requested durations are interpolated log-log and clamped to the curve's range, never extrapolated. The default year is the latest complete one (2025; 2026 is partial), read from the dataset's manifest.</p>
+<h2>12.3 Not used to recompute pluvial risk</h2>
+<p>R95p/R99p are seasonal aggregates, a different statistic from the single-day percentile threshold of Ch. 20, so they are shown as a separate reference and not folded into that tier.</p>
+
+<h1 class="chapter" id="c13">13. Climate Change Scaling</h1>
+<p>Annual-maximum daily rainfall from up to 8 of 34 NEX-GDDP-CMIP6 models (1985–2014) is fitted with a Gumbel (EV-I) distribution to give return-period depths (2, 5, 10, 25, 50, 100, 200 years), taken as the ensemble median. The intensification factor is the ratio of the same return-period value fitted for a future window (2036–2065 or 2071–2100) to the historical one (delta-change method). This is a statistical model projection; the observed IDF curve (Ch. 12) remains available alongside because the two answer different questions. Uncached, it reads dozens of files and takes 1–3 minutes.</p>
+
+<h1 class="chapter" id="c14">14. Antecedent Moisture, Infiltration &amp; Friction</h1>
+<h2>14.1 Antecedent Moisture Condition</h2>
+<p>The solver takes one flat infiltration rate, so a full Curve-Number recalculation is not possible. A 0–100 slider multiplies the user's baseline (treated as AMC-II), interpolated linearly between three reference points approximating the CN(II)→CN(I)/CN(III) retention ratios:</p>
+<div class="formula">multiplier(0)   = 1.8    AMC-I, dry
+multiplier(50)  = 1.0    AMC-II, average
+multiplier(100) = 0.25   AMC-III, saturated</div>
+<p>Reports always show the baseline, the multiplier and the effective rate used.</p>
+<h2>14.2 Soil-derived infiltration (SoilGrids)</h2>
+<p>Sand and clay (0–5 cm) are classified into a USDA texture class (§37.16 fixed a gap for sand ≥ 45 % and clay ≥ 35 %), mapped to Rawls, Brakensiek &amp; Miller (1983) saturated conductivity, and reduced to one area-weighted mean rate for the AOI, because the CUDA ACC solver has no per-cell infiltration. An optional Green-Ampt average rate solves the implicit cumulative-infiltration equation numerically.</p>
+<h2>14.3 Per-cell Manning's friction</h2>
+<p>Unlike infiltration, per-cell Manning's n is consumed by the CUDA ACC solver (<code>initialise_manning</code>, traced in source). ESA WorldCover classes map to overland-flow roughness (Chow 1959; USACE HEC-RAS; FEMA):</p>
+<table>
+<tr><th>Land cover</th><th class="num">Manning's n</th></tr>
+<tr><td>Mangroves</td><td class="num">0.140</td></tr>
+<tr><td>Tree cover</td><td class="num">0.130</td></tr>
+<tr><td>Shrubland</td><td class="num">0.070</td></tr>
+<tr><td>Herbaceous wetland</td><td class="num">0.045</td></tr>
+<tr><td>Built-up (open ground between conditioned buildings)</td><td class="num">0.045</td></tr>
+<tr><td>Cropland</td><td class="num">0.037</td></tr>
+<tr><td>Grassland</td><td class="num">0.035</td></tr>
+<tr><td>Snow/ice, Moss/lichen</td><td class="num">0.030</td></tr>
+<tr><td>Bare/sparse vegetation, Permanent water</td><td class="num">0.025</td></tr>
+</table>
+<p>A floor of 0.01 and the θ = 0.8 numerical-diffusion term below 0.02 guard against the documented low-friction instability.</p>
+
+<!-- ===================================================== PART V -->
+<h1 class="chapter" id="c15">15. Fluvial Flooding</h1>
+<h2>15.1 Automatic river siting</h2>
+<p>OSM waterways (river/stream/canal) that cross the AOI are found by distance to each edge; the inlet position is snapped to the nearest valid edge cell. Channel widths are documented estimates: river 40 m, stream 8 m, canal 15 m, other 20 m.</p>
+<h2>15.2 Discharge context</h2>
+<p>Open-Meteo's Flood API (GloFAS reanalysis and forecast) gives a 37-day discharge window so the user can set an informed peak. The physics is driven by the scenario the user sets, informed but not dictated by this context.</p>
+<h2>15.3 Channel conditioning and its limit</h2>
+<p>The DEM has no river bathymetry. An optional conditioning step carves a channel along the buffered waterway using the Tier 2 width/depth relations — an approximation of the sub-grid channel solver, which the CUDA build lacks. Without it, a large discharge forced into an estimated width can produce locally very deep results; that is a property of bare-DEM routing, not a bug.</p>
+
+<h1 class="chapter" id="c16">16. Glacial Lake Outburst Floods (GLOF)</h1>
+<h2>16.1 Peak-discharge formulas <span class="new">CORRECTED</span></h2>
+<div class="formula">Popov (1991):          Q<sub>peak</sub> = 0.0048 · V<sup>0.896</sup>
+Huggel et al. (2002):  V = 0.1217 · A<sup>1.4129</sup>
+Froehlich (1995):      Q<sub>peak</sub> = 0.607 · V<sup>0.295</sup> · h<sup>1.24</sup></div>
+<p>V is lake volume (m³), A lake area (m²), h breach height (m), Q in m³/s. Huggel's area–volume relation is used only when no volume is known.</p>
+<p>The previous edition printed the Popov formula incorrectly; the form above is the one in the code. Applied to Shishper Glacier Lake's 2022 event (38,987,000 m³) it gives 30,388 m³/s against a reported 3,737 m³/s — about 8× too high. That is why the curated Shishper preset uses the reported event numbers directly; the formula is used for lakes with no documented event. Froehlich is used when a breach height is known, including landslide-dam scenarios.</p>
+<h2>16.2 Lakes: a curated preset plus HydroLAKES</h2>
+<p>The curated list (Shishper) carries reported event data. Any of 953 Pakistani HydroLAKES lakes can be chosen by id or distance from the AOI, with the note that it is "a real lake, not individually validated against a documented GLOF event".</p>
+<h2>16.2a PMD 2024 lake inventory as a third lake source</h2>
+<p>The PMD glacial-lake inventory (3,378 lake polygons, northern Pakistan) can be searched by distance from the AOI. Each lake carries a dam type (morainic, ice-dammed, mixed, bedrock; spelling variants in the source are normalised), glacier relation and the nearest village. The inventory has no volume, so volume comes from the Huggel et al. (2002) area relation, which can be off by an order of magnitude. Newly formed lakes such as Shishper (2018) are not in it; use the curated preset for those.</p>
+<h2>16.2b Documented outburst events (HMAGLOFDB)</h2>
+<p>The High Mountain Asia GLOF database lists 774 events, 151 of them in Pakistan (140 in Gilgit-Baltistan, 47 since 2000). The app lists the events within 100 km of the drawn area with year, lake, dam type, mechanism, volume, peak discharge, deaths and impact, and an event with a documented discharge or volume can be added as a scenario. The catalogue is a compilation, not a census, and Pakistan's records are thin: only 9 report a volume and 3 a peak discharge (all Shisper, 85 to 142 m&sup3;/s).</p>
+<h2>16.2c How good is the Popov formula? <span class="new">NEW</span></h2>
+<p>On the 32 events worldwide that report both volume and peak discharge, the Popov estimate divided by the documented peak discharge has a median of 1.05 for moraine-dammed lakes (16 events; 10th to 90th percentile 0.11 to 14.3), 2.8 for supraglacial lakes (11 events) and 17 for ice-dammed lakes (5 events). Popov was fitted to moraine-dam failures, so it badly overestimates ice-dammed lakes, which are about half of Pakistan's recorded events; the 17 rests on only five events. Every volume-based discharge now shows a documented-event range (the Popov value divided by the ratio spread for that dam type; all lake types when the type is unknown or has fewer than five events) with the event count and a caution. It is an empirical spread of the formula's error, not a forecast for the lake.</p>
+<h2>16.3 Hydrograph and routing</h2>
+<p>The peak arrives at 10 % of the event (default 3 h), matching the fast-rise, slow-recede shape of documented GLOFs. The peak can go to a Tier 3 inflow (needs siting) or straight to Tier 2 (no siting). Results link to the nearest HydroSHEDS basin, and a glacier SAR displacement result for a known lake links back to this estimator.</p>
+
+<h1 class="chapter" id="c17">17. Dams &amp; Reservoirs <span class="new">NEW</span></h1>
+<h2>17.1 Burned into every run</h2>
+<p>Global Dam Watch (101 dams, 86 reservoirs, including Tarbela, Mangla, Chashma, Marala, Rasul, Hub, Warsak, Khanpur, Simly, Rawal, Tanda and Satpara) is applied to every run's bare DEM before buildings: reservoir polygons are lowered by their mean depth (10 m when missing) and dam points are raised by their height (15 m when missing) as a 60 m-radius patch, because GDW has no as-built alignment. The run cache key includes a fingerprint of the dam data, so results computed without dams are never served.</p>
+<h2>17.2 Spillway events</h2>
+<p>Ten documented Mangla/Tarbela spillway openings are available; four have a numeric outflow, converted from cusecs (× 0.0283168466 → m³/s) and added as an inflow at the dam. The 48 h duration is an estimate.</p>
+<h2>17.3 Dam-failure scenarios</h2>
+<p>Peak breach discharge from Froehlich (1995) with the reservoir's real volume. Only 23 of 101 dams have a recorded height. For 64 more, height is estimated from reservoir depth using the ratio measured on the 22 dams that have both (low / central / high = 1.14 / 2.30 / 3.17) and reported as a range; 14 have neither and are refused. Froehlich is fitted to small dams, so Tarbela-class results are order-of-magnitude only.</p>
+<h2>17.4 Spillway outlook</h2>
+<p>The GloFAS inflow forecast at the dam is compared with the lowest documented inflow at which the spillway opened. Validated only for Tarbela (GloFAS 6,576 m³/s vs documented 6,881 and 5,947: −4 % / +11 %). Mangla is refused: GloFAS gives 2.2 m³/s at the dam (808 m³/s at the best of 25 nearby cells) against a documented 8,495 m³/s.</p>
+
+<h1 class="chapter" id="c18">18. Snow &amp; Glacier Melt <span class="new">NEW</span></h1>
+<h2>18.1 Short snowmelt forecasts (SRM)</h2>
+<p>Snowmelt Runoff Model style (Martinec &amp; Rango 1986): the AOI is split into elevation bands, temperature is lapsed at 6.5 °C/km per band, and melt uses a degree-day factor of 4.5 mm °C⁻¹ day⁻¹ (within the 2–6 range of the SRM manual and Hock 2003) above 0 °C. It gives a single-day discharge or a multi-day forecast hydrograph that can be used as a time-varying inflow.</p>
+<h2>18.2 Distributed snow and glacier model</h2>
+<p><code>hydro_model.py</code> is a daily, pixel-distributed model run per basin:</p>
+<ul>
+<li><b>Snow:</b> degree-day melt with a sub-daily temperature spread, rain/snow transition between 0 and 2 °C, refreeze (5 %) and liquid-water holding (10 %).</li>
+<li><b>Glacier ice:</b> melt = DDF<sub>ice</sub> × positive degree-days × terrain factor × debris factor, limited by the ice that remains; thickness evolves.</li>
+<li><b>Soil, groundwater, fast runoff;</b> lakes with weir outflow and rapid-release rules.</li>
+<li><b>Routing:</b> D8 with Manning-based travel time; outlet discharge is the sum over exit cells.</li>
+</ul>
+<p>Forcing is ERA5-Land hourly temperature and precipitation clipped to the basin plus 0.3°. Temperature is lapsed to each pixel from its ERA5 cell's mean DEM height (−6.5 °C/km), because ERA5 cells span thousands of metres of relief in the Karakoram. Basins are prepared from SRTM in their UTM zone at max(30 m, area/40,000 pixels), typically ~260–270 m, with pysheds fill and D8, and PMD 2024 glacier and lake polygons. Default factors: DDF<sub>snow</sub> 4 and DDF<sub>ice</sub> 8 mm °C⁻¹ day⁻¹, precipitation factor 1, temperature offset 0.</p>
+<h2>18.3 Ice thickness and debris (October 2026)</h2>
+<p>IceBoost v2.0 modelled ice thickness (RGI v7 region 14) and a debris melt-factor raster, both on a 26.6 m grid, are averaged onto each basin's model grid over ice-covered source pixels only, so a half-ice cell gets the thickness of its ice rather than half of it. Glacier-inventory pixels where IceBoost models no ice are treated as ice-free (previously they received a flat 50 m).</p>
+<table>
+<tr><th>Basin</th><th class="num">IceBoost ice</th><th class="num">Mean thickness</th><th class="num">PMD glacier share</th><th class="num">PMD-only cells</th></tr>
+<tr><td>Hunza 4080566900</td><td class="num">1,016 km² (37 %)</td><td class="num">175 m</td><td class="num">44 %</td><td class="num">1,439</td></tr>
+<tr><td>4080575700 (Ghizar side)</td><td class="num">577 km² (20 %)</td><td class="num">81 m</td><td class="num">28 %</td><td class="num">1,331</td></tr>
+</table>
+<p>What changed the results was treating PMD-only pixels as ice-free: they carried about 15 % of all ice melt. Thickness itself matters little in a one-year run, because most ice is far thicker than a season's melt; it will matter for multi-year runs. The debris factor differs from 1 on only 0.5–1.3 % of ice pixels in both basins (mean 0.994–1.000), so it has almost no effect there and under-represents real Karakoram debris cover.</p>
+<h2>18.4 Plausibility check against GloFAS</h2>
+<p>GloFAS is itself a model, not gauge data; agreement is a plausibility check. The comparison cell is chosen by water balance: within ±3 cells of the outlet, the cell whose 2003–2012 mean discharge matches the basin's own GloFAS-generated runoff (runoff × area) within 1.5×; otherwise no comparison is made. The old rule — the highest-flow cell inside the basin — picked a neighbouring river for Hunza (78 vs 20 m³/s). Skill is reported for the melt season (April–September) as KGE, NSE, bias and r, with a warning when |bias| &gt; 40 % or KGE &lt; 0.3.</p>
+<div class="formula">KGE = 1 − √[ (r − 1)² + (σ<sub>sim</sub>/σ<sub>obs</sub> − 1)² + (μ<sub>sim</sub>/μ<sub>obs</sub> − 1)² ]</div>
+<h2>18.5 Per-basin calibration with a hold-out year</h2>
+<p>A grid of temperature offset (−3 to +1 °C) × precipitation factor (0.5 to 4) × degree-day pair (4/8 or 7/16) — 50 runs — is evaluated on a calibration year; the winner and the defaults are then run on a different hold-out year. A trial is rejected if glacier-wide mass balance is below −1.5 m w.e./yr (the regional geodetic range is −0.1 to −0.5; Hugonnet et al. 2021), so GloFAS cannot be matched by melting ice that does not exist. A basin is marked transferable when the hold-out KGE ≥ 0.3, |bias| ≤ 40 % and the mass balance is plausible.</p>
+<table>
+<tr><th>Basin</th><th>Setting</th><th>Calibration year (Oct 2024–Oct 2025)</th><th>Hold-out (Oct 2023–Oct 2024)</th><th class="num">Glacier balance</th><th>Verdict</th></tr>
+<tr><td>Hunza</td><td>Defaults</td><td>KGE 0.86, bias +9 %</td><td>KGE 0.83, bias +13 %</td><td class="num">+0.04</td><td>—</td></tr>
+<tr><td>Hunza</td><td>−2 °C, precip ×0.5, DDF 7/16</td><td>KGE 0.95, bias −2 %</td><td>KGE 0.87, bias +3 %</td><td class="num">−0.40</td><td>Transferable</td></tr>
+<tr><td>4080575700</td><td>Best of grid</td><td>KGE −1.50, bias +192 %</td><td>KGE −1.16, bias +157 %</td><td class="num">−0.69</td><td>Not transferable</td></tr>
+</table>
+<div class="note">Basin 4080575700 overshoots GloFAS 2–3× under every plausible setting. GloFAS's own water balance there is consistent, so the comparison cell is not the cause. Possible causes, none confirmed: glacier outlines, too little modelled accumulation on low glacier tongues (3,500–4,500 m melt 7–10 m w.e./yr at defaults), or GloFAS under-counting ice melt (it has no explicit glacier model). A stream gauge is needed. Melt discharge for that basin should not be used.</div>
+
+<h1 class="chapter" id="c19">19. Coastal &amp; Tidal Flooding</h1>
+<h2>19.1 Static method: the Khan et al. (2020) bathtub</h2>
+<p>Published Karachi Port total water levels (tide + surge) at 50 / 100 / 1,000 years — 3.73 / 3.76 / 3.92 m, log-interpolated between them, with sea-level rise of 3.6 mm/yr and a mean tidal range of 2.3 m — flood every cell at or below the level that is connected (4-neighbour) to a seed: boundary cells below the level or cells at or below 0 m. The reference is regional (Karachi), labelled as such.</p>
+<h2>19.2 Wave run-up (Stockdon et al. 2006)</h2>
+<div class="formula">R<sub>2%</sub> = 1.1 · ( 0.35 β √(H<sub>0</sub>L<sub>0</sub>) + ½ √(H<sub>0</sub>L<sub>0</sub> (0.563 β² + 0.004)) ),   L<sub>0</sub> = gT²/2π</div>
+<p>H<sub>0</sub> and T from the Open-Meteo Marine API; β measured from DEM shore-to-inland transects, falling back to 0.03. On a Karachi test: 0.565 m of run-up on a 3.76 m still-water level, total 4.325 m. Opt-in.</p>
+<h2>19.3 Animated preview</h2>
+<p>The static method applied at 12 points along a GTSR-shaped water-level series; each frame assumes instant equilibrium (no routing between frames). Under one second.</p>
+<h2>19.4 Dynamic surge (GTSR + HVAR)</h2>
+<p>A GTSR daily-maxima episode at the nearest of 94 Pakistan-coast stations is rescaled to an anchor — the static total water level, or the station's own recorded peak, optionally plus the 2.3 m tidal range (a conservative "surge at high tide" sum, not a non-linear interaction) — and applied as an HVAR boundary on the lowest edge that has land. It now runs on the GPU after the kernel patch (§4.2). A coastal-only run starts at a 5.0 s step (tested at 0.2, 2 and 5 s with matching mass balance; 13–17× faster than 0.2 s). Compound mode adds rain in the same run.</p>
+<h2>19.5 Limitation</h2>
+<p>The dynamic boundary injects water only through the AOI's rectangular edge. If that edge sits on land above the surge, the dynamic run can show less flooding than the static method, which also seeds from low cells anywhere in the domain. Draw the AOI so its edge reaches the real coastline.</p>
+
+<h2>19.6 Local water levels: 42 GTSM stations</h2>
+<p>A second water-level source is selectable beside the Karachi tide-gauge anchors: GTSM-ERA5-E v2 return levels (2, 5, 10, 25, 50, 100 years) at 42 stations along the Pakistan coast. The nearest station to the AOI centroid is used, log-interpolated in return period and extended log-linearly beyond 100 years (flagged as extrapolated). The 100-year level varies from about 1.44 m in the west to 1.90 m near Karachi. <b>The two sources disagree by about a factor of two at Karachi</b> (GTSM 1.79 m against 3.76 m from the gauge record). On a Karachi test area the gauge level floods 80.1 km&sup2; (peak depth 4.7 m) and the GTSM level 28.1 km&sup2; (2.7 m). GTSM is modelled and coarse near the coast, and its vertical datum has not been reconciled with the SRTM DEM, so it is offered as an alternative (default remains the gauge) and labelled as likely a lower bound. Neither is validated against an observed coastal flood.</p>
+<h2>19.7 Sea mask, mangroves and sea-level rise</h2>
+<p>A 30 m sea mask seeds the connected-bathtub flood from real sea cells, in addition to the previous edge and below-0 m seeds. Global Mangrove Watch 2025 cover reports the mangrove area in the AOI and how much of it floods; mangroves do not attenuate water in the flood calculation. A user-set sea-level rise (metres, presets +0.25 to +1.0) is added to either source and stacks with the Karachi trend by target year. The presets are scenario values, not sourced projections.</p>
+<h2>19.8 Coastal susceptibility index and instant level explorer</h2>
+<p>A screening index (0 to 1, five classes at 0.2 / 0.4 / 0.6 / 0.8) combines elevation above mean high water (MSL plus half the 2.3 m tidal range; weight 0.25), distance to the sea (0.10, ramp 20 km to 0), slope (0.10, 5&deg; to 0) and mangrove buffer (0.07). The weights are expert defaults from the supplied coastal model, not fitted; missing factors are dropped and the weights renormalised. It is shown on the map and as a downloadable static map. A level explorer precomputes the connected-bathtub flood every 0.25 m from 0 to 8 m for the AOI, so a slider shows area, depth and volume instantly; the chosen level can be drawn on the 3D map.</p>
+<h2>19.9 Not adopted from the supplied coastal model</h2>
+<p>Harmonic tide analysis and nuisance-flood frequency need tide-gauge records that are not available; the validation metrics need an observed flood map; the datum reconciliation is left as an open task. The model's own README states inundation is blocked until the vertical datum is verified.</p>
+
+<h1 class="chapter" id="c20">20. Pluvial / Flash-Flood Risk Tiering</h1>
+<p>Forecast or recent rainfall is compared with a 20-year daily-precipitation climatology at the AOI point (Open-Meteo Historical Weather API, ERA5-backed): ≥ p90 watch, ≥ p95 warning, ≥ p99 severe, otherwise none. The observed IDF reference (Ch. 12) is shown alongside, not mixed in. The resolution ceiling is ~10 km hourly; no ground-radar product covers Pakistan (NOAA MRMS was checked and is US-only).</p>
+
+<h1 class="chapter" id="c21">21. Geomorphology, Landslides &amp; Sediment <span class="new">NEW</span></h1>
+<h2>21.1 Rock type and slope</h2>
+<p>GLiM lithology (Hartmann &amp; Moosdorf 2012, Pakistan clip) gives each of its 16 classes an erodibility from 1 to 5 (e.g. unconsolidated sediments and evaporites 5, pyroclastics 4). Combined with DEM slope (breaks at 15 % and 35 %) and erodibility (breaks at 2.0 and 3.5) it gives a negligible / low / moderate / high landslide and debris-flow susceptibility.</p>
+<h2>21.2 ML landslide susceptibility</h2>
+<p>A national CNN/DNN ensemble map (KPK, GB and AJK only; AUC ≈ 0.88) is summarised by class shares inside the AOI; a verdict is given only when at least 50 % of the AOI is covered. The simple rock-type rating can disagree with it (Hunza: "low" vs "elevated"); where the ML map exists it should be preferred, and the UI says so. Valley-depth and confinement statistics come from national rasters.</p>
+<h2>21.3 Sediment transport risk</h2>
+<p>A post-processing indicator on the run's own depth and velocity at every saved step:</p>
+<div class="formula">τ   = ρ g n² V² / h<sup>1/3</sup>
+θ   = τ / ((ρ<sub>s</sub> − ρ<sub>w</sub>) g d<sub>50</sub>),   θ<sub>c</sub> = 0.047
+q<sub>b</sub>  = 8 · max(θ − θ<sub>c</sub>, 0)<sup>1.5</sup> · √((s − 1) g d<sub>50</sub>³)</div>
+<p>Bed-load transport after Meyer-Peter &amp; Müller (1948).</p>
+<p>d<sub>50</sub> comes from the SoilGrids texture. There is no feedback to the DEM (LISFLOOD-FP has no sediment capability), and the indicator is refused when the depth stack was spatially strided.</p>
+
+<!-- ===================================================== PART VI -->
+<h1 class="chapter" id="c22">22. Buildings &amp; Infrastructure Risk</h1>
+<h2>22.1 Footprints and heights</h2>
+<p>Google Open Buildings footprints are the primary source (OSM building coverage was measured ~14× sparser in a comparison box). Height follows a cascade: OSM <code>height</code>, then <code>building:levels</code> × 3.0 m, then a flat 6 m estimate (OSM height tags covered only ~2 % of buildings in a dense Lahore test). The OSM lookup uses a spatial index, taking a 450,000-building AOI from hours to 3.8 s (§37.15).</p>
+<h2>22.2 Building damage band</h2>
+<p>The Huizinga et al. (2017) Asia "Built-up" depth-damage curve converts the peak depth at each footprint's centroid into a damage fraction, banded minor ≤ 0.30, moderate ≤ 0.55, major ≤ 0.72, severe above. Green is reserved for dry. Depth ÷ height (submersion fraction) is still reported, but no longer decides the colour: against a 6 m assumed height, real pluvial depths (0.81 m maximum at any centroid in one test) made "severe" unreachable.</p>
+<h2>22.3 DEFRA hazard rating</h2>
+<div class="formula">HR = d × (v + 1.5)
+low ≤ 0.75 · moderate ≤ 1.25 · significant ≤ 2.0 · extreme &gt; 2.0</div>
+<p>Velocity is de-staggered from LISFLOOD-FP's Arakawa-C grid (Vx on vertical faces with one extra column, Vy on horizontal faces with one extra row) by averaging adjacent faces onto cell centres. A negative or NODATA hazard is "outside domain", never "extreme".</p>
+<h2>22.4 Animated risk colour</h2>
+<p>The building damage fraction and road hazard rating are recomputed at every saved timestep, so a 3D view's colours rise through the storm and fade as water recedes.</p>
+<h2>22.5 Infrastructure categories</h2>
+<table>
+<tr><th>Category</th><th>Source</th><th>Count (national)</th></tr>
+<tr><td>Roads</td><td>HOTOSM, indexed GeoPackage</td><td>1,113,962 lines</td></tr>
+<tr><td>Hospitals, schools</td><td>Government shapefiles</td><td>35,561 / 65,909</td></tr>
+<tr><td>Power transmission lines</td><td>Government shapefile</td><td>419</td></tr>
+<tr><td>Railway lines</td><td>OSM-derived shapefile (MultiLineStrings exploded)</td><td>659</td></tr>
+<tr><td>Airports, railway stations, sea ports</td><td>Shapefiles (ports reprojected from Web Mercator)</td><td>136 / 655 / 3</td></tr>
+<tr><td>Trees/forest</td><td>Overpass (retry on timeout/5xx)</td><td>live</td></tr>
+</table>
+
+<h1 class="chapter" id="c23">23. Land-Use Damage &amp; Hotspot Analysis</h1>
+<h2>23.1 Land-use damage</h2>
+<p>ESA WorldCover classes (resampled to the run grid) are combined with the Huizinga et al. (2017) Asia depth-damage curves per class (Built-up: 0 m → 0, 0.5 m → 0.30, 1 m → 0.45, … 6 m → 0.90), counting only cells inside the true AOI polygon. Before that mask was added, every statistic was diluted by out-of-polygon cells counted as dry (a typical polygon fills ~64 % of its box).</p>
+<h2>23.2 Getis-Ord Gi* hotspots</h2>
+<p>A published spatial-statistics test (<code>esda</code>/<code>libpysal</code>), queen contiguity, 99 permutations; a cell is a hotspot when Z &gt; 1.96 and p &lt; 0.05 (cold spot Z &lt; −1.96). Per-class cell counts sum exactly to the valid-cell total in every run checked.</p>
+
+<h1 class="chapter" id="c24">24. Estimated Monetary Loss</h1>
+<h2>24.1 Source</h2>
+<p>Huizinga et al. (2017) Table 3-21 (2010 EUR/m²). Pakistan has no country value, so the Asia continental averages are used: residential 111 EUR/m², agriculture 0.03 EUR/m².</p>
+<h2>24.2 Building loss</h2>
+<div class="formula">Loss<sub>structure</sub> = area × storeys × 111 EUR/m² × damage fraction
+Loss<sub>content</sub>   = 0.50 × Loss<sub>structure</sub>
+Loss<sub>total</sub>     = Loss<sub>structure</sub> + Loss<sub>content</sub></div>
+<p>Storeys = height / 3 m; the 0.50 content ratio is the FEMA/HAZUS residential value.</p>
+<h2>24.3 Agricultural loss</h2>
+<p>Cropland area × that cell's damage fraction × 0.03 EUR/m². Built-up land is excluded (already valued through buildings), and natural land cover is not priced because the JRC tables have no class for it.</p>
+<h2>24.4 Currency</h2>
+<div class="formula">PKR = EUR (2010 prices) × 322.5</div>
+<p>A current exchange rate applied to 2010 prices — not an inflation-adjusted conversion.</p>
+<h2>24.5 Where loss appears</h2>
+<p>Run summaries, NbS and protection scenarios (loss before, after and avoided, from the baseline's own footprints), run comparisons, batch reports and AAL. Every enrichment is written back to <code>summary.json</code> (§37.22).</p>
+
+<h1 class="chapter" id="c25">25. Average Annual Loss (AAL)</h1>
+<p>The standard catastrophe-risk metric, by trapezoidal integration of loss against annual exceedance probability (FEMA HAZUS method):</p>
+<div class="formula">AAL = ∫<sub>0</sub><sup>1</sup> Loss(p) dp,    p = 1/T</div>
+<p>Beyond the rarest return period tested the loss is held constant; below the most frequent it falls linearly to zero at p = 1. AAL is its own action (several physics runs with buildings), and refuses — naming the missing return period — rather than computing from incomplete data. Verified by hand: two runs (10 yr Rs 52.8 M, 50 yr Rs 199.7 M) gave Rs 37,872,545.84/yr, matching an independent calculation to the cent.</p>
+
+<!-- ===================================================== PART VII -->
+<h1 class="chapter" id="c26">26. Nature-based Solutions (NbS)</h1>
+<p>Reforestation, grassland restoration or wetland restoration, applied "active" (full conversion) or "passive" (one step along an ecological order), change land cover; per-cell Manning's n and the area-mean infiltration are re-derived (land-cover infiltration: tree 75, mangroves 60, shrub 40, grass 20, crop 12, built 8, bare 5, moss 10, wetland 2, snow 2, water 0 mm/hr) and the physics is re-run with the baseline's own forcing. The cell-by-cell comparison reports area protected and, never hidden, a displacement percentage. Auto-recommend evaluates all six combinations and ranks them by building loss avoided (by area when there are no buildings).</p>
+
+<h1 class="chapter" id="c27">27. Grey Infrastructure Protection Scenarios</h1>
+<table>
+<tr><th>Structure</th><th class="num">Height / depth</th><th class="num">Half-width</th><th>Effect</th></tr>
+<tr><td>Dam / embankment</td><td class="num">+3.0 m</td><td class="num">8 m</td><td>Raise (square end caps)</td></tr>
+<tr><td>Barrage</td><td class="num">+2.5 m</td><td class="num">12 m</td><td>Raise</td></tr>
+<tr><td>Diversion canal</td><td class="num">−2.0 m</td><td class="num">6 m</td><td>Lower (flat end caps)</td></tr>
+<tr><td>Drainage pipe</td><td class="num">−1.0 m (diameter)</td><td class="num">1.5 m</td><td>Lower</td></tr>
+<tr><td>Rainwater catchment / retention basin</td><td class="num">dug depression</td><td class="num">~40 m across</td><td>Lower; storage volume reported</td></tr>
+</table>
+<p>Drawn lines are buffered into corridor polygons and burned onto a copy of the baseline's building-conditioned DEM; the re-run keeps the baseline's rain, friction, AMC and boundary conditions. Results: area protected, displacement, and loss avoided in PKR. A structure that lands entirely outside valid terrain is reported as a failure, not run.</p>
+
+<h1 class="chapter" id="c28">28. Mystic-Driven Auto-Optimization</h1>
+<h2>28.1 No surrogate</h2>
+<p>mystic's differential evolution (<code>diffev2</code>) searches placement and sizing; every candidate is a full LISFLOOD-FP re-run with the structure burned in. Each evaluation is expensive, so the user picks a small budget (Quick / Balanced / Thorough) rather than searching to convergence.</p>
+<h2>28.2 Variables and objective</h2>
+<p>Seven variables per structure: centre (two, normalised to the AOI box), orientation, length (0.15–0.9 of the box diagonal), height and width multipliers (0.5–1.5 of the type default) and a continuous type index floored to a choice.</p>
+<div class="formula">objective = −loss_reduction_% + 0.5 × displacement_%</div>
+<p>Area reduction replaces loss reduction when the baseline has no buildings.</p>
+<p>Failed or outside-AOI candidates get a fixed penalty of 10⁶, and failures are logged to <code>optimizer_errors.log</code>. The final answer re-runs the best evaluated trial's own structures through the manual pipeline. With a tiny budget the search can return a placement with a small positive area reduction but a small negative loss avoided — an honest, unconverged result the loss-weighted objective is designed to surface.</p>
+
+<!-- ===================================================== PART VIII -->
+<h1 class="chapter" id="c29">29. Live Continuous Monitoring &amp; Alerts</h1>
+<p>A watch (an AOI plus a rainfall threshold) is checked every 10 minutes against the Open-Meteo forecast. A crossing starts a Tier 3 run and, when a webhook URL is set, posts JSON readable by Slack (<code>text</code>) and Discord (<code>content</code>) plus structured fields (peak, duration, threshold, run id); a report link is added only when <code>PUBLIC_BASE_URL</code> is set. Delivery success is recorded per alert. "Now" is computed in the forecast's own local time (§37.19).</p>
+
+<h1 class="chapter" id="c30">30. Glacier SAR Displacement Monitoring</h1>
+<p>Sentinel-1 offset tracking via Earth Engine measures monthly glacier surface displacement, combining ascending and descending passes (mean where both are valid), corrected for a stable-ground bias estimated in a 1,500 m ring around the GLIMS glacier bodies (other glaciers masked out). Cumulative-displacement and velocity (cm/day) thumbnails are auto-scaled to each run's own maximum; the confidence threshold is user-tunable (default 0.5). A known-lake result links to the GLOF estimator.</p>
+<div class="note">Working again after re-authentication on 14 October 2026. Verified live on the Shishper/Hunza area: the GLIMS baseline found 52 glaciers (217 km²), and a two-month displacement run (1 June to 31 July 2026) gave a mean cumulative displacement of 1.24 m, a maximum of 11.46 m and 79.5 km² of active ice, with a stable-ground bias of (+0.25, &minus;0.20) m estimated from 260,567 pixels. The Earth Engine project is in restricted mode, so heavier or longer runs may be slow or refused.</div>
+
+<h2>30.1 ITS_LIVE glacier speed (no login) <span class="new">NEW</span></h2>
+<p>As an alternative that needs no Earth Engine account, NASA ITS_LIVE image-pair velocities (Sentinel-2 and Landsat feature tracking, public STAC search, granules on AWS) are fetched for the AOI. Pairs of 5 to 40 days with at least 30% valid pixels are used. Speed statistics are computed over the PMD glacier polygons inside the AOI, and the median of the last 45 days is compared with the median of the same calendar window in the previous two years, so the seasonal cycle cancels. A pair is used only if at least 10% of the glacier cells carry a velocity. A ratio of 1.5 or more is reported as a marked speed-up and 1.25 to 1.5 as a possible one; with fewer than three pairs in either set the verdict is "inconclusive", and a caution is added when the recent and baseline pairs come from different sensors or track very different shares of the glacier. These are screening thresholds, not validated against surge or outburst precursors. On a Hunza test area the recent Sentinel-1 pairs gave a median of 76 m/yr against 50 m/yr for the two usable baseline pairs (ratio 1.5), which the app correctly reports as inconclusive because the baseline is two pairs from different sensors. Granules (2 to 30 MB each) are cached locally, with a thumbnail of the latest speed map. Pair coverage is cloud- and snow-limited, each pair has its own error, and a speed-up is a possible warning sign, not proof that an outburst is coming.</p>
+
+<h1 class="chapter" id="c31">31. Storm-Motion Nowcasting</h1>
+<p>A small LSTM (window of six 30-minute displacements, 32 hidden units) trained on 72 IMERG monsoon storm-days (2021–2023) predicts a storm cell's next displacement for the moving-storm rainfall option (§11.4). Tracks are never bridged across a missing half-hour, the train/test split is by storm-day, and the error metric uses each row's own latitude. Live inference depends on Earth Engine and works again after re-authentication; checked on 14 October 2026 at a Lahore-area point, it fetched the latest satellite rainfall window and, finding no rain above 2 mm/hr nearby, correctly fell back to a static storm centre instead of inventing motion.</p>
+
+<h1 class="chapter" id="c32">32. Discovery Tools: Basins, Tehsils, Rainfall Hotspots</h1>
+<h2>32.1 River basins (HydroSHEDS)</h2>
+<p>1,131 level-08 basins, indexed once and browsable by region, ranked by area, nearest to a point, or nearest to a GLOF site; one click sets a basin as the AOI. The same basins feed the melt model (Ch. 18).</p>
+<h2>32.2 Tehsils</h2>
+<p>578 tehsil boundaries searchable by name in the main map search (name, then district, then province); a result becomes the AOI.</p>
+<h2>32.3 National rainfall hotspots</h2>
+<p>The highest-recorded individual grid cells nationally for any IDF-cube metric, labelled with their tehsil, district and province, usable before any AOI is drawn.</p>
+
+<!-- ===================================================== PART IX -->
+<h1 class="chapter" id="c33">33. Validation &amp; Accuracy Record <span class="new">NEW</span></h1>
+<table>
+<tr><th>Check</th><th>Result</th></tr>
+<tr><td>Bahawalpur, SRTM vs FABDEM, same polygon</td><td>1.436 vs 1.449 km² flooded</td></tr>
+<tr><td>LISFLOOD-FP v5.9 CPU vs 8.2 CPU vs 8.2 GPU (Bahawalpur, 104 km²)</td><td>v5.9 = 8.2 CPU bit-identical; GPU 2.816 vs 2.818 m max depth; GPU ~10–11× faster</td></tr>
+<tr><td>GPU vs CPU river inflow, valid inlet (Lahore-area DEM)</td><td>Identical to the displayed digit (§5.4)</td></tr>
+<tr><td>GPU vs CPU coastal HVAR (Karachi)</td><td>41.4370 km² / 4.00 m on both</td></tr>
+<tr><td>Mass conservation, closed synthetic domains</td><td>Stored/analytic 1.000 (CPU), 0.997–0.998 (GPU)</td></tr>
+<tr><td>Inflow volume after whole-cell snap</td><td>2.160047×10⁶ vs 2.16×10⁶ m³ analytic</td></tr>
+<tr><td>ACC depth correction vs DG2 (15–200 % slope)</td><td>R² = 0.992, max corrected-depth error 4.9 %</td></tr>
+<tr><td>2022 Sindh flood vs UNOSAT extent, 48 h ERA5 storm (253.5 mm)</td><td>CSI 0.659, POD 0.669, FAR 0.021 (73.5 vs 107.7 km²)</td></tr>
+<tr><td>Same AOI, 10-day window (424.6 mm)</td><td>CSI 0.694, POD 0.705, FAR 0.022 (77.6 vs 107.7 km²)</td></tr>
+<tr><td>Same AOI, 30-day window</td><td>Not completed — no report was produced</td></tr>
+<tr><td>Observed-flood scoring route vs the validation script (2022 Sindh, UNOSAT VIIRS extent, 48 h run)</td><td>Identical: CSI 0.6592, POD 0.6686, FAR 0.0209, F1 0.7946, bias 0.683; 73.54 vs 107.69 km² (via <code>/runs/&lt;id&gt;/validate-observed</code>)</td></tr>
+<tr><td>Melt model vs GloFAS (melt season)</td><td>Hunza KGE 0.86 default, 0.95/0.87 calibrated; basin 4080575700 not reconcilable (Ch. 18)</td></tr>
+<tr><td>Tarbela spillway outlook vs documented inflows</td><td>−4 % / +11 %; Mangla refused (Ch. 17)</td></tr>
+</table>
+<p>The 2022 validation was re-run after a bug that fed the storm at half its real depth (§37.23); the earlier CSI of 0.42 was from the under-fed storm. Closed vs open boundaries made no difference at 48 h.</p>
+<p><b>Scoring any run against an observed extent.</b> A finished run's panel has a "Compare with observed flood" control. The uploaded file may be polygons (geojson, gpkg, shp or zipped shapefile; every polygon counts as flooded) or a GeoTIFF (cells above 0 are flooded, nodata ignored). It is placed on the run's own grid, only cells that are real terrain inside the area of interest are scored (so empty cells outside the polygon cannot inflate the score), the empirical steep-terrain depth correction is applied, and a cell is wet above 0.05 m. Reported: CSI, POD, FAR, F1, bias, modelled and observed wet area. An observed file that does not overlap the run produces a warning rather than a zero score.</p>
+<div class="note"><b>Open question.</b> On the 2022 AOI, CPU and GPU maximum depth differ at a few sink cells (16.3 vs 8.95 m) while the wet footprint matches (55,483 of ~55,500 cells), and the CPU run stored ~4.9 % more water than its own rain column. Synthetic closed domains conserve mass on both builds, so this is terrain-specific and unexplained. Compare wet area or CSI across builds, not maximum depth.</div>
+
+<!-- ===================================================== PART X -->
+<h1 class="chapter" id="c34">34. 3D Visualization</h1>
+<h2>34.1 Mapbox-native, not a custom Three.js scene</h2>
+<p>An earlier custom Three.js pipeline accumulated a long bug history (camera-angle illusions, floating buildings, a <code>DoubleSide</code> material rendering almost nothing) and was replaced by Mapbox GL JS native 3D terrain (<code>map.setTerrain</code> on <code>mapbox.mapbox-terrain-dem-v1</code>), <code>fill-extrusion</code> buildings and line roads. The physics still runs on SAILAB's own DEM; only the visual terrain uses Mapbox's global elevation. Everything is positioned by lon/lat, so it aligns regardless of the terrain mesh.</p>
+<h2>34.2 Animation and water rendering</h2>
+<p>The depth overlay is a live Mapbox canvas source driven by a WebGL2 fragment shader. Per-timestep depth and velocity are uploaded as textures (depth sqrt-encoded to 8 bits, velocity as 2&times;8 bits scaled to the run's 98th-percentile speed) and interpolated on the GPU between the two nearest saved timesteps, so shorelines are smooth rather than blocky cells. Colour shades from light to dark blue with depth by Beer&ndash;Lambert-style absorption; the surface is lit with a sun term and specular glint, ripples are advected along the solver's own velocity field (flow-map technique), and foam appears at the wet/dry edge. This is a rendering change only: depth and velocity are the run's own LISFLOOD-FP output. Custom colour ramps (damage, nature-based-solution and run-comparison overlays) and browsers without WebGL2 use the previous CPU canvas path.</p>
+<p>Playback is a fixed loop mapped onto the run's real simulated duration; rain intensity follows the actual hyetograph or uploaded series, and the clock shows real time for uploaded series. Building and road colours animate with per-frame risk (&sect;22.4): buildings stay neutral until water reaches them and then take the Huizinga damage colour; roads are drawn only while wet. White flow lines are particles advected by the solver velocity and drawn brighter where flow is faster.</p>
+<h2>34.2a Viewer controls and probe</h2>
+<ul>
+<li><b>What to show:</b> depth over time, maximum depth (per-cell peak across all timesteps), flow speed, flow paths.</li>
+<li><b>Map style:</b> Dark, Light, Satellite, Streets, Terrain, Night. A style change removes every custom layer, so the viewer waits for the new style to finish loading, re-adds the scene, and retries on error; a frame error is logged and skipped rather than stopping the animation.</li>
+<li><b>On the map:</b> buildings, terrain (exaggeration slider), labels, flow lines; fine-tune cutoff depth, opacity and particle count.</li>
+<li><b>Timeline card:</b> live flooded area, deepest water and water volume per frame (cell count &times; cell area; depth sum &times; cell area), a rainfall bar chart over a flooded-area curve with playhead, hover tooltip and click/drag seeking, export as PNG or MP4.</li>
+<li><b>Click-to-pin probe:</b> depth and velocity at the clicked cell, its peak depth, ground elevation from the run's bare DEM, and a depth-over-time chart. Values are read from the embedded run grid (strided only for very large domains), not from Mapbox terrain.</li>
+</ul>
+<p>The page is assembled from three asset files (<code>mapbox3d_style.css</code>, <code>mapbox3d_body.html</code>, <code>mapbox3d_app.js</code>) by <code>mapbox3d_utils.py</code>; they must be deployed together. Cached runs keep the script they were built with; only new runs (or a rebuilt scene) use the current viewer.</p>
+<h2>34.3 Safeguards found necessary</h2>
+<ul>
+<li><b>Camera bounds:</b> edge-on views of correct geometry repeatedly looked like data bugs; distance and pitch are bounded, and Reset View runs automatically before every export.</li>
+<li><b>Rebuild without re-simulating:</b> <code>POST /runs/&lt;id&gt;/rebuild-scene</code> redraws a finished run's 3D page from its saved depth/velocity rasters, building and road files with the current viewer (the "Rebuild 3D view" button). Cached runs otherwise keep the script they were built with. The depth/velocity stack is now read and strided one timestep at a time, which cut that stage on the whole-Islamabad run from about 680 s to 8 s (§37.33).</li>
+<li><b>Payload size:</b> a 6.6 M-cell run embedded a 2.64 GB HTML file; the depth stack is now spatially strided above 5,000,000 frame×cells (peak depth still taken at full resolution), and any scene over 150 MB is logged.</li>
+</ul>
+
+<h1 class="chapter" id="c35">35. Reports, Comparisons &amp; Exports</h1>
+<ul>
+<li><b>Single-run report</b> (HTML and PDF via WeasyPrint) built from the run's own data.</li>
+<li><b>Compare two runs:</b> a cell-by-cell diff (only A wet / only B wet / both wet), mean depth change and building-loss difference; refused unless both runs share an identical grid. Coastal dynamic jobs are supported.</li>
+<li><b>Batch report:</b> flooded area and maximum depth across a list of runs (e.g. a return-period sweep) with a trend chart.</li>
+<li><b>Shared report style:</b> one light, print-friendly <code>REPORT_CSS</code> with a dark-teal banner, verified in both the browser and the PDF pipeline.</li>
+<li><b>Susceptibility-style map (PNG):</b> any finished run can download a static classified map of peak flood depth (five classes, hillshade base, graticule, scale bar, north arrow, legend with area and percentage per class, key figures, notes). The same renderer produces the coastal susceptibility map.</li>
+<li><b>Observed-flood comparison:</b> upload a mapped extent (polygons or GeoTIFF) to score a run: CSI, POD, FAR, F1, bias and wet areas (§33).</li>
+<li><b>One-page PDF summaries:</b> the coastal result (water level, wave run-up, flooded area, depth, method notes) and the GLOF estimate (peak discharge, volume, lake and downstream site, the empirical range from documented events) each have an "Export PDF summary" button. The browser posts back the result it already holds; every value is HTML-escaped before rendering.</li>
+<li><b>Video export:</b> browser WebM → <code>/export-video</code> → H.264 MP4 via the bundled imageio-ffmpeg, with dimensions rounded to even numbers for libx264.</li>
+</ul>
+
+<h1 class="chapter" id="c36">36. User Interface Design System</h1>
+<p>A dark "operations dashboard" identity: a near-black base with a soft radial vignette, the existing cyan/teal brand accent with a violet secondary, glass panels, gradient buttons with hover and press feedback, focus rings, a shimmer progress bar and a single MutationObserver that animates every newly rendered result without touching the hundreds of rendering call sites. The 3D view's controls share the same styling. Tabs: Tier 2 · Instant Flood, Tier 3 · Physics Run, and Coastal / Tidal, with discovery panels (rainfall hotspots, river basins) above the AOI controls. Mobile layouts were deliberately out of scope.</p>
+
+<!-- ===================================================== PART XI -->
+<h1 class="chapter" id="c37">37. Chronicle of Major Bugs Found and Fixed</h1>
+<p>Each entry was root-caused from direct evidence (a compiler error, a sanitizer trace, a hand-computed reference, a controlled bisection) and re-verified against real data. Entries 37.21 onward are new in this edition.</p>
+<div class="bug">
+<h3>37.1 Overpass 406 (missing Accept header)</h3><p>python-requests sends no Accept header and Overpass's Apache front-end rejected the requests; set explicitly.</p>
+<h3>37.2 Flow accumulation double-counted backflow</h3><p>Pit cells were given an uphill "downstream" direction; a 3×3 test accumulated more than its 9 cells. Zero drop now terminates.</p>
+<h3>37.3 Buildings corrupting the physics</h3><p>Buildings on NODATA cells turned −9999 into −9993, read downstream as real terrain — a ~10,000 m false cliff inside the simulation. Only valid cells are now conditioned.</p>
+<h3>37.4 Lines reconnecting across AOI gaps</h3><p>Roads leaving and re-entering the AOI were drawn straight across the gap; split at each exit and entry.</p>
+<h3>37.5 Buildings rendered as terrain blobs</h3><p>The 3D terrain used the conditioned DEM; a bare copy is now kept and real footprints are extruded on top.</p>
+<h3>37.6 Camera-angle illusions mistaken for data bugs</h3><p>Several reports traced to near-edge-on views of correct geometry; camera bounds and automatic Reset View before export.</p>
+<h3>37.7 Hazard fallthrough for invalid data</h3><p>Negative/NODATA hazard fell through to "extreme"; now "outside domain".</p>
+<h3>37.8 Green for a flooded building</h3><p>Green is now reserved for dry; wet bands use yellow to red.</p>
+<h3>37.9 Staggered velocity combined without de-staggering</h3><p>Vx/Vy sit on an Arakawa-C grid; averaged onto cell centres before use.</p>
+<h3>37.10 Water past the terrain edge</h3><p>After exact terrain clipping, water triangles must have all three vertices inside the AOI.</p>
+<h3>37.11 "Boundary inflow silently zero under CUDA" (superseded)</h3><p>The previous edition reported that the CUDA path drops all boundary inflow and routed such runs to the CPU. That diagnosis was wrong; see 37.25 and 37.26.</p>
+<h3>37.12 Boundary conditions a no-op on every real DEM</h3><p>LISFLOOD-FP reads boundary coordinates as absolute, from the DEM header; boundaries written in local coordinates collapsed to a zero-width point. The DEM corner is now added.</p>
+<h3>37.13 Discharge under-delivered near an edge corner</h3><p>Flux was computed from the unclamped width (75 % delivered in one case); the width is clamped first.</p>
+<h3>37.14 The "dormant 1000× rainfall-column bug" (reversed)</h3><p>A ×1000 was added on the strength of the LISFLOOD-FP manual's units. In this build the column is plain m³, so the fix inflated CPU-run rainfall 1000× and made mass checks meaningless; reversed (37.21).</p>
+<h3>37.15 O(buildings × OSM candidates) post-processing</h3><p>cProfile showed a per-building linear scan taking 98 % of the time; replaced with shapely 2 vector operations and an STRtree (3.79 s at whole-Islamabad scale), with byte-identical results verified first.</p>
+<h3>37.16 Soil-texture misclassification</h3><p>Sand ≥ 45 % with clay ≥ 35 % fell through to "loam" (Ksat 13.2 instead of 1.2 mm/hr, 215 of 5,151 combinations); the missing "sandy clay" rule was added.</p>
+<h3>37.17 Shapefile inside a zip sub-folder</h3><p>GDAL's plain <code>zip://</code> form only finds root-level shapefiles; entries are scanned and the nested path used.</p>
+<h3>37.18 The DG2 CUDA crash</h3><p>A missing <code>MaxField</code> constructor argument gave an unpadded buffer; found with compute-sanitizer and fixed in three files (§7.2).</p>
+<h3>37.19 Timezone in forecast peak detection</h3><p>Open-Meteo labels are local time; comparing with UTC shifted the future/past boundary by 5 h and could fire alerts on past rain. "Now" is now computed in the forecast's own frame.</p>
+<h3>37.20 Duplicate rain timestamps</h3><p>Sorting does not guarantee strictly increasing times; ties are merged keeping the larger rate.</p>
+<h3>37.21 Rainfall volume 1000× too high on CPU runs</h3><p>Measured 13.9×10⁶ m³ in the column vs 14.3×10⁶ analytic: this build writes plain m³. The ×1000 was removed and a regression test added.</p>
+<h3>37.22 Stale DEM path and a silent fallback</h3><p>A wrong path made every Pakistan run fall back to a small Bahawalpur sample. All paths now live in <code>data_paths.py</code>, the DEM moved to its new location, and the fallback (and its sample file) were deleted, so a missing DEM is now an error.</p>
+<h3>37.23 Validation storm fed at half depth</h3><p><code>validate_2022_flood.py</code> passed the window average as the triangle's peak, delivering 127 instead of 253.5 mm. Peak = 2 × average; the earlier CSI 0.42 is superseded.</p>
+<h3>37.24 A mis-escaped apostrophe blanked the map</h3><p>One quote in the Python-rendered JavaScript killed the whole page script. Guarded by a <code>node --check</code> test of the rendered script and a headless-Chromium smoke test.</p>
+<h3>37.25 "CUDA inflow bug" was an inlet on NODATA cells</h3><p>The test DEM's first six west columns were NODATA, so the inflow was injected into NODATA cells; CUDA zeroes their water every step and the −9999 m pit blew up (0.3 → 8.7 m in seconds, 496 m by 4 h). With the inlet on valid terrain, GPU and CPU agree. Inflow runs now use the GPU unless an inflow segment covers NODATA. CUDA's missing QFIX case is handled by writing constant inflow as QVAR.</p>
+<h3>37.26 Coastal stage boundary never wetted a dry edge on GPU</h3><p>The CUDA HVAR code acted only on cells already wet (unpatched: 0.0 m, 0 wet cells; CPU: 6.18 km²). Patched to act when the stage exceeds the ground, as the CPU build does; GPU and CPU now agree.</p>
+<h3>37.27 Inflow 1.46× too large</h3><p>The solver applies boundaries on whole cells; a 40 m channel on 29 m cells received 58 m of flux. The segment is snapped to whole cells.</p>
+<h3>37.28 Melt-model routing pointed uphill</h3><p><code>derive_d8_pointer</code> had swapped slices, so every pointer pointed uphill and the routing graph was cyclic. Fixed; outlet discharge is also now the sum over exit cells, not the maximum.</p>
+<h3>37.29 Wrong GloFAS cell for the melt check</h3><p>The highest-flow GloFAS cell inside the Hunza polygon sat on a neighbouring river (78 vs 20 m³/s generated in the basin), which made Hunza look like it needed a ×3–4 precipitation factor. The cell is now chosen by water balance; with it, Hunza's defaults already agree.</p>
+<h3>37.30 Slow GloFAS reads</h3><p>Reading ten years of netCDF through a lazy concatenation for every check took over 15 minutes; 2003–2012 means are precomputed once (~20 s) and checks take ~2 s.</p>
+<h3>37.31 Upload failure in the test sandbox only</h3><p>Every multipart upload failed with <code>ERR_ALPN_NEGOTIATION_FAILED</code> in headless Chromium while Node <code>fetch()</code> succeeded; a test-environment artifact. The defensive warning added during the investigation was kept.</p>
+<h3>37.32 2.64 GB scene file</h3><p>Fixed by spatial striding above an element budget (§34.3); three affected runs were regenerated (35.7× smaller).</p>
+<h3>37.33 Post-processing stalled for hours on one large run</h3><p>Reading the per-timestep stack took 680 s on the 2.35 M-cell Islamabad run because every step ran over the whole stack at once (square root of full-resolution arrays, then a strided transpose). The reader now processes one timestep at a time and downsamples per frame (7.8 s), and the other slow steps are timed in the run log (<code>[timing]</code> lines). A later rebuild of the same scene took about 7 hours only because the shared machine was swapping (all 16 GB of swap in use, memory stalls about 60% of the time); the same steps take minutes on a healthy machine.</p>
+<h3>37.34 Roads built a coordinate transformer per vertex</h3><p>Clipping each road to the AOI created a new projection transformer for every vertex. All vertices are now transformed and tested inside the polygon in one batch; a test keeps the old function as a reference and checks identical output on random paths with and without an AOI.</p>
+<h3>37.35 Google blocked the Earth Engine sign-in</h3><p>The default <code>earthengine authenticate</code> requests Drive and Cloud Storage scopes in addition to Earth Engine, and Google is blocking the Drive scope for the default client. Requesting only the Earth Engine and Cloud scopes succeeded. The new credential file lacked the project name, so it was added by hand.</p>
+</div>
+
+<h1 class="chapter" id="c38">38. Considered and Declined</h1>
+<table>
+<tr><th>Tool / technique</th><th>Reason declined</th></tr>
+<tr><td>TauDEM</td><td>Static-DEM flow direction only — less informative than LISFLOOD-FP's own velocity; needs an MPI build without root.</td></tr>
+<tr><td>xHydro</td><td>Catchment streamflow calibration/frequency analysis; no 2D inundation.</td></tr>
+<tr><td>dfm_tools</td><td>Delft3D-FM pre/post-processing; cannot read LISFLOOD-FP output.</td></tr>
+<tr><td>FABDEM</td><td>Non-commercial licence; buildings are already conditioned into the DEM.</td></tr>
+<tr><td>Global HydroATLAS/HAND precompute</td><td>Multi-terabyte batch job; per-AOI HAND takes under a second.</td></tr>
+<tr><td>Full GRDC gauges</td><td>Registration-gated (the retired Tier 1 used Caravan instead).</td></tr>
+<tr><td>NOAA MRMS, USGS dataretrieval</td><td>US-only.</td></tr>
+<tr><td>SWMM</td><td>No sewer-network data exists on the share for any Pakistan AOI.</td></tr>
+<tr><td>GPU-MWDG2 adaptive solver</td><td>No rainfall forcing; an added rainfall kernel produced negative total volume (§5.6).</td></tr>
+<tr><td>Single-precision DG2</td><td>2.73× faster but 44 % different depth at altitude (§7.3).</td></tr>
+<tr><td>Raising depththresh for stability</td><td>Made steep runs worse (§7.3).</td></tr>
+</table>
+
+<h1 class="chapter" id="c39">39. Known Limitations</h1>
+<ul>
+<li><b>ACC everywhere, with a narrow correction.</b> <code>FORCE_ACC_ONLY</code> trades DG2's accuracy for speed; the depth correction fixes magnitude, not flow paths, and was fitted on one storm and geometry (§5.3).</li>
+<li><b>Extreme Karakoram relief remains unstable under ACC</b> (255 m depth, growing mass error on the 852 %-slope basin) (§7.1).</li>
+<li><b>No river bathymetry</b>; large discharges into estimated widths can give locally deep results (§15.3).</li>
+<li><b>Earth Engine</b> works again, but its cloud project is in "restricted mode" (free compute quota exceeded), so heavy glacier or storm jobs may be throttled or refused.</li>
+<li><b>Observed-flood scoring</b> has been checked on one real event (2022 Sindh) only; there is no automated check against a second event.</li>
+<li><b>Melt model:</b> one basin (4080575700) cannot be reconciled with GloFAS; the debris raster barely marks debris; ice thickness is modelled, not measured; GloFAS is a model, not a gauge (Ch. 18).</li>
+<li><b>Dams:</b> Froehlich is fitted to small dams; 64 dam heights are estimated; the spillway outlook is valid only for Tarbela (Ch. 17).</li>
+<li><b>Loss and AAL</b> use regional (Asia) maximum-damage values at a current exchange rate applied to 2010 prices (Ch. 24).</li>
+<li><b>Coastal dynamic runs</b> need an AOI edge that reaches the coastline (§19.5).</li>
+<li><b>GPU vs CPU maximum depth</b> can differ at a few sink cells; compare wet area (Ch. 33).</li>
+<li><b>Validation</b> covers one major event (2022 Sindh); the 30-day window run did not complete.</li>
+<li><b>Global DEM</b> outside Pakistan is opt-in only; mobile layouts are out of scope.</li>
+</ul>
+
+<h1 class="chapter" id="c40">40. Operations &amp; Testing <span class="new">NEW</span></h1>
+<ul>
+<li><b>Server:</b> Flask on port 8000 with no auto-reload. Restart after any backend change: find the PID with <code>ss -ltnp | grep :8000</code> and kill it; never <code>pkill -f</code> a pattern that also appears in your own command line.</li>
+<li><b>Copies:</b> the working copy on the external SSD and the live copy in <code>~/flood/</code> are separate; copy changed files across and confirm with <code>cmp</code>.</li>
+<li><b>Solver slot:</b> <code>/solver-status</code> shows who holds the solver and who waits; queued runs show what they are waiting on. <code>POST /runs/&lt;id&gt;/cancel</code> cancels a queued or running job.</li>
+<li><b>Cache cleanup:</b> <code>cache_cleanup.py</code> is a dry run unless given <code>--apply</code>. It keeps the newest 20 runs and anything listed in <code>keep_runs.txt</code> and removes runs older than 30 days (options <code>--days</code>, <code>--keep-newest</code>, <code>--dir</code>). On 14 October 2026 the dry run found 125 runs (4.5 GB) of the 50 GB run cache; nothing has been deleted.</li>
+<li><b>Access token:</b> setting <code>SAILAB_ACCESS_TOKEN</code> in <code>.env</code> makes requests from other machines present the token; requests from the server itself are exempt. No service file is installed; the app is started by hand.</li>
+<li><b>Earth Engine:</b> credentials are in <code>~/.config/earthengine/credentials</code> and must contain the cloud project name. Re-authenticate with <code>earthengine authenticate --force --scopes=https://www.googleapis.com/auth/earthengine,https://www.googleapis.com/auth/cloud-platform</code>, then restart the server.</li>
+<li><b>Data check:</b> <code>/data-status</code> lists every dataset path and whether it exists.</li>
+<li><b>Tests:</b> fast suite <code>pytest tests -q -m "not slow"</code> (392 tests passing on 14 October 2026; 32 slow tests deselected). Slow tests include real LISFLOOD-FP runs (GPU vs CPU for inflow and coastal HVAR, closed-domain mass balance, NODATA-inlet fallback) and live HTTP routes. Front-end guards: <code>node --check</code> on the rendered script and a headless-Chromium smoke test.</li>
+<li><b>LISFLOOD-FP patches:</b> keep <code>lisflood_patches/cuda_acc_solver.cu</code>; after any re-extraction re-apply it and the MaxField fix, and rebuild both <code>build</code> and <code>build_netcdf</code>.</li>
+<li><b>Melt calibration:</b> <code>/area/melt-model/calibrate</code> or <code>calibrate_melt_basin.py HYBAS_ID CAL_START CAL_END VAL_START VAL_END</code> (~10 minutes per basin when uncached).</li>
+<li><b>Environment switches:</b> <code>SAILAB_FORCE_CPU=1</code>, <code>SAILAB_FORCE_CUDA=1</code> (test only), <code>SAILAB_&lt;DATASET&gt;</code> path overrides, <code>PUBLIC_BASE_URL</code> for alert links, <code>MAPBOX_TOKEN</code> in <code>.env</code>.</li>
+<li><b>Technical index:</b> <code>DATA_SOURCES_AND_METHODS.md</code> lists every path, constant and formula in compact form; <code>CLAUDE.md</code> holds the full engineering log.</li>
+</ul>
+
+<h1 class="chapter" id="c41">41. References</h1>
+<ul class="refs">
+<li>Aureli, F., et al. (2025). LISFLOOD-FP 8.2: GPU-accelerated multiwavelet discontinuous Galerkin solver for rapid, multiscale flood simulation. <i>Geoscientific Model Development</i>, 18, 9827.</li>
+<li>Bates, P. D., Horritt, M. S., &amp; Fewtrell, T. J. (2010). A simple inertial formulation of the shallow water equations for efficient two-dimensional flood inundation modelling. <i>Journal of Hydrology</i>, 387, 33–45.</li>
+<li>Chow, V. T. (1959). <i>Open-Channel Hydraulics</i>. McGraw-Hill.</li>
+<li>DEFRA / Environment Agency (2006). Flood Risks to People, Phase 2 (FD2321) — hazard rating methodology.</li>
+<li>Froehlich, D. C. (1995). Peak outflow from breached embankment dam. <i>Journal of Water Resources Planning and Management</i>, 121(1), 90–97.</li>
+<li>Getis, A., &amp; Ord, J. K. (1992). The analysis of spatial association by use of distance statistics. <i>Geographical Analysis</i>, 24(3), 189–206.</li>
+<li>Gupta, H. V., Kling, H., Yilmaz, K. K., &amp; Martinez, G. F. (2009). Decomposition of the mean squared error and NSE performance criteria. <i>Journal of Hydrology</i>, 377, 80–91.</li>
+<li>Hartmann, J., &amp; Moosdorf, N. (2012). The new global lithological map database GLiM. <i>Geochemistry, Geophysics, Geosystems</i>, 13, Q12004.</li>
+<li>Hock, R. (2003). Temperature index melt modelling in mountain areas. <i>Journal of Hydrology</i>, 282, 104–115.</li>
+<li>Huggel, C., Kääb, A., Haeberli, W., Teysseire, P., &amp; Paul, F. (2002). Remote sensing based assessment of hazards from glacier lake outbursts. <i>Canadian Geotechnical Journal</i>, 39, 316–330.</li>
+<li>Hugonnet, R., et al. (2021). Accelerated global glacier mass loss in the early twenty-first century. <i>Nature</i>, 592, 726–731.</li>
+<li>Huizinga, J., de Moel, H., &amp; Szewczyk, W. (2017). Global flood depth-damage functions: Methodology and the database with guidelines. JRC Technical Report EUR 28552 EN.</li>
+<li>IceBoost v2.0 glacier ice thickness, RGI v7.0 region 14. Zenodo record 21220985.</li>
+<li>Keers, J. F., &amp; Wescott, P. (1977). A computer-based model for design rainfall in the United Kingdom. Met Office Scientific Paper 36.</li>
+<li>Khan, et al. (2020). Coastal flood hazard assessment, Karachi, Pakistan. <i>Entropy</i>, 22(7), 796.</li>
+<li>Lehner, B., &amp; Grill, G. (2013). Global river hydrography and network routing: baseline data and new approaches (HydroSHEDS). <i>Hydrological Processes</i>, 27, 2171–2186.</li>
+<li>Leopold, L. B., &amp; Maddock, T. (1953). The hydraulic geometry of stream channels and some physiographic implications. USGS Professional Paper 252.</li>
+<li>Martinec, J., &amp; Rango, A. (1986). Parameter values for snowmelt runoff modelling. <i>Journal of Hydrology</i>, 84, 197–219; and the SRM User's Manual.</li>
+<li>Messager, M. L., et al. (2016). Estimating the volume and age of water stored in global lakes (HydroLAKES). <i>Nature Communications</i>, 7, 13603.</li>
+<li>Meyer-Peter, E., &amp; Müller, R. (1948). Formulas for bed-load transport. Proc. 2nd IAHR Congress, Stockholm.</li>
+<li>Muis, S., et al. (2016). A global reanalysis of storm surges and extreme sea levels (GTSR). <i>Nature Communications</i>, 7, 11969.</li>
+<li>Muñoz-Sabater, J., et al. (2021). ERA5-Land: a state-of-the-art global reanalysis dataset for land applications. <i>Earth System Science Data</i>, 13, 4349–4383.</li>
+<li>Nash, J. E., &amp; Sutcliffe, J. V. (1970). River flow forecasting through conceptual models. <i>Journal of Hydrology</i>, 10, 282–290.</li>
+<li>Poggio, L., et al. (2021). SoilGrids 2.0. <i>SOIL</i>, 7, 217–240.</li>
+<li>Popov, N. (1991). Assessment of glacial debris flow hazard in the north Tien-Shan. Proc. Soviet-China-Japan Symposium on Natural Disasters.</li>
+<li>Rawls, W. J., Brakensiek, D. L., &amp; Miller, N. (1983). Green-Ampt infiltration parameters from soils data. <i>Journal of Hydraulic Engineering</i>, 109(1), 62–70.</li>
+<li>Stockdon, H. F., Holman, R. A., Howd, P. A., &amp; Sallenger, A. H. (2006). Empirical parameterization of setup, swash, and runup. <i>Coastal Engineering</i>, 53, 573–588.</li>
+<li>Thrasher, B., et al. (2022). NASA Global Daily Downscaled Projections, CMIP6. <i>Scientific Data</i>, 9, 262.</li>
+<li>Zanaga, D., et al. (2022). ESA WorldCover 10 m 2021 v200.</li>
+<li>Zheng, X., et al. (2018). GeoFlood: Large-scale flood inundation mapping based on high-resolution terrain analysis. <i>Water Resources Research</i>, 54(12).</li>
+</ul>
+
+</body>
+</html>
