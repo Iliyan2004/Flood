@@ -4,7 +4,7 @@ from .server import ensure_server
 from .simcity_adapter import SailabFloodSimulator
 
 __all__ = ["SailabClient", "FloodResult", "SailabError", "SailabUnavailable", "ensure_server", "SailabFloodSimulator"]
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from .site import HazardCurve, SailabSite  # noqa: E402,F401
 

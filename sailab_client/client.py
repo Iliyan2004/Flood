@@ -55,6 +55,13 @@ class FloodResult:
         return out
 
     @property
+    def road_detail(self) -> dict:
+        """Roads only: {"major": {in_domain, flooded, length_km, flooded_km}, "local": {...}, "bridges": {in_domain, flooded},
+        "total_length_km", "flooded_length_km"}. Major = motorway to tertiary. Inside Islamabad the road set is drivable
+        roads only (no footpaths or tracks); elsewhere it is every mapped road. Empty if the run had no road data."""
+        return ((self.summary.get("infra_risk") or {}).get("roads") or {}).get("road_detail") or {}
+
+    @property
     def report_url(self) -> str:
         return f"{self.base_url}/runs/{self.run_id}/report.html"
 
