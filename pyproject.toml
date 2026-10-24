@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sailab-client"
-version = "0.1.0"
+version = "0.2.0"
 description = "Thin client for the SAILAB flood-intelligence server: call its simulations from another project without copying the pipeline."
 requires-python = ">=3.9"
 dependencies = ["requests>=2.28"]

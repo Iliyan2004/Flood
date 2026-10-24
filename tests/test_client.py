@@ -7,7 +7,8 @@ import pytest
 from sailab_client import SailabClient, SailabError, SailabFloodSimulator, SailabUnavailable
 
 STATE = {"polls": 0, "auth": []}
-SUMMARY = {"flooded_area_km2": 1.5, "max_depth_m": 2.2, "estimated_building_loss": {"total_loss_pkr": 1000.0}}
+SUMMARY = {"flooded_area_km2": 1.5, "max_depth_m": 2.2, "estimated_building_loss": {"total_loss_pkr": 1000.0},
+           "infra_risk": {"shelters": {"in_domain": 4, "flooded_count": 1, "flooded_pct_of_in_domain": 25.0}, "roads": {"in_domain": 10, "flooded_count": 0, "flooded_pct_of_in_domain": 0.0}}}
 
 
 class H(BaseHTTPRequestHandler):
@@ -59,6 +60,7 @@ def test_run_flood_waits_and_returns_result(url):
     r = SailabClient(url).run_flood(AOI, 55, 3, poll=0.01, friction=0.04)
     assert r.run_id == "r1" and r.flooded_area_km2 == 1.5 and r.building_loss_pkr == 1000.0
     assert r.report_url.endswith("/runs/r1/report.html")
+    assert r.infrastructure["shelters"] == {"in_domain": 4, "flooded": 1, "flooded_pct": 25.0} and r.infrastructure["roads"]["flooded"] == 0
 
 
 def test_params_are_forwarded(url):

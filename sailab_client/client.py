@@ -44,6 +44,17 @@ class FloodResult:
         return (self.summary.get("estimated_building_loss") or {}).get("total_loss_pkr")
 
     @property
+    def infrastructure(self) -> dict:
+        """Per category (roads, critical, power, railway, strategic, trees, and for Islamabad also shelters, police,
+        water_facilities, fuel_chemical, governance, industry): {"in_domain": n, "flooded": n, "flooded_pct": pct}."""
+        out = {}
+        for cat, d in (self.summary.get("infra_risk") or {}).items():
+            if isinstance(d, dict):
+                out[cat] = {"in_domain": d.get("in_domain", 0), "flooded": d.get("flooded_count", 0),
+                            "flooded_pct": round(d.get("flooded_pct_of_in_domain", 0.0), 1)}
+        return out
+
+    @property
     def report_url(self) -> str:
         return f"{self.base_url}/runs/{self.run_id}/report.html"
 

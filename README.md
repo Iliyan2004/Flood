@@ -32,6 +32,7 @@ aoi = {"type": "Polygon", "coordinates": [[[73.023,33.734],[73.033,33.734],[73.0
 
 r = client.run_flood(aoi, rain_mm_hr=60, duration_hr=2)   # full 2D physics; waits for the result
 print(r.flooded_area_km2, r.max_depth_m, r.building_loss_pkr, r.report_url)
+print(r.infrastructure)                                    # flooded counts per category: roads, hospitals/schools, power, rail, ...
 
 client.instant_flood(aoi, discharge_m3s=300)               # sub-second terrain-index preview (approximate)
 client.coastal_flood(karachi_aoi, return_period_years=100)
@@ -68,6 +69,12 @@ is not imported by this package; if it is installed its own `Metric`/`Lever` cla
 | `SAILAB_URL` | Server address | `http://127.0.0.1:8000` |
 | `SAILAB_ACCESS_TOKEN` | Token for a server on another machine (not needed locally) | none |
 | `SAILAB_HOME` | SAILAB install, used only by `ensure_server()` | `~/flood` |
+
+## What the server adds on its side (no change needed here)
+
+- Infrastructure is read from the SimCity PostGIS when the server has `SAILAB_PG_URL` set, otherwise from local files.
+- For areas inside **Islamabad**, six more categories appear in `result.infrastructure`: `shelters`, `police`,
+  `water_facilities`, `fuel_chemical`, `governance`, `industry`. Elsewhere those keys are absent.
 
 ## Limits
 
