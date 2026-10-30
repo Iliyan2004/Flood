@@ -6467,3 +6467,7 @@ Copied to `global_data/tide/karachi_hourly_h147b.csv`.
 - Lanes, width and surface are carried but not yet used in any calculation (no road-capacity model).
 - Plugin 0.3.0 adds `FloodResult.road_detail`.
 
+
+## Oct 2026: landing page returns -- `/` is the landing page, the app is at `/app`
+
+`landing.html` (read from disk per request, `__APP_VERSION__` filled in) is a full-screen WebGL fragment-shader scene: a huge teal tsunami wall with a foam crest advancing over dark flood water at dusk, "SAILAB" in heavy type with its full form (initials highlighted) and an "Open SAILAB" button. Clicking it plays a 1.5 s surge (the wave sweeps over the camera, then a flash) and then opens `/app`; ctrl/cmd/middle-click and reduced-motion users navigate directly. `?import=<id>` on `/` redirects straight to `/app` so the SimCity hand-over still works, and any other query string is forwarded. The shader renders at ~0.7 of native resolution and lowers itself further if the first 40 frames are slow; no WebGL shows a CSS sea. Tests moved to `/app` (`test_page_js_syntax`, `test_run_queue_cancel`, `test_frontend_smoke`); new `tests/test_landing_page.py`. The earlier landing page (removed Oct 2026 earlier) was a Three.js scene; this one has no library dependency.

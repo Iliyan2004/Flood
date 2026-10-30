@@ -4041,8 +4041,24 @@ fetch('/dem-source').then(r => r.json()).then(d => {{
 """
 
 
+def _landing_html():
+    # read from disk each time so the page can be tuned without a restart; APP_VERSION is the only placeholder
+    with open(os.path.join(BASE_DIR, "landing.html"), encoding="utf-8") as f:
+        return f.read().replace("__APP_VERSION__", APP_VERSION)
+
+
 @app.route("/")
 def index():
+    # the entry page is the landing page; a SimCity hand-over (?import=<id>) goes straight to the app
+    if request.args.get("import"):
+        return redirect("/app?" + request.query_string.decode())
+    resp = Response(_landing_html(), mimetype="text/html")
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
+@app.route("/app")
+def main_app():
     return PAGE
 
 

@@ -25,7 +25,7 @@ JS_ERROR = re.compile(r"CONSOLE.*(Uncaught|SyntaxError|ReferenceError|TypeError)
 def dom_and_log(live_server):
     cmd = [CHROMIUM, "--headless=new", "--no-sandbox", "--disable-gpu", "--enable-unsafe-swiftshader",
            "--enable-logging=stderr", "--v=0", "--virtual-time-budget=15000", "--window-size=1400,900",
-           "--dump-dom", live_server + "/"]
+           "--dump-dom", live_server + "/app"]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
     except subprocess.TimeoutExpired:

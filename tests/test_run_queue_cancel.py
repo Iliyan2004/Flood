@@ -24,5 +24,5 @@ def test_cannot_cancel_during_postprocessing_and_unknown_is_404():
 
 
 def test_version_shown_in_page():
-    html = fis_app.app.test_client().get("/").get_data(as_text=True)
+    html = fis_app.app.test_client().get("/app").get_data(as_text=True)
     assert f"v{fis_app.APP_VERSION}" in html
