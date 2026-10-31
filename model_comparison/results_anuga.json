@@ -1,0 +1,44 @@
+{
+ "A_manchar_edge": {
+  "CSI": 0.495,
+  "POD": 0.855,
+  "FAR": 0.46,
+  "F1": 0.662,
+  "wet_km2": 142825,
+  "obs_cells": 90131,
+  "hits": 77093,
+  "misses": 13038,
+  "false_alarms": 65732,
+  "correct_neg": 29678,
+  "area_ratio": 1.585,
+  "max_depth_m": 4.34
+ },
+ "B_north_dadu": {
+  "CSI": 0.535,
+  "POD": 0.863,
+  "FAR": 0.415,
+  "F1": 0.697,
+  "wet_km2": 137304,
+  "obs_cells": 93075,
+  "hits": 80287,
+  "misses": 12788,
+  "false_alarms": 57017,
+  "correct_neg": 34087,
+  "area_ratio": 1.475,
+  "max_depth_m": 1.91
+ },
+ "C_shikarpur": {
+  "CSI": 0.478,
+  "POD": 0.863,
+  "FAR": 0.482,
+  "F1": 0.647,
+  "wet_km2": 156582,
+  "obs_cells": 94016,
+  "hits": 81098,
+  "misses": 12918,
+  "false_alarms": 75484,
+  "correct_neg": 15141,
+  "area_ratio": 1.665,
+  "max_depth_m": 2.09
+ }
+}

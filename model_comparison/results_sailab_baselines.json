@@ -1,0 +1,140 @@
+{
+ "A_manchar_edge": {
+  "prevalence_observed_flooded": 0.486,
+  "ncols": 413,
+  "nrows": 462,
+  "baseline_all_wet": {
+   "CSI": 0.486,
+   "POD": 1.0,
+   "FAR": 0.514,
+   "F1": 0.654,
+   "wet_km2": 185541,
+   "obs_cells": 90131,
+   "hits": 90131,
+   "misses": 0,
+   "false_alarms": 95410,
+   "correct_neg": 0,
+   "area_ratio": 2.059
+  },
+  "baseline_lowest_terrain_oracle_prevalence": {
+   "CSI": 0.392,
+   "POD": 0.564,
+   "FAR": 0.439,
+   "F1": 0.563,
+   "wet_km2": 90596,
+   "obs_cells": 90131,
+   "hits": 50853,
+   "misses": 39278,
+   "false_alarms": 39743,
+   "correct_neg": 55667,
+   "area_ratio": 1.005
+  },
+  "sailab_acc": {
+   "CSI": 0.504,
+   "POD": 0.901,
+   "FAR": 0.467,
+   "F1": 0.67,
+   "wet_km2": 152466,
+   "obs_cells": 90131,
+   "hits": 81243,
+   "misses": 8888,
+   "false_alarms": 71223,
+   "correct_neg": 24187,
+   "area_ratio": 1.692,
+   "runtime_s": 71.3,
+   "max_depth_m": 4.53
+  }
+ },
+ "B_north_dadu": {
+  "prevalence_observed_flooded": 0.505,
+  "ncols": 407,
+  "nrows": 459,
+  "baseline_all_wet": {
+   "CSI": 0.505,
+   "POD": 1.0,
+   "FAR": 0.495,
+   "F1": 0.671,
+   "wet_km2": 184179,
+   "obs_cells": 93075,
+   "hits": 93075,
+   "misses": 0,
+   "false_alarms": 91104,
+   "correct_neg": 0,
+   "area_ratio": 1.979
+  },
+  "baseline_lowest_terrain_oracle_prevalence": {
+   "CSI": 0.507,
+   "POD": 0.674,
+   "FAR": 0.328,
+   "F1": 0.673,
+   "wet_km2": 93370,
+   "obs_cells": 93075,
+   "hits": 62727,
+   "misses": 30348,
+   "false_alarms": 30643,
+   "correct_neg": 60461,
+   "area_ratio": 1.003
+  },
+  "sailab_acc": {
+   "CSI": 0.528,
+   "POD": 0.876,
+   "FAR": 0.429,
+   "F1": 0.691,
+   "wet_km2": 142786,
+   "obs_cells": 93075,
+   "hits": 81539,
+   "misses": 11536,
+   "false_alarms": 61247,
+   "correct_neg": 29857,
+   "area_ratio": 1.534,
+   "runtime_s": 51.1,
+   "max_depth_m": 1.94
+  }
+ },
+ "C_shikarpur": {
+  "prevalence_observed_flooded": 0.509,
+  "ncols": 411,
+  "nrows": 462,
+  "baseline_all_wet": {
+   "CSI": 0.509,
+   "POD": 1.0,
+   "FAR": 0.491,
+   "F1": 0.675,
+   "wet_km2": 184641,
+   "obs_cells": 94016,
+   "hits": 94016,
+   "misses": 0,
+   "false_alarms": 90625,
+   "correct_neg": 0,
+   "area_ratio": 1.964
+  },
+  "baseline_lowest_terrain_oracle_prevalence": {
+   "CSI": 0.347,
+   "POD": 0.516,
+   "FAR": 0.487,
+   "F1": 0.515,
+   "wet_km2": 94553,
+   "obs_cells": 94016,
+   "hits": 48527,
+   "misses": 45489,
+   "false_alarms": 46026,
+   "correct_neg": 44599,
+   "area_ratio": 1.006
+  },
+  "sailab_acc": {
+   "CSI": 0.481,
+   "POD": 0.884,
+   "FAR": 0.486,
+   "F1": 0.65,
+   "wet_km2": 161852,
+   "obs_cells": 94016,
+   "hits": 83141,
+   "misses": 10875,
+   "false_alarms": 78711,
+   "correct_neg": 11914,
+   "area_ratio": 1.722,
+   "runtime_s": 52.0,
+   "max_depth_m": 2.06
+  }
+ }
+}

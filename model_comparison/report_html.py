@@ -1,0 +1,111 @@
+import json, os, sys, numpy as np, datetime
+CMP = os.path.expanduser("~/flood/cmp")
+R = json.load(open(f"{CMP}/results_all.json")); X = json.load(open(f"{CMP}/results_extra.json")); F = json.load(open(f"{CMP}/figs.json"))
+areas = list(R); M = ["SAILAB (LISFLOOD-FP ACC)", "ANUGA", "SFINCS", "TELEMAC-2D"]
+S = {"SAILAB (LISFLOOD-FP ACC)": "SAILAB"}
+def mean(m, k): return float(np.mean([R[a][m][k] for a in areas]))
+rt = X["runtimes"]
+def img(k, w="100%"): return f'<img src="data:image/png;base64,{F[k]}" style="width:{w};max-width:100%">'
+rows = ""
+base = ["Flood everything", "Lowest terrain (oracle fraction)"]
+hw = {"SAILAB": "GPU (NVIDIA GB10)", "ANUGA": "CPU, 90 m mesh", "SFINCS": "CPU, 20 threads, 29 m", "TELEMAC-2D": "CPU, 1 core, 90 m mesh"}
+for m in base + M:
+    nm = S.get(m, m); mm = nm in hw
+    rtm = f"{np.mean([rt[a][nm] for a in areas]):.0f} s" if mm else "-"
+    rows += f"<tr class={'base' if not mm else ''}><td>{nm}</td>" + "".join(f"<td>{R[a][m]['CSI']:.3f}</td>" for a in areas) + \
+        f"<td><b>{mean(m,'CSI'):.3f}</b></td><td>{mean(m,'POD'):.2f}</td><td>{mean(m,'FAR'):.2f}</td><td>{mean(m,'area_ratio'):.2f}x</td><td>{rtm}</td><td>{hw.get(nm,'-')}</td></tr>"
+untried = [
+ ("HEC-RAS 2D", "Only Windows and x86 Linux builds exist; this server is ARM. A 2D case also needs a mesh/geometry file normally built in its Windows GUI.", "Free, but cannot run here. SAILAB runs on this machine with no licence or Windows."),
+ ("TUFLOW (Classic/HPC/FV)", "Commercial licence required, Windows/x86.", "No licence cost for SAILAB's solver (GPL)."),
+ ("MIKE 21 / MIKE+", "Commercial licence (DHI), Windows.", "Same."),
+ ("InfoWorks ICM", "Commercial licence (Autodesk), Windows.", "Same."),
+ ("Flood Modeller", "Commercial licence, Windows.", "Same."),
+ ("FLO-2D", "Windows desktop program; Pro tier is paid.", "Same."),
+ ("Delft3D-FM / D-Flow FM", "Official binaries are x86; no ARM package found.", "SAILAB is built from source for this ARM/GPU machine."),
+ ("TRITON, SERGHEI, RIM2D, HiPIMS", "Need source builds; GPU support on this ARM GPU is untested. Not attempted for time.", "Not a SAILAB advantage: untested."),
+ ("Fathom, Google Flood Hub, GloFAS", "Data products or services, not runnable models.", "Published scores only (see survey)."),
+]
+ut = "".join(f"<tr><td>{a}</td><td>{b}</td><td>{c}</td></tr>" for a, b, c in untried)
+html = f"""<!doctype html><html><head><meta charset="utf-8"><title>SAILAB multi-model flood case study</title>
+<style>
+body{{font-family:'DejaVu Sans',Arial,sans-serif;color:#1b2a2f;max-width:900px;margin:24px auto;padding:0 18px;line-height:1.45;font-size:13px}}
+h1{{font-size:24px;margin:0 0 2px}} h2{{font-size:17px;margin:28px 0 8px;border-bottom:2px solid #0b7a75;padding-bottom:3px}} h3{{font-size:14px;margin:18px 0 6px}}
+.band{{background:#0b3d40;color:#fff;padding:18px 22px;border-radius:4px}} .band p{{margin:4px 0;color:#cfe8e6}}
+table{{border-collapse:collapse;width:100%;margin:8px 0;font-size:12px}} th,td{{border:1px solid #cfd8d7;padding:5px 7px;text-align:left}} th{{background:#e8f1f0}}
+tr.base td{{color:#69757a;font-style:italic}} .box{{background:#f2f7f6;border-left:4px solid #0b7a75;padding:10px 14px;margin:10px 0}}
+.warn{{background:#fdf3e3;border-left:4px solid #d9a400;padding:10px 14px;margin:10px 0}} .cap{{font-size:11px;color:#59676b;margin:2px 0 10px}}
+.key span{{display:inline-block;width:12px;height:12px;margin:0 4px -2px 10px}} .small{{font-size:11px;color:#59676b}}
+@media print{{.pb{{page-break-before:always}}}}
+</style></head><body>
+<div class="band"><h1>SAILAB against other flood models: a controlled case study</h1>
+<p>Same terrain, rainfall, friction and scoring for every model, scored against the UNOSAT satellite flood map of the 2022 Sindh floods.</p>
+<p>Generated {datetime.date.today():%d %B %Y}. SAILAB v6.1, LISFLOOD-FP 8.2.</p></div>
+
+<h2>1. What this shows, in plain terms</h2>
+<div class="box"><b>SAILAB's accuracy is on par with the other open 2D flood models, not better.</b>
+Across three test areas SAILAB's mean CSI is {mean(M[0],'CSI'):.3f}, against {mean('ANUGA','CSI'):.3f} (ANUGA), {mean('TELEMAC-2D','CSI'):.3f} (TELEMAC-2D) and {mean('SFINCS','CSI'):.3f} (SFINCS). The differences are about 0.01 to 0.03 and the three areas disagree on the ordering, so there is no winner on accuracy.
+SAILAB and ANUGA flooded almost the same cells (94% overlap), and TELEMAC-2D matched SAILAB at 90%. Independent codes agreeing this closely is good evidence that SAILAB's solver is correct.</div>
+<div class="warn"><b>No model, including SAILAB, scored clearly better than the trivial "flood everything" guess</b> (mean CSI {mean('Flood everything','CSI'):.3f}). Raising the wet-depth cut-off makes every model score worse (section 5). The most likely reason is the forcing, not the models: the 2022 Sindh flood was mostly river overflow and upstream water, and this test applies only local rainfall. This has not been tested directly.</div>
+<p><b>Where SAILAB does have a measured advantage:</b></p>
+<ul>
+<li><b>Speed.</b> On the same cases SAILAB's GPU solver took {np.mean([rt[a]['SAILAB'] for a in areas]):.0f} s on average, against {np.mean([rt[a]['TELEMAC-2D'] for a in areas]):.0f} s (TELEMAC-2D), {np.mean([rt[a]['SFINCS'] for a in areas]):.0f} s (SFINCS) and {np.mean([rt[a]['ANUGA'] for a in areas]):.0f} s (ANUGA). The comparison is GPU against CPU, ANUGA and TELEMAC used a coarser 90 m mesh, and TELEMAC ran on one core, so it shows what a user gets, not a like-for-like solver speed test.</li>
+<li><b>Integration and cost.</b> SAILAB runs the whole workflow (rainfall, buildings, roads, loss, scenarios, monitoring) on one machine with no licence fee. None of the other models do that on their own.</li>
+<li><b>Portability.</b> SAILAB's solver runs on this ARM GPU server; the commercial and Windows tools in section 7 could not be run here at all.</li>
+</ul>
+<p><b>Where it is not ahead:</b> accuracy (parity), depth validation (none for any model here), and the volume of published validation behind HEC-RAS, TUFLOW, MIKE and others.</p>
+
+<h2>2. Study design</h2>
+<ul>
+<li><b>Event and observed map:</b> the 2022 Pakistan floods, Sindh. Observed flood extent from UNOSAT (VIIRS satellite, 29 November 2022). The map is from three months after the August peak, so it shows water that persisted, not the rain-driven peak.</li>
+<li><b>Areas:</b> three 13 km boxes placed along the edge of the observed flood so each is about half flooded (49%, 50%, 51%). An earlier test box that was 98% flooded was dropped because it cannot show skill.</li>
+<li><b>Same inputs for every model:</b> SRTM elevation (29 m), 253.5 mm of rain over 48 hours (the wettest 48-hour ERA5 window at the site), Manning n = 0.05, no infiltration, closed boundaries, nothing calibrated.</li>
+<li><b>Scoring:</b> cells counted wet above 5 cm peak depth. CSI = hits / (hits + misses + false alarms); POD = share of observed flooded cells found; FAR = share of predicted wet cells that were dry in the observation.</li>
+<li><b>Baselines:</b> "Flood everything", and "lowest terrain", which floods the lowest cells up to the true flooded fraction (it is told the answer's size).</li>
+<li><b>Models run:</b> SAILAB (LISFLOOD-FP 8.2, ACC solver, GPU); ANUGA 4.1 (full shallow-water, finite volume, 90 m mesh); SFINCS (Deltares, local-inertial, built from source); TELEMAC-2D (full shallow-water, finite element, built from source, 90 m mesh, constant rain at the same total).</li>
+</ul>
+
+<h2>3. Results</h2>
+<table><tr><th>Model</th><th>CSI A</th><th>CSI B</th><th>CSI C</th><th>Mean CSI</th><th>POD</th><th>FAR</th><th>Wet area / observed</th><th>Mean run time</th><th>Hardware</th></tr>{rows}</table>
+<p class="cap">Areas: A Manchar edge, B north Dadu, C Shikarpur. Italic rows are the trivial baselines. Wet area / observed above 1 means over-prediction.</p>
+{img('csi','88%')}<p class="cap">Figure 1. CSI by area. The grey bars are the baselines.</p>
+{img('podfar')}<p class="cap">Figure 2. Detection against false alarms. All four models find 83 to 100% of the flooded cells; SFINCS reaches 100% only because it reports more than 5 cm of water in every cell.</p>
+
+<h2 class="pb">4. Maps</h2>
+<p class="key">Key: <span style="background:#2b7a4b"></span>correctly wet &nbsp;<span style="background:#d9a400"></span>missed &nbsp;<span style="background:#c0392b"></span>false alarm &nbsp;<span style="background:#e9ecef;border:1px solid #bbb"></span>correctly dry</p>
+<h3>Area A: Manchar edge</h3>{img('map_A_manchar_edge')}
+<h3>Area B: north Dadu</h3>{img('map_B_north_dadu')}
+<h3>Area C: Shikarpur</h3>{img('map_C_shikarpur')}
+<p class="cap">Figure 3. Observed flooding (left, blue) and each model's result against it. All four models flood the low western strip of area A, which the satellite map shows as dry.</p>
+<h3>Peak depth, area A</h3>{img('depthA')}<p class="cap">Figure 4. Peak depth from each model (same scale). The patterns are alike; maximum depths are 4.1 to 4.5 m.</p>
+
+<h2 class="pb">5. How robust is the result</h2>
+{img('sens','60%')}<p class="cap">Figure 5. Mean CSI as the wet-depth cut-off rises. Every model falls below "flood everything" at every cut-off from 10 cm up, and below both baselines from 20 cm up (SAILAB beats "flood everything" only at 5 cm, by 0.004), so the models' depth patterns do not line up with the observed extent. A model that is right for the right reasons would hold up better as the cut-off rises.</p>
+{img('agree','46%')}<p class="cap">Figure 6. How much the models' flooded cells overlap each other (1 = identical). SAILAB, ANUGA and TELEMAC-2D agree at 0.90 to 0.94; SFINCS differs most because it keeps a thin layer of water everywhere.</p>
+{img('rt','60%')}<p class="cap">Figure 7. Run times (log scale). Hardware differs between models, see section 1.</p>
+
+<h2>6. What the evidence supports</h2>
+<ul>
+<li>SAILAB's solver gives the same flood as independent codes on the same inputs: this is the strongest finding, and it supports the correctness of the numerics.</li>
+<li>It cannot yet claim better real-world accuracy than the other models, and this test alone cannot show whether any of them has real skill on this flood.</li>
+<li>SAILAB ran about 2 to 9 times faster than the CPU models on these cases (TELEMAC-2D 2.4x, ANUGA 8x, SFINCS 9x on average), with the hardware caveat above.</li>
+</ul>
+<div class="warn"><b>Limits of this study.</b> One event; three small areas; observed map three months after the peak; rain-only forcing that cannot represent river overflow; no depth data to compare against; meshes of 29 m and 90 m differ between models; each model's own numerical settings were left at defaults; the area-A west strip may reflect SRTM elevation error. None of these favour or disadvantage SAILAB specifically.</div>
+
+<h2>7. Models not run, and why</h2>
+<table><tr><th>Model</th><th>Why it was not run</th><th>What that means for SAILAB</th></tr>{ut}</table>
+<p>Not running a model is not evidence that it is worse or better than SAILAB. What it does show is a practical difference: SAILAB's solver is open and runs on this ARM GPU server without a licence or Windows, while most of the established tools need a licence, Windows or x86 hardware. For these models the survey (SAILAB_Flood_Model_Survey.md) lists published validation results instead; HEC-RAS, for example, has been benchmarked against LISFLOOD-FP (the engine inside SAILAB) on the Secchia River flood, where both mis-estimated extent and depth in built-up areas.</p>
+
+<h2>8. Recommended next steps to make the accuracy case</h2>
+<ol>
+<li>Score an event where the flood can be reproduced from its drivers: known river inflow (for example the 2010 Indus flood with gauge hydrographs), or a rain-driven urban flood with a mapped extent.</li>
+<li>Add observed depths (high-water marks, gauges) so depth can be scored, not just extent.</li>
+<li>Run SAILAB with river inflow from GloFAS on the 2022 areas, to test the river-overflow explanation.</li>
+<li>Run HEC-RAS or TUFLOW on the same three areas on a licensed x86 machine, and score with the same code (inputs are available).</li>
+<li>Try 8.3 of LISFLOOD-FP on a multi-million-cell basin; on our test cases it matched 8.2 and showed no speed gain.</li>
+</ol>
+
+<h2>9. Reproducibility</h2>
+<p class="small">All code and inputs are in <code>~/flood/cmp</code>: <code>case_common.py</code> (shared DEM, observed map and scoring), <code>run_baselines_sailab.py</code>, <code>run_anuga.py</code>, <code>run_sfincs.py</code>, <code>run_telemac.py</code>, <code>score_all.py</code>, <code>report_build.py</code>. Raw numbers: <code>results_all.json</code>, <code>results_extra.json</code>. Models: SAILAB/LISFLOOD-FP 8.2; ANUGA 4.1.0 (pip); SFINCS v2.5.0-beta (Deltares, built from source 31 Oct 2026); TELEMAC v9.2-dev (built from source, serial). The first SFINCS attempt used a conda package with the same name that turned out to be a plasma-physics code; it was removed and no result came from it. The earlier SAILAB test reporting CSI 0.66 used a box that was 98% flooded and should not be quoted as accuracy.</p>
+</body></html>"""
+open(f"{CMP}/SAILAB_Model_Comparison_Report.html", "w").write(html)
+print("html bytes", len(html))
