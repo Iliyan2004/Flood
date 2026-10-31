@@ -1,6 +1,6 @@
 # SAILAB — Technical Reference: Data Sources, Paths, Methods and Validation
 
-Rebuilt on 8 October 2026 and updated on 14 October 2026 from the code in `~/flood/` (read module by module, constants copied from source).
+Rebuilt on 8 October 2026 from the code in `~/flood/` (read module by module, constants copied from source).
 The previous edition (12 September 2026) is kept as `DATA_SOURCES_AND_METHODS.md.bak_2026-09-12`.
 This file says **where each dataset lives, what is computed from it, and how far the result has been checked**.
 For the history of bugs and decisions, see `CLAUDE.md`.
@@ -54,7 +54,7 @@ Conventions used below:
 
 Read directly rather than through `data_paths.py`:
 - GloFAS historical reanalysis: `SHARE/7. GLOFAS Variables/GLOFAS_Historical/river_discharge/river_discharge_pak_{1979..2025}.nc` (`dis24`, m³/s, 0.05°) and `.../runoff_water/runoff_water_pak_{1979..2012}.nc` (`rowe`, kg m⁻² day⁻¹). Used by the melt-model check.
-- Earth Engine credentials: `~/.config/earthengine/credentials` (`glacier_monitoring_utils`, `storm_motion_lstm`). Re-authenticated on 14 October 2026 (see the updates section at the end); the file must contain `project`. The cloud project is in Google's restricted mode (free compute quota exceeded).
+- Earth Engine credentials: `~/.config/earthengine/credentials` (`glacier_monitoring_utils`, `storm_motion_lstm`). **At the last check the refresh token was expired or revoked**, so both features return "Earth Engine is not available" until someone re-runs `earthengine authenticate`.
 
 ### 1.2 App-local datasets (`<app>/global_data/` and app root)
 
@@ -216,7 +216,7 @@ Read directly rather than through `data_paths.py`:
 ### 6.3 Storm shape (`storm_utils.py`, `storm_motion_lstm.py`)
 - Areal Reduction Factor (Keers & Wescott 1977 / FSR-FEH) `ARF = 1 − b·D^−a`, five area bands, 1.0 below 1 km², clamped to (0.05, 1].
 - Storm centring `w = exp(−r/L)` normalised to a mean of 1 over the AOI, with `L = √(area/π)` by default; optionally a moving centre. Written as NetCDF dynamic rain.
-- Storm-motion LSTM: a 6-step window of 30-min displacements, 32 hidden units, trained on 72 IMERG storm-days with a day-level split. Needs Earth Engine, which works again after the 14 October 2026 re-authentication (§1.1).
+- Storm-motion LSTM: a 6-step window of 30-min displacements, 32 hidden units, trained on 72 IMERG storm-days with a day-level split. Needs Earth Engine, which is currently unavailable (§1.1).
 
 ### 6.4 Pluvial risk tier (`pluvial_utils.py`)
 - A 20-year daily climatology at the AOI point gives p90/p95/p99; tiers are watch, warning and severe. Shown alongside, not mixed with, the observed IDF reference (RX1day, peak hourly, R95p/R99p seasonal totals, trend). The resolution ceiling is ~10 km hourly; no radar product covers Pakistan.
@@ -312,7 +312,6 @@ Read directly rather than through `data_paths.py`:
 | 2022 Sindh flood vs UNOSAT extent, 48 h ERA5 storm (253.5 mm) | CSI 0.659, POD 0.669, FAR 0.021 (73.5 vs 107.7 km²) |
 | same, 10-day window (424.6 mm) | CSI 0.694, POD 0.705, FAR 0.022 (77.6 vs 107.7 km²) |
 | same, 30-day window | not completed (no report produced) |
-| Observed-flood scoring route vs the validation script (same 2022 run, UNOSAT VIIRS extent) | identical: CSI 0.6592, POD 0.6686, FAR 0.0209, F1 0.7946; 73.54 vs 107.69 km² |
 | Melt model vs GloFAS | §9.3 |
 
 Open questions: CPU and GPU max depth differ at a few sink cells on the 2022 AOI (16.3 vs 8.95 m) while wet area matches, so compare wet area / CSI, not max depth; ACC instability on extreme relief (§4.4); the melt-model disagreement on basin 4080575700 (§9.3).
@@ -321,7 +320,7 @@ Open questions: CPU and GPU max depth differ at a few sink cells on the 2022 AOI
 
 ## 12. Tests and operations
 
-- Fast suite: `~/flood/venv/bin/python -m pytest tests -q -m "not slow"` (392 tests on 14 October 2026, all passing; 32 slow tests deselected). Slow tests include real LISFLOOD-FP runs (GPU-vs-CPU inflow and HVAR, closed-domain mass balance) and live HTTP routes.
+- Fast suite: `~/flood/venv/bin/python -m pytest tests -q -m "not slow"` (348 tests at the last run, all passing). Slow tests include real LISFLOOD-FP runs (GPU-vs-CPU inflow and HVAR, closed-domain mass balance) and live HTTP routes.
 - Front-end guards: `tests/test_page_js_syntax.py` (`node --check` on the rendered page script) and `tests/test_frontend_smoke.py` (headless Chromium: map canvas present, no console errors).
 - Restart the server after any backend change: find the PID with `ss -ltnp | grep :8000` and `kill` it. Never `pkill -f` a pattern that appears in your own command line.
 - The working copy (`/mnt/external-ssd/DGX SHARED/Tasks/Reselli_AI/flood/`) and the live copy (`~/flood/`) are separate; copy changed files across and confirm with `cmp`.
@@ -337,13 +336,13 @@ Open questions: CPU and GPU max depth differ at a few sink cells on the 2022 AOI
 
 Coastal susceptibility index (0-1, 5 classes at 0.2/0.4/0.6/0.8): elevation above mean high water (MSL + half the 2.3 m Karachi tidal range; weight 0.25, ramp 10 m -> 0), distance to sea (0.10, 20 km -> 0), slope (0.10, 5 deg -> 0), mangrove buffer (0.07, 1 -> 0), renormalised over the factors present. Weights are expert defaults from the supplied model, not fitted.
 
-## Updates of 14 October 2026
 
-- **Observed-flood scoring:** `observed_validation_utils.py` + `POST /runs/<id>/validate-observed`. Input: polygons (geojson/gpkg/shp/zipped shapefile) or a GeoTIFF (>0 = flooded). Put on the run grid, scored only on valid in-AOI cells, ACC depth correction applied, wet > 0.05 m. Output: CSI, POD, FAR, F1, bias, wet areas.
-- **PDF summaries:** `POST /report/coastal.pdf`, `/report/glof.pdf` (`result_report_utils.py`; the browser posts back the result it holds; values are HTML-escaped).
-- **Solver slot:** `TrackedSlot` (replaces the bare semaphore): `/solver-status` shows holder and waiters; queued runs show what they wait for; NbS scenarios now take the slot (they did not before).
-- **3D page rebuild:** `POST /runs/<id>/rebuild-scene` redraws from saved results, no re-simulation. `_read_water_stack` streams one timestep at a time (stack read 680 s → 8 s on the 2.35 M-cell Islamabad run). A rebuild once took ~7 h purely because the machine was swapping.
-- **Roads:** `_lonlat_paths_to_segments_batch` (one transform and one inside-AOI test for all vertices); identical output to the per-vertex version.
-- **Access token:** `SAILAB_ACCESS_TOKEN` in `.env`; non-loopback requests must present it. No service file is installed.
-- **Cache cleanup:** `cache_cleanup.py` (dry run unless `--apply`; keeps the newest 20 runs and anything in `keep_runs.txt`; default age 30 days). First dry run: 125 runs / 4.5 GB of 50 GB; nothing deleted.
-- **Earth Engine:** re-authenticated with `--scopes=.../earthengine,.../cloud-platform` (the default request adds Drive/Storage scopes, which Google blocks for the default client); credential file needs `project` (900557213876); restart the server afterwards. Live checks passed (GLIMS baseline 52 glaciers/217 km²; Shishper SAR, 2 months: mean 1.24 m, max 11.46 m, 79.5 km² active ice; storm-motion nowcast fell back to static with no nearby rain). The project reports "restricted mode" (free compute quota exceeded).
+## Third edition additions (31 October 2026)
+
+The full reference is `SAILAB_Technical_Reference.pdf` (third edition, 64 pages); this file stays the compact index. Added since the 8 October rebuild:
+- **Tide and datum (Ch. 19.10).** `global_data/tide/karachi_hourly_h147b.csv` (hourly, 2007-2016); Khan et al. return levels are above the gauge zero, MSL is 1.849 m above it, so 100-yr = 1.91 m above MSL (not 3.76 m). `tide_utils.py` 23-constituent harmonic fit (unseen-years RMSE 0.118 m, r 0.987); `build_tide_surge_series`.
+- **Vector data (Ch. 22.6-22.8).** `pg_vector_utils.py` (PostGIS first, files fall back; `SAILAB_PG_URL`), `islamabad_layers_utils.py` (Islamabad GeoPackage: shelters, police, water facilities, fuel/chemical, governance, industry), drivable roads view for boxes inside Islamabad, `road_detail` results.
+- **Entry points and operations (Ch. 2.4, 40).** `landing.html` at `/`, app at `/app`; `SAILAB_ACCESS_TOKEN`; `ops_agents.py` (health watchdog, forecast validation, run QA; `SAILAB_ALERT_WEBHOOK`); `cache_cleanup.py`; observed-flood scoring route; scene rebuild route; client plugin and GitHub publishing.
+- **Evidence (Ch. 33.1, `model_comparison/`).** Multi-model study: SAILAB mean CSI 0.504 vs ANUGA 0.503, SFINCS 0.500, TELEMAC-2D 0.497, flood-everything 0.500. Parity, not superiority. The earlier Sindh CSI 0.659 used a 98%-flooded box and is not evidence of skill.
+- **LISFLOOD-FP 8.3 (Ch. 4.3).** Built, identical to 8.2, no speed gain on our cases, not adopted.
+- Earth Engine was re-authenticated on 13 Oct 2026 (the "revoked" note in section 1.1 is superseded). Fast tests: 420.
