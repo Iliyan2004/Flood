@@ -6,7 +6,7 @@ Scope: the widely used flood and hydrodynamic modelling tools, not every model i
 
 | Model | Type / physics | Licence, cost | GPU | Scale seen in literature | Validation evidence found | Basis |
 |---|---|---|---|---|---|---|
-| **SAILAB** (LISFLOOD-FP 8.2 inside) | 2D local-inertial (ACC) or DG2 shallow-water; plus HAND instant preview, coastal bathtub/HVAR, GLOF, snowmelt, loss | Own app; solver GPL | Yes (CUDA, GB10) | Pakistan-wide, no size cap | One event: Sindh 2022 vs UNOSAT, CSI 0.66, POD 0.67, FAR 0.02 | own |
+| **SAILAB** (LISFLOOD-FP 8.2 inside) | 2D local-inertial (ACC) or DG2 shallow-water; plus HAND instant preview, coastal bathtub/HVAR, GLOF, snowmelt, loss | Own app; solver GPL | Yes (CUDA, GB10) | Pakistan-wide, no size cap | Case study in this report: three half-flooded areas, 2022 Sindh, mean CSI 0.50, on par with ANUGA, SFINCS and TELEMAC-2D and the trivial baseline. (An earlier CSI of 0.66 came from a 98%-flooded box and is withdrawn.) | own |
 | **LISFLOOD-FP 8.x** | 2D local-inertial / non-uniform grid | GPL v3, non-commercial per a source | Yes; ACC 2-28x faster than CPU, non-uniform up to 320x | Regional | Many papers; 8.3 released 13 Oct 2026 | S |
 | **HEC-RAS 2D** | Full SWE or diffusion wave | Free (US Army Corps) | Not verified | Reach to basin | Benchmarked against the UK EA suite (Brunner 2018); compared with LISFLOOD-FP on the Secchia River (both misestimated extent/depth in built-up zones) | S |
 | **TUFLOW** (Classic / HPC / FV) | Full SWE; HPC GPU solver | Commercial, by module | Yes (TUFLOW GPU) | Urban to catchment | In the UK EA 2013 benchmark of 2D packages | S |
@@ -30,8 +30,8 @@ Scope: the widely used flood and hydrodynamic modelling tools, not every model i
 
 ## 2. Where SAILAB stands
 
-- **Strengths:** open physics engine on a GPU; one workflow from rainfall to buildings, roads, loss, coastal, GLOF, snowmelt and protection scenarios; Pakistan-specific datasets; queueing, run QA and monitoring built in.
-- **Weaknesses:** one flood-extent validation (Sindh 2022); no depth validation; damage curves are Asia averages; ACC can fail on extreme slopes; no 1D channel network or sewer system; elevation data at about 29 m.
+- **Strengths:** open physics engine on a GPU (measured 51 to 71 s per 13 km area against 89 to 767 s for the CPU models run here); one workflow from rainfall to buildings, roads, loss, coastal, GLOF, snowmelt and protection scenarios; Pakistan-specific datasets; queueing, run QA and monitoring built in.
+- **Weaknesses:** no flood-extent skill clearly above a trivial guess on the 2022 Sindh test (rain-only forcing; see the case-study report); no depth validation; damage curves are Asia averages; ACC can fail on extreme slopes; no 1D channel network or sewer system; elevation data at about 29 m.
 - **Versus Fathom and Google Flood Hub:** they publish continental validation; SAILAB does not yet.
 
 ## 3. Which models can run a case study here

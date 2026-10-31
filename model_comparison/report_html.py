@@ -3,6 +3,21 @@ CMP = os.path.expanduser("~/flood/cmp")
 R = json.load(open(f"{CMP}/results_all.json")); X = json.load(open(f"{CMP}/results_extra.json")); F = json.load(open(f"{CMP}/figs.json"))
 areas = list(R); M = ["SAILAB (LISFLOOD-FP ACC)", "ANUGA", "SFINCS", "TELEMAC-2D"]
 S = {"SAILAB (LISFLOOD-FP ACC)": "SAILAB"}
+import re as _re
+try: E2E = json.load(open(f"{CMP}/results_e2e_sailab.json"))
+except Exception: E2E = None
+def survey_table():
+    L = open(f"{CMP}/../SAILAB_Flood_Model_Survey.md").read().split("\n"); out = []; on = False
+    for l in L:
+        if l.startswith("| Model |"): on = True
+        if on:
+            if not l.startswith("|"): break
+            out.append(l)
+    rows = [[c.strip() for c in r.strip("|").split("|")] for r in out if not _re.match(r"^\|[-| ]+\|$", r)]
+    h = "<table><tr>" + "".join(f"<th>{c}</th>" for c in rows[0]) + "</tr>"
+    for r in rows[1:]: h += "<tr>" + "".join("<td>" + _re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", c) + "</td>" for c in r) + "</tr>"
+    return h + "</table>"
+def loc(f): return sum(1 for _ in open(f"{CMP}/{f}"))
 def mean(m, k): return float(np.mean([R[a][m][k] for a in areas]))
 rt = X["runtimes"]
 def img(k, w="100%"): return f'<img src="data:image/png;base64,{F[k]}" style="width:{w};max-width:100%">'
@@ -26,6 +41,49 @@ untried = [
  ("Fathom, Google Flood Hub, GloFAS", "Data products or services, not runnable models.", "Published scores only (see survey)."),
 ]
 ut = "".join(f"<tr><td>{a}</td><td>{b}</td><td>{c}</td></tr>" for a, b, c in untried)
+NEW78 = f"""
+<h2 class="pb">7. Time from question to result</h2>
+<p>Solver run time is only part of the work. The tools differ more in what a user must prepare before the solver can start.</p>
+<h3>What SAILAB took, measured</h3>
+<p>Drawing a 13 km area and pressing run, with everything fetched and processed automatically (elevation, land-cover friction, buildings burned in as obstacles, roads, facilities, flood solver, building and road risk, estimated loss, 3D scene), on the live server:</p>
+<table><tr><th>Area</th><th>Total, polygon to finished result</th><th>Of which flood solver</th><th>Buildings used</th></tr>
+{"".join(f"<tr><td>{n}</td><td><b>{v['total_s']:.0f} s</b></td><td>{v['wall_clock_solver_s']:.0f} s</td><td>{v['buildings_used']:,}</td></tr>" for n, v in E2E.items())}
+</table>
+<p class="cap">Measured 31 Oct 2026, fresh runs with no cache, 48 h storm. No files were prepared by hand.</p>
+<h3>What the other models needed from me, measured</h3>
+<p>For the three open models I ran, I had to write the converters myself, because none of them reads a DEM and a rainfall total directly. Script lengths, excluding the shared scoring code:</p>
+<table><tr><th>Model</th><th>Lines of code I wrote</th><th>What it had to do</th></tr>
+<tr><td>SAILAB</td><td><b>0</b></td><td>Polygon in, result out.</td></tr>
+<tr><td>ANUGA</td><td>{loc('run_anuga.py')}</td><td>Build a triangular mesh, interpolate elevation onto it, set friction, boundaries and a rain function, collect maximum depth.</td></tr>
+<tr><td>SFINCS</td><td>{loc('run_sfincs.py')}</td><td>Write elevation and mask grids, a rainfall table and the input file; read the result back.</td></tr>
+<tr><td>TELEMAC-2D</td><td>{loc('run_telemac.py')}</td><td>Write a mesh file in its binary format and a boundary file by hand, write the steering file, read the result back.</td></tr></table>
+<p class="cap">Each also needed its own installation, and I hit and fixed a wrong-package install (SFINCS), a parallel-build race, a missing output keyword and a wrong output setting along the way. That is not a fair measure of an expert's time, but it shows these tools start from a terrain file and little else.</p>
+<h3>What the commercial tools typically require (general knowledge, not measured here)</h3>
+<table><tr><th>Input</th><th>HEC-RAS 2D, TUFLOW, MIKE and similar</th><th>SAILAB</th></tr>
+<tr><td>Terrain</td><td>User sources, clips and loads a DEM</td><td>Built in (Pakistan SRTM); cropped to the drawn polygon</td></tr>
+<tr><td>Mesh or grid</td><td>User builds and checks it</td><td>Automatic</td></tr>
+<tr><td>Roughness</td><td>User maps land cover to Manning values</td><td>Automatic from ESA WorldCover</td></tr>
+<tr><td>Buildings, roads, facilities</td><td>Separate datasets, collected and joined by the user</td><td>Built in (Google Open Buildings, road and facility layers)</td></tr>
+<tr><td>Rainfall and inflow</td><td>User prepares time series</td><td>Entered, uploaded, or taken from forecasts and design-storm data</td></tr>
+<tr><td>Boundary conditions</td><td>User defines them</td><td>Defaults, or river detection and inflow tools</td></tr>
+<tr><td>Damage and loss</td><td>Separate tool or spreadsheet</td><td>Built in</td></tr></table>
+<p class="cap">I did not time these workflows and have no measured figure for how long they take; the point is the number of separate steps, not hours.</p>
+
+<h2>8. Hardware and GPU support</h2>
+<table><tr><th>Model</th><th>GPU support</th><th>Basis</th></tr>
+<tr><td><b>SAILAB (LISFLOOD-FP)</b></td><td><b>Yes, CUDA.</b> Runs on the NVIDIA GB10 in this server.</td><td>Measured: 51 to 71 s per area on the GPU</td></tr>
+<tr><td>LISFLOOD-FP (published)</td><td>Yes; the uniform solver is 2 to 28 times faster than its CPU version, the non-uniform solver up to 320 times</td><td><a href="https://gmd.copernicus.org/articles/16/2391/2023/">LISFLOOD-FP 8.1 paper, Geoscientific Model Development 2023</a></td></tr>
+<tr><td>HEC-RAS 2D</td><td>No GPU support found in the public release notes I could access (not confirmed against the official HEC notes)</td><td>Search, 31 Oct 2026</td></tr>
+<tr><td>TUFLOW</td><td>Yes (TUFLOW GPU / HPC)</td><td>Listed in the UK Environment Agency 2013 benchmark</td></tr>
+<tr><td>TRITON, SERGHEI, RIM2D, HiPIMS</td><td>Yes (multi-GPU)</td><td>Published papers; not run here</td></tr>
+<tr><td>SRH-2D</td><td>Yes, new in 2026; average speedup about 7.7x in one deck</td><td><a href="https://aquaveo.com/media/wysiwyg/transportation-hydraulics/Webinar-Resources/2026-05-13%20Accelerating%202D%20Hydraulic%20Modeling%20GPU%20enabled%20SRH-2D%20in%20SMS.pdf">Aquaveo webinar</a></td></tr>
+<tr><td>ANUGA, TELEMAC-2D, SFINCS (as run here)</td><td>CPU in this study (TELEMAC and ANUGA builds are CPU)</td><td>Measured: 89 to 767 s per area</td></tr></table>
+<p>SAILAB's speed in section 3 therefore compares a GPU solver with CPU solvers. That is a real advantage of the product on the hardware it was built for, not proof that the underlying numerical scheme is faster. Models that were not run (HEC-RAS and others) were not timed, so no speed claim is made against them.</p>
+"""
+NEW11 = f"""<h2 class="pb">11. Full survey table</h2>
+<p>All the models considered, with whether each fact came from a source retrieved during this work (S) or from general knowledge not re-verified (K).</p>
+{survey_table()}
+"""
 html = f"""<!doctype html><html><head><meta charset="utf-8"><title>SAILAB multi-model flood case study</title>
 <style>
 body{{font-family:'DejaVu Sans',Arial,sans-serif;color:#1b2a2f;max-width:900px;margin:24px auto;padding:0 18px;line-height:1.45;font-size:13px}}
@@ -49,8 +107,10 @@ SAILAB and ANUGA flooded almost the same cells (94% overlap), and TELEMAC-2D mat
 <p><b>Where SAILAB does have a measured advantage:</b></p>
 <ul>
 <li><b>Speed.</b> On the same cases SAILAB's GPU solver took {np.mean([rt[a]['SAILAB'] for a in areas]):.0f} s on average, against {np.mean([rt[a]['TELEMAC-2D'] for a in areas]):.0f} s (TELEMAC-2D), {np.mean([rt[a]['SFINCS'] for a in areas]):.0f} s (SFINCS) and {np.mean([rt[a]['ANUGA'] for a in areas]):.0f} s (ANUGA). The comparison is GPU against CPU, ANUGA and TELEMAC used a coarser 90 m mesh, and TELEMAC ran on one core, so it shows what a user gets, not a like-for-like solver speed test.</li>
+<li><b>Time from question to result.</b> From a drawn polygon to a finished result with buildings, roads, risk and loss took SAILAB {min(v['total_s'] for v in E2E.values()):.0f} to {max(v['total_s'] for v in E2E.values()):.0f} seconds with nothing prepared by hand (section 7). The other open models needed hand-written converters of 59 to 114 lines each.</li>
+<li><b>GPU.</b> SAILAB's solver runs on the GPU. No GPU support for HEC-RAS 2D was found in the public release notes I could read (section 8).</li>
 <li><b>Integration and cost.</b> SAILAB runs the whole workflow (rainfall, buildings, roads, loss, scenarios, monitoring) on one machine with no licence fee. None of the other models do that on their own.</li>
-<li><b>Portability.</b> SAILAB's solver runs on this ARM GPU server; the commercial and Windows tools in section 7 could not be run here at all.</li>
+<li><b>Portability.</b> SAILAB's solver runs on this ARM GPU server; the commercial and Windows tools in section 9 could not be run here at all.</li>
 </ul>
 <p><b>Where it is not ahead:</b> accuracy (parity), depth validation (none for any model here), and the volume of published validation behind HEC-RAS, TUFLOW, MIKE and others.</p>
 
@@ -91,12 +151,12 @@ SAILAB and ANUGA flooded almost the same cells (94% overlap), and TELEMAC-2D mat
 </ul>
 <div class="warn"><b>Limits of this study.</b> One event; three small areas; observed map three months after the peak; rain-only forcing that cannot represent river overflow; no depth data to compare against; meshes of 29 m and 90 m differ between models; each model's own numerical settings were left at defaults; the area-A west strip may reflect SRTM elevation error. None of these favour or disadvantage SAILAB specifically.</div>
 
-<h2>7. Models not run, and why</h2>
+{NEW78}<h2>9. Models not run, and why</h2>
 <table><tr><th>Model</th><th>Why it was not run</th><th>What that means for SAILAB</th></tr>{ut}</table>
 <p>Not running a model is not evidence that it is worse or better than SAILAB. What it does show is a practical difference: SAILAB's solver is open and runs on this ARM GPU server without a licence or Windows, while most of the established tools need a licence, Windows or x86 hardware. For these models the survey (SAILAB_Flood_Model_Survey.md) lists published validation results instead; HEC-RAS, for example, has been benchmarked against LISFLOOD-FP (the engine inside SAILAB) on the Secchia River flood, where both mis-estimated extent and depth in built-up areas.</p>
 
 
-<h2>8. What published studies found when they compared HEC-RAS, LISFLOOD-FP and SWAT</h2>
+<h2>10. What published studies found when they compared HEC-RAS, LISFLOOD-FP and SWAT</h2>
 <p>SAILAB's flood engine is LISFLOOD-FP, so published HEC-RAS versus LISFLOOD-FP studies are the most relevant outside evidence. They use different events, metrics and settings, so their numbers cannot be compared with this report's CSI. "Checked" means I read the paper's own text; the rest rest on the abstract or a search summary and should be checked before quoting.</p>
 <table><tr><th>Study</th><th>Models and site</th><th>What it found</th><th>Checked</th></tr>
 <tr><td><a href="https://research-information.bris.ac.uk/en/publications/comparing-2d-capabilities-of-hec-ras-and-lisflood-fp-on-complex-t/">Shustikova et al. 2019</a>, Hydrological Sciences Journal</td><td>HEC-RAS 5.0.3 (2D) vs LISFLOOD-FP, Secchia River, Italy, 25 to 100 m grids</td><td>25 m grids were best for both; 50 and 100 m performed nearly the same. Both mis-estimated extent and depth in built-up areas.</td><td>Abstract</td></tr>
@@ -111,7 +171,7 @@ SAILAB and ANUGA flooded almost the same cells (94% overlap), and TELEMAC-2D mat
 <p>I found no study comparing SWAT with LISFLOOD or LISFLOOD-FP. They answer different questions: SWAT is a catchment water-balance model that predicts river flow, not flood extent, and "LISFLOOD" (the JRC hydrological model) is a different program from LISFLOOD-FP. Related results found: SWAT against HEC-HMS on the Kalu River, Sri Lanka (SWAT NSE 0.87 calibration and 0.66 validation; HEC-HMS 0.91 and 0.56); SWAT on the Upper Indus Basin (calibration NSE 0.81 to 0.86, doing worse than a neural-network model); and JRC LISFLOOD on the Wei River, China (daily NSE 0.69, monthly 0.79). All of these come from search summaries and are unchecked. SAILAB's closest counterpart to a catchment model is its snowmelt module, which scored KGE 0.86 against GloFAS on the Hunza basin with default settings; GloFAS is itself a model, not gauge data.</p>
 <div class="box"><b>What the literature adds.</b> Published comparisons tend to find HEC-RAS much faster and more detailed in the channel, and LISFLOOD-FP better at spreading water across the floodplain, with HEC-RAS showing larger sensitivity to floodplain roughness in one study. None found one clearly more accurate than the other overall. That fits this report's own result: SAILAB's LISFLOOD-FP engine performs about like other 2D models, and nothing published or measured here shows it ahead on accuracy.</div>
 
-<h2>9. Recommended next steps to make the accuracy case</h2>
+{NEW11}<h2>12. Recommended next steps to make the accuracy case</h2>
 <ol>
 <li>Score an event where the flood can be reproduced from its drivers: known river inflow (for example the 2010 Indus flood with gauge hydrographs), or a rain-driven urban flood with a mapped extent.</li>
 <li>Add observed depths (high-water marks, gauges) so depth can be scored, not just extent.</li>
@@ -120,7 +180,7 @@ SAILAB and ANUGA flooded almost the same cells (94% overlap), and TELEMAC-2D mat
 <li>Try 8.3 of LISFLOOD-FP on a multi-million-cell basin; on our test cases it matched 8.2 and showed no speed gain.</li>
 </ol>
 
-<h2>10. Reproducibility</h2>
+<h2>13. Reproducibility</h2>
 <p class="small">All code and inputs are in <code>~/flood/cmp</code>: <code>case_common.py</code> (shared DEM, observed map and scoring), <code>run_baselines_sailab.py</code>, <code>run_anuga.py</code>, <code>run_sfincs.py</code>, <code>run_telemac.py</code>, <code>score_all.py</code>, <code>report_build.py</code>. Raw numbers: <code>results_all.json</code>, <code>results_extra.json</code>. Models: SAILAB/LISFLOOD-FP 8.2; ANUGA 4.1.0 (pip); SFINCS v2.5.0-beta (Deltares, built from source 31 Oct 2026); TELEMAC v9.2-dev (built from source, serial). The first SFINCS attempt used a conda package with the same name that turned out to be a plasma-physics code; it was removed and no result came from it. The earlier SAILAB test reporting CSI 0.66 used a box that was 98% flooded and should not be quoted as accuracy.</p>
 </body></html>"""
 open(f"{CMP}/SAILAB_Model_Comparison_Report.html", "w").write(html)

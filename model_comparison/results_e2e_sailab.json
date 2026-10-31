@@ -1,0 +1,57 @@
+{
+ "A_manchar_edge": {
+  "run_id": "96da2b38c29e6e34",
+  "status": "done",
+  "total_s": 187.2,
+  "stage_first_seen_s": {
+   "buildings": 0.3,
+   "model": 57.3,
+   "postprocess": 147.4,
+   "scene": 184.2,
+   "done": 187.2
+  },
+  "buildings_used": 6023,
+  "wall_clock_solver_s": 80.91043138504028,
+  "error": null,
+  "initial": {
+   "error": null,
+   "cached": false
+  }
+ },
+ "B_north_dadu": {
+  "run_id": "05d6193bc9330cf9",
+  "status": "done",
+  "total_s": 81.3,
+  "stage_first_seen_s": {
+   "buildings": 0.2,
+   "model": 9.2,
+   "postprocess": 69.3,
+   "done": 81.3
+  },
+  "buildings_used": 10394,
+  "wall_clock_solver_s": 51.80679416656494,
+  "error": null,
+  "initial": {
+   "error": null,
+   "cached": false
+  }
+ },
+ "C_shikarpur": {
+  "run_id": "27686f39a2cecd29",
+  "status": "done",
+  "total_s": 87.3,
+  "stage_first_seen_s": {
+   "buildings": 0.2,
+   "model": 9.2,
+   "postprocess": 72.3,
+   "done": 87.3
+  },
+  "buildings_used": 5959,
+  "wall_clock_solver_s": 52.66118264198303,
+  "error": null,
+  "initial": {
+   "error": null,
+   "cached": false
+  }
+ }
+}
