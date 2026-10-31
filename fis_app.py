@@ -73,6 +73,7 @@ import glacier_monitoring_utils
 import sediment_utils
 import storm_utils
 import monitoring_utils
+import ops_agents
 import rainfall_csv_utils
 import numpy as np
 import rasterio
@@ -6952,6 +6953,15 @@ def execute_fis_run(run_id, run_dir, dem_ascii_path, rain_mm_hr, duration_hr,
             with open(log_path, "a") as logf:
                 logf.write(f"[summary] failed to persist enriched summary.json: {e}\n")
 
+        # Run QA (ops_agents.assess_run): rule-based check of the finished
+        # result; recorded in run_qa.json and summarised on the summary.
+        try:
+            qa = ops_agents.qa_run_dir(run_dir, notifier=ops_agents.notify, run_id=run_id)
+            if qa:
+                summary["qa"] = {"verdict": qa["verdict"], "issues": len(qa["issues"]), "fallbacks": qa["fallbacks"]}
+        except Exception as e:
+            print(f"[ops] run QA failed for {run_id}: {e}")
+
         with RUN_STATE_LOCK:
             RUN_STATE[run_id].update(status="done", stage="done", summary=summary, elapsed=elapsed)
 
@@ -9215,6 +9225,11 @@ def _check_one_watch(watch_id, watch, base_url):
         print(f"[monitor] {watch_id}: rainfall fetch failed: {e}")
         return
     peak_mm_hr, duration_hr, peak_time = monitoring_utils.real_forecast_peak_and_duration(rainfall)
+    try:
+        ops_agents.record_forecast(watch_id, watch.get("name"), watch["lat"], watch["lon"], rainfall,
+                                   watch["threshold_mm_hr"])
+    except Exception as e:
+        print(f"[ops] forecast ledger write failed: {e}")
     watches = monitoring_utils.load_watches()
     if watch_id not in watches:
         return  # removed while we were checking
@@ -9275,6 +9290,64 @@ def _monitor_background_loop():
         time.sleep(600)
 
 
+@app.route("/ops/health")
+def ops_health():
+    """Last stored result of every data-health check (see ops_agents.py)."""
+    return jsonify(ops_agents._load_json(ops_agents.STATE_PATH, {"checks": {}}))
+
+
+@app.route("/ops/health/run", methods=["POST"])
+def ops_health_run():
+    """Runs every health check now (takes several seconds; network probes)."""
+    return jsonify(ops_agents.run_health_checks())
+
+
+@app.route("/ops/forecast-skill")
+def ops_forecast_skill():
+    """How well the live-monitoring forecasts matched what was later
+    reported for the same hours (optionally ?watch_id=)."""
+    return jsonify(ops_agents.forecast_skill(watch_id=request.args.get("watch_id")))
+
+
+@app.route("/runs/<run_id>/qa")
+def run_qa(run_id):
+    """Rule-based QA record for a finished run (computed on demand for runs made before QA existed)."""
+    if not re.fullmatch(r"[0-9a-f]{16}", run_id):
+        abort(404)
+    run_dir = os.path.join(FIS_CACHE, run_id)
+    qa = ops_agents._load_json(os.path.join(run_dir, "run_qa.json"), None)
+    if qa is None:
+        qa = ops_agents.qa_run_dir(run_dir, run_id=run_id)
+    if qa is None:
+        abort(404)
+    return jsonify(qa)
+
+
+@app.route("/ops/run-qa-scan", methods=["POST"])
+def ops_run_qa_scan():
+    body = request.get_json(silent=True) or {}
+    return jsonify(ops_agents.scan_recent_runs(FIS_CACHE, since_days=float(body.get("since_days", 2)),
+                                               limit=int(body.get("limit", 200)), notifier=ops_agents.notify))
+
+
+def _ops_background_loop():
+    """Health checks every 15 minutes, forecast scoring in the same pass,
+    and a QA scan of recent runs once a day."""
+    last_scan = 0.0
+    while True:
+        try:
+            ops_agents.run_health_checks()
+            n = ops_agents.score_due_forecasts()
+            if n:
+                print(f"[ops] scored {n} monitoring forecast(s)")
+            if time.time() - last_scan > 86400:
+                last_scan = time.time()
+                ops_agents.scan_recent_runs(FIS_CACHE, notifier=ops_agents.notify)
+        except Exception as e:
+            print(f"[ops] background loop error (continuing): {e}")
+        time.sleep(900)
+
+
 @app.route("/osm-buildings-3d")
 def osm_buildings_3d():
     """Standalone tool, deliberately separate from the main single-page app
@@ -9309,5 +9382,7 @@ if __name__ == "__main__":
         if not _ok and not _req:
             print(f"[{MODEL_NAME}] note: optional dataset missing: {_name} -> {_path}")
     threading.Thread(target=_monitor_background_loop, daemon=True).start()
+    if os.environ.get('SAILAB_DISABLE_OPS_LOOP') != '1':
+        threading.Thread(target=_ops_background_loop, daemon=True).start()
     print(f"[{MODEL_NAME}] running at http://0.0.0.0:{_port}")
     app.run(host="0.0.0.0", port=_port, debug=False, threaded=True)

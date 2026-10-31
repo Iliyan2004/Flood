@@ -185,7 +185,7 @@ def _start_owned_server():
     # correctly. Forcing unbuffered output costs nothing here (this
     # process's whole point is to be inspected) and can't affect the
     # physics results themselves.
-    env = dict(os.environ, FIS_APP_PORT=str(TEST_PORT), PYTHONUNBUFFERED="1")
+    env = dict(os.environ, FIS_APP_PORT=str(TEST_PORT), PYTHONUNBUFFERED="1", SAILAB_DISABLE_OPS_LOOP="1")
     proc = subprocess.Popen(
         [VENV_PY, "fis_app.py"], cwd=BASE_DIR, stdout=logf, stderr=subprocess.STDOUT, env=env,
     )

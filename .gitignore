@@ -48,3 +48,8 @@ fis_imports/
 *.log
 __pycache__/
 .pytest_cache/
+
+# runtime state written by ops_agents.py
+ops_state.json
+forecast_ledger.jsonl
+run_qa.json

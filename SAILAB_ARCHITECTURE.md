@@ -392,3 +392,8 @@ A thin HTTP client; data and the GPU stay on the SAILAB host, which must be runn
 - Melt model calibrates against GloFAS (itself a model), and one tested basin could not be reconciled.
 - Extreme-relief basins (Karakoram) can still show unphysical depths on ACC.
 - Earth Engine features need a valid credential and quota.
+
+## 15. Operations agents and the landing page (added Oct 2026)
+
+- **Landing page:** `/` serves `landing.html` (WebGL tsunami scene, "Open SAILAB" button); the application is at `/app`. `/?import=<id>` redirects straight to `/app` (SimCity hand-over).
+- **Operations agents (`ops_agents.py`):** a 15-minute background thread runs (1) a data-health watchdog over Earth Engine, PostGIS, Open-Meteo, GloFAS, Overpass, disk, GPU, datasets and the solver binary, alerting only on state changes; (2) forecast validation, scoring logged monitoring forecasts against later analysis; (3) run QA, a rule-based check of each finished run recorded in `run_qa.json`. Routes: `/ops/health`, `/ops/health/run`, `/ops/forecast-skill`, `/runs/<id>/qa`, `/ops/run-qa-scan`. State files: `ops_state.json`, `forecast_ledger.jsonl`. Alerts: `SAILAB_ALERT_WEBHOOK`. The agents never change a model or result.
