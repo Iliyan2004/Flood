@@ -62,3 +62,7 @@ Same inputs for every model: one DEM (SRTM, 29 m), the same rainfall or inflow h
 - Google Flood Hub / Nature 2024: https://research.google/blog/using-ai-to-expand-global-access-to-reliable-flood-forecasts/
 - Pakistan 2022 satellite flood maps, NHESS 2023: https://nhess.copernicus.org/articles/23/3305/2023/
 - Licence overview (UK guide): https://www.unda.co.uk/news/flood-modelling-software-tools-techniques-guide/
+
+## 6. Published HEC-RAS / LISFLOOD-FP / SWAT comparisons (added 31 Oct 2026)
+
+Full table with sources in `model_comparison/SAILAB_Model_Comparison_Report.pdf`, section 8. Summary: checked against the papers' own text, Fernandez and Mourato (River Lis, Portugal) found 65% overlap between HEC-RAS and LISFLOOD-FP inundated areas, HEC-RAS flood-wave travel time about half, LISFLOOD-FP much slower; Oikonomou et al. (Thessaly, Greece) reported run times of 3 h (LISFLOOD-FP), 2 h (FLO-2D) and 10 min (HEC-RAS), with HEC-RAS far more sensitive to floodplain roughness. From abstracts or search summaries only: Shustikova et al. 2019 (Secchia, both mis-estimate built-up areas), Gorgan Plain F-statistic 0.69 vs 0.67, Horritt and Bates 2002, Alzette 2009. No study comparing SWAT with LISFLOOD/LISFLOOD-FP was found (SWAT is a catchment water-balance model, not a flood-extent model).
