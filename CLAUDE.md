@@ -6529,3 +6529,7 @@ Layout only (a CSS override block at the end of the page stylesheet, plus a few 
 - A welcome card (search a place, draw, upload, link to /instant) shows once per browser session (not for SimCity `?import=` links).
 - The old drag splitters are hidden (their code is untouched). Not styled for phones.
 - Tests: frontend smoke, page JS syntax, landing and run-queue tests pass (24). Checked in headless Chromium: welcome card, drawer, area loaded (card), expanded main view. A finished physics run's expanded view was not re-checked after this change.
+
+## Nov 2026: 3D viewer lost the flood and buildings after a map-style change (fixed)
+
+Switching the 3D viewer to Dark, Light, Night (or Satellite the first time) removed the flood, buildings and area mask. Cause: `setMapStyle` waited a fixed 80 ms and then re-added the layers when `map.isStyleLoaded()` was true, but that stays true for the OLD style while a style not fetched before is still loading; the early-return in `addSceneSources` then skipped, and the new style wiped everything. It only worked for styles already cached, which is why it looked intermittent. Fix (`mapbox3d_app.js`): wait for the new style's own `style.load` event, then `isStyleLoaded()`, up to 30 s. Checked in headless Chromium on a real run: layers present after dark, light, night, satellite, dark (before the fix: all absent except the last, cached, one). Already-built 3D pages keep the old script until rebuilt (the "Rebuild 3D view" button, or `POST /runs/<id>/rebuild-scene`); new runs get the fix.

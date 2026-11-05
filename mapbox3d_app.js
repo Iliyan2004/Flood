@@ -393,13 +393,16 @@ function setMapStyle(key) {
   if (key === ui.styleKey || styleSwapInProgress) return;
   styleSwapInProgress = true; ui.styleKey = key;
   document.querySelectorAll('.tile').forEach(t => t.classList.toggle('active', t.dataset.style === key));
+  // A style swap drops every custom source/layer. isStyleLoaded() can still be true for the OLD style while the new
+  // one is being fetched, so wait for the new style's own load event first (a style not fetched before takes longer
+  // than any fixed delay), then for the map to be ready, and never leave the swap flag stuck if re-adding throws.
+  let newStyleLoaded = false;
+  map.once('style.load', () => { newStyleLoaded = true; });
   map.setStyle(STYLE_URLS[key]);
-  // A style swap drops every custom source/layer. Wait until the NEW style is
-  // genuinely loaded, and never leave the swap flag stuck if re-adding throws.
   let tries = 0;
   const tryAdd = () => {
-    if (!map.isStyleLoaded() && tries++ < 100) { setTimeout(tryAdd, 100); return; }
-    try { addSceneSources(); } catch (e) { console.warn('re-adding scene after style swap:', e); if (tries < 100) { tries++; setTimeout(tryAdd, 150); return; } }
+    if (!(newStyleLoaded && map.isStyleLoaded()) && tries++ < 300) { setTimeout(tryAdd, 100); return; }
+    try { addSceneSources(); } catch (e) { console.warn('re-adding scene after style swap:', e); if (tries < 300) { tries++; setTimeout(tryAdd, 150); return; } }
     styleSwapInProgress = false;
   };
   setTimeout(tryAdd, 80);
