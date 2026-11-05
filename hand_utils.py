@@ -60,6 +60,7 @@ CHANNEL_SIDE_SLOPE = 1.5   # trapezoidal side slope (run:rise), typical natural 
 
 _CACHEABLE_KEYS = (
     "dem", "hand", "accumulation", "stream_mask", "nearest_drainage_idx", "cellsize_m", "shape",
+    "dem_raw", "filled",    # added for street-level ponding (pluvial_ponding_depth); older cache files lack them
 )
 
 
@@ -116,6 +117,8 @@ def compute_hand(dem_path, accum_threshold=STREAM_ACCUM_THRESHOLD_CELLS):
     return dict(
         grid=grid,
         dem=np.asarray(inflated),
+        dem_raw=np.asarray(dem, dtype="float32"),
+        filled=np.asarray(flooded, dtype="float32"),
         hand=np.asarray(hand),
         accumulation=np.asarray(acc),
         stream_mask=np.asarray(stream_mask),
@@ -256,3 +259,48 @@ def discharge_to_inundation(hand_result, outlet_discharge_m3s):
     depth_grid = np.where(dem <= -9998, 0.0, depth_grid)
 
     return depth_grid, stage_by_flat_idx
+
+
+PONDING_MIN_SINK_M = 0.02    # a depression shallower than this is noise, not a puddle
+
+
+def pluvial_ponding_depth(hand_result, effective_rain_mm):
+    """Water that collects in the terrain's own low spots when rain falls on every cell.
+
+    Each depression (cells that depression-filling raised) receives the effective rain that falls on everything
+    draining into it (flow accumulation at its outlet) and fills from its lowest cell up, to at most its spill
+    level. Returns depth in metres on the HAND grid (0 elsewhere). Screening only: a real flood routes water
+    across the surface while it rains, which this does not.
+    """
+    from scipy import ndimage
+    raw, filled, acc = hand_result["dem_raw"], hand_result["filled"], hand_result["accumulation"]
+    cell_area = float(hand_result["cellsize_m"]) ** 2
+    valid = raw > -9000
+    sink = ((filled - raw) > PONDING_MIN_SINK_M) & valid
+    depth = np.zeros(raw.shape, dtype="float32")
+    if effective_rain_mm <= 0 or not sink.any():
+        return depth
+    lab, n = ndimage.label(sink, structure=np.ones((3, 3), dtype=int))
+    if n == 0:
+        return depth
+    catch_cells = np.atleast_1d(ndimage.maximum(acc, lab, index=np.arange(1, n + 1)))
+    slices = ndimage.find_objects(lab)
+    rain_m = effective_rain_mm / 1000.0
+    for i, sl in enumerate(slices):
+        if sl is None:
+            continue
+        m = lab[sl] == (i + 1)
+        z = raw[sl][m].astype("float64")
+        spill = float(np.median(filled[sl][m]))
+        volume = rain_m * max(float(catch_cells[i]), float(z.size)) * cell_area / cell_area   # in cell-depth units
+        order = np.argsort(z)
+        zs = z[order]
+        cs = np.cumsum(zs)
+        vol_at = np.arange(1, zs.size + 1) * zs - cs        # volume (m of depth x cells) when the level reaches each cell
+        k = int(np.searchsorted(vol_at, volume, side="right"))
+        level = (volume + cs[k - 1]) / k if k >= 1 else zs[0]
+        level = min(level, spill)
+        d = np.clip(level - z, 0.0, None)
+        block = depth[sl]
+        block[m] = d.astype("float32")
+    return depth

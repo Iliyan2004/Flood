@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SAILAB Instant</title>
-<meta name="description" content="Draw an area in Pakistan, move the discharge slider and see the flood extent immediately. A terrain-based screening estimate.">
+<meta name="description" content="Pick a place in Pakistan and a rain scenario; see where flood water collects, on the map, in about a second.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400;100,600;100,800&family=Archivo+Narrow:wght@500;600&display=swap">
@@ -12,93 +12,149 @@
 <link href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.4.3/dist/mapbox-gl-draw.css" rel="stylesheet">
 <style>
   :root {
-    --ink: #eaf6f5; --muted: #8fb0b2; --aqua: #55e6da; --aqua-deep: #14a8a0; --bg: #05100f; --panel: #0a1b1d;
-    --line: rgba(85, 230, 218, .18); --warn: #f0b04a;
+    --ink: #eaf6f5; --muted: #9bbcbe; --aqua: #55e6da; --aqua-deep: #14a8a0; --bg: #05100f;
+    --glass: rgba(6, 22, 24, .82); --line: rgba(85, 230, 218, .22); --warn: #f0b04a;
     --display: "Archivo", "Helvetica Neue", Arial, sans-serif; --text: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
-  body { background: var(--bg); color: var(--ink); font-family: var(--text); font-size: 15px; display: flex; flex-direction: column; }
-  header { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: #071516; }
-  .brand { font-family: var(--display); font-weight: 800; font-stretch: 110%; letter-spacing: .12em; text-decoration: none; color: var(--ink); }
-  .pill { font-size: .75rem; letter-spacing: .16em; text-transform: uppercase; color: #03161a; background: var(--aqua); border-radius: 999px; padding: 3px 10px; font-weight: 600; }
-  header nav { margin-left: auto; display: flex; gap: 10px; }
-  header a.nav { color: var(--ink); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: .9rem; letter-spacing: .06em; }
-  header a.nav:hover, header a.nav:focus-visible { border-color: var(--aqua); color: var(--aqua); outline: none; }
-  .layout { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 460px); }
-  #map { min-height: 320px; }
-  aside { border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
-  section { padding: 14px 16px; border-bottom: 1px solid var(--line); }
-  h2 { margin: 0 0 8px; font-family: var(--display); font-size: .8rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--aqua); }
-  p.note { margin: 6px 0 0; color: var(--muted); font-size: .88rem; line-height: 1.45; }
-  input[type=text], input[type=number], input[type=file] { width: 100%; background: #06100f; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--text); font-size: 15px; overflow: hidden; }
+  #map { position: fixed; inset: 0; }
+  .glass { background: var(--glass); -webkit-backdrop-filter: blur(12px) saturate(1.3); backdrop-filter: blur(12px) saturate(1.3); border: 1px solid var(--line); box-shadow: 0 10px 36px rgba(0, 0, 0, .45); }
+
+  /* top bar */
+  #bar { position: fixed; z-index: 10; top: 10px; left: 10px; right: 10px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 14px; }
+  .brand { font-family: var(--display); font-weight: 800; font-stretch: 110%; letter-spacing: .12em; text-decoration: none; color: var(--ink); padding: 0 6px; }
+  .pill { font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: #03161a; background: var(--aqua); border-radius: 999px; padding: 3px 10px; font-weight: 600; }
+  .searchbox { position: relative; flex: 1; min-width: 120px; max-width: 460px; }
+  input[type=text], input[type=number], select { width: 100%; background: rgba(2, 10, 11, .7); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; }
   input[type=range] { width: 100%; accent-color: var(--aqua); }
-  input:focus-visible, button:focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; }
-  .row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px dashed rgba(143, 176, 178, .18); font-variant-numeric: tabular-nums; }
-  .row b { color: var(--ink); }
-  .results { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-  .big { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #071819; }
-  .big span { display: block; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-  .big strong { font-family: var(--display); font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-  button.chip { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font: inherit; cursor: pointer; }
-  button.chip:hover { border-color: var(--aqua); color: var(--aqua); }
-  .go { display: inline-block; margin-top: 10px; text-decoration: none; text-align: center; color: #03161a; background: linear-gradient(135deg, var(--aqua), var(--aqua-deep)); border-radius: 999px; padding: 9px 18px; font-family: var(--display); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; font-size: .8rem; }
-  #hits { position: absolute; z-index: 5; top: 56px; left: 56px; width: min(340px, calc(100% - 24px)); background: #071819; border: 1px solid var(--line); border-radius: 10px; max-height: 260px; overflow-y: auto; display: none; }
-  #hits button { display: block; width: 100%; text-align: left; background: none; border: 0; color: var(--ink); padding: 8px 12px; font: inherit; cursor: pointer; }
-  #hits button:hover, #hits button:focus-visible { background: rgba(85, 230, 218, .12); outline: none; }
-  .mapwrap { position: relative; min-height: 320px; }
-  #mapSearch { position: absolute; z-index: 5; top: 12px; left: 56px; width: min(340px, calc(100% - 140px)); box-shadow: 0 6px 24px rgba(0,0,0,.5); }
-  #view { width: 100%; height: 360px; border: 0; background: #06100f; display: block; }
-  .err { color: #ff8d7a; }
-  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } aside { border-left: 0; border-top: 1px solid var(--line); } body { overflow-y: auto; } .layout { min-height: auto; } #map, .mapwrap { height: 55vh; } }
+  :focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 7px 12px; font: inherit; letter-spacing: .04em; cursor: pointer; text-decoration: none; white-space: nowrap; }
+  .btn:hover { border-color: var(--aqua); color: var(--aqua); }
+  .btn.on { background: var(--aqua); color: #03161a; border-color: var(--aqua); }
+  .btn.primary { background: linear-gradient(135deg, var(--aqua), var(--aqua-deep)); color: #03161a; border: 0; font-family: var(--display); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; font-size: .82rem; }
+  .spacer { margin-left: auto; display: flex; gap: 8px; }
+  .hits { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; right: 0; background: #071819; border: 1px solid var(--line); border-radius: 12px; max-height: 300px; overflow-y: auto; display: none; }
+  .hits button { display: block; width: 100%; text-align: left; background: none; border: 0; color: var(--ink); padding: 8px 12px; font: inherit; cursor: pointer; }
+  .hits button small { display: block; color: var(--muted); }
+  .hits button:hover, .hits button:focus-visible { background: rgba(85, 230, 218, .12); outline: none; }
+  .hits .grp { padding: 6px 12px 2px; font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--aqua); }
+
+  /* welcome */
+  #welcome { position: fixed; z-index: 30; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(2, 8, 9, .55); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+  #welcome .card { position: relative; width: min(860px, 100%); display: grid; grid-template-columns: 1fr 1fr; border-radius: 22px; overflow: hidden; }
+  #welcome .left { padding: 30px; background: linear-gradient(160deg, #0b3a3c 0%, #0a2a30 60%, #06161b 100%); }
+  #welcome .left h1 { margin: 0 0 18px; font-family: var(--display); font-weight: 900; font-stretch: 110%; letter-spacing: .08em; font-size: 2rem; }
+  #welcome .left li { list-style: none; margin: 0 0 14px; line-height: 1.4; color: rgba(234, 246, 245, .88); }
+  #welcome .left li b { display: block; color: var(--ink); font-size: 1.05rem; }
+  #welcome ul { padding: 0; margin: 0; }
+  #welcome .right { padding: 30px; background: #f4fbfb; color: #0a1f22; }
+  #welcome .right h2 { margin: 0 0 16px; font-family: var(--display); font-weight: 800; font-size: 1.7rem; line-height: 1.15; }
+  #welcome .right h2 em { font-style: normal; color: #0d8f88; }
+  #welcome label { display: block; font-weight: 600; margin: 10px 0 6px; }
+  #welcome input[type=text] { background: #fff; color: #0a1f22; border: 1px solid #b9d6d6; }
+  #welcome .hits { background: #fff; border-color: #b9d6d6; }
+  #welcome .hits button { color: #0a1f22; } #welcome .hits button small { color: #5b7b7d; }
+  #welcome .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { background: #fff; color: #0a1f22; border: 1.5px solid #b9d6d6; border-radius: 10px; padding: 8px 12px; font: inherit; font-weight: 600; cursor: pointer; }
+  .chip.on { border-color: #0d8f88; background: #e1f6f4; color: #086660; }
+  #welcome .go { width: 100%; margin-top: 16px; padding: 12px; border-radius: 12px; font-size: .95rem; }
+  #welcome .close { position: absolute; z-index: 2; top: 12px; right: 12px; background: #fff; color: #0a1f22; border: 1px solid #b9d6d6; width: 34px; height: 34px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; }
+  #welcome .fine { margin-top: 14px; color: #5b7b7d; font-size: .85rem; line-height: 1.4; }
+
+  /* result panel + legend */
+  #panel { position: fixed; z-index: 10; left: 10px; bottom: 28px; width: min(360px, calc(100% - 20px)); border-radius: 16px; padding: 14px 16px; display: none; }
+  #panel h3 { margin: 0 0 2px; font-family: var(--display); font-size: 1.05rem; font-weight: 800; letter-spacing: .04em; }
+  #panel .sub { color: var(--muted); font-size: .86rem; margin-bottom: 8px; }
+  #panel .chips { display: flex; gap: 6px; margin: 8px 0; }
+  #panel .chip { background: transparent; color: var(--ink); border: 1px solid var(--line); padding: 5px 10px; font-weight: 500; }
+  #panel .chip.on { background: var(--aqua); color: #03161a; border-color: var(--aqua); }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 6px 0; }
+  .row label { color: var(--muted); font-size: .86rem; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 6px; }
+  .stat { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: rgba(2, 10, 11, .55); }
+  .stat span { display: block; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .stat strong { font-family: var(--display); font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  #panel p { margin: 6px 0 0; font-size: .82rem; line-height: 1.4; color: var(--muted); }
+  #panel p.err { color: #ff8d7a; }
+  #legend { position: fixed; z-index: 10; right: 10px; bottom: 28px; border-radius: 12px; padding: 10px 12px; display: none; }
+  #legend h4 { margin: 0 0 6px; font-family: var(--display); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; }
+  #legend div { display: flex; align-items: center; gap: 8px; font-size: .82rem; margin: 2px 0; font-variant-numeric: tabular-nums; }
+  #legend i { width: 16px; height: 12px; border-radius: 3px; display: inline-block; }
+  #busy { position: fixed; z-index: 12; top: 70px; left: 50%; transform: translateX(-50%); padding: 7px 16px; border-radius: 999px; display: none; font-size: .9rem; }
+  @media (max-width: 760px) {
+    #welcome .card { grid-template-columns: 1fr; } #welcome .left { display: none; }
+    #bar .brand + .pill { display: none; } .btn .lbl { display: none; }
+    #legend { bottom: auto; top: 64px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-<header>
+<div id="map"></div>
+
+<div id="bar" class="glass">
   <a class="brand" href="/">SAILAB</a><span class="pill">Instant</span>
-  <nav><a class="nav" href="/">Home</a><a class="nav" href="/app">Physical model &rarr;</a></nav>
-</header>
-<div class="layout">
-  <div class="mapwrap">
-    <input type="text" id="mapSearch" placeholder="Search a tehsil, e.g. Charsadda" autocomplete="off" aria-label="Search a tehsil">
-    <div id="hits" role="listbox"></div>
-    <div id="map" style="position:absolute; inset:0;"></div>
+  <div class="searchbox">
+    <input type="text" id="barSearch" placeholder="Search a place or tehsil in Pakistan" autocomplete="off" aria-label="Search a place or tehsil">
+    <div class="hits" id="barHits"></div>
   </div>
-  <aside>
-    <section>
-      <h2>1 &middot; Area</h2>
-      <p class="note" id="areaHint">Draw a polygon on the map (tool at the top left), search a tehsil, or upload a shapefile (.zip) or GeoJSON.</p>
-      <input type="file" id="uploadFile" accept=".zip,.geojson,.json" style="margin-top:8px;" aria-label="Upload an area file">
-      <div class="row" style="margin-top:8px;"><span>Area</span><b id="areaKm2">&ndash;</b></div>
-    </section>
-    <section>
-      <h2>2 &middot; River discharge</h2>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <input type="number" id="q" value="50" min="0" step="10" style="max-width:130px;" aria-label="Discharge in cubic metres per second"><span>m&sup3;/s</span>
-      </div>
-      <input type="range" id="qSlider" min="0" max="3.7" step="0.01" value="1.7" style="margin-top:10px;" aria-label="Discharge slider (logarithmic)" disabled>
-      <div class="presets">
-        <button class="chip" data-q="10">Small stream 10</button><button class="chip" data-q="100">Flood 100</button>
-        <button class="chip" data-q="1000">Major 1,000</button><button class="chip" data-q="3737">Shishper 2022: 3,737</button>
-      </div>
-      <div class="results">
-        <div class="big"><span>Flooded area</span><strong id="outArea">&ndash;</strong></div>
-        <div class="big"><span>Deepest water</span><strong id="outDepth">&ndash;</strong></div>
-      </div>
-      <p class="note" id="status">Pick an area to begin.</p>
-    </section>
-    <section style="padding:0;">
-      <iframe id="view" title="3D flood view" srcdoc="<body style='background:#06100f;color:#8fb0b2;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0'>The 3D flood map appears here.</body>"></iframe>
-    </section>
-    <section>
-      <h2>What this is</h2>
-      <p class="note">A screening estimate computed in about a second from the terrain alone: water height above the nearest drainage (HAND) combined with a channel rating curve. It shows where a given flow could reach, not how the flood unfolds over time. It ignores buildings, rain and dams.</p>
-      <p class="note">For depth over time, velocity, buildings and roads at risk, loss in PKR, coastal, GLOF and protection scenarios, use the full physical model.</p>
-      <a class="go" href="/app">Open the physical model</a>
-    </section>
-  </aside>
+  <div class="spacer">
+    <button class="btn" id="drawBtn" title="Draw your own area on the map">Draw area</button>
+    <button class="btn" id="threeD" title="Tilt the map and show terrain relief">3D</button>
+    <a class="btn" href="/app" title="Full physical model">Physical model &rarr;</a>
+  </div>
 </div>
+
+<div id="busy" class="glass">Working...</div>
+
+<div id="welcome" role="dialog" aria-modal="true" aria-labelledby="wtitle">
+  <div class="card glass">
+    <button class="close" id="wclose" aria-label="Close and explore the map">&times;</button>
+    <div class="left">
+      <h1>SAILAB Instant</h1>
+      <ul>
+        <li><b>Where rain water collects</b>Rain falls on every part of the area and gathers in low ground and along the drainage lines.</li>
+        <li><b>Answer in about a second</b>Computed from the terrain alone, no flood simulation to wait for.</li>
+        <li><b>Real Pakistan rainfall</b>Moderate and extreme storms come from recorded rainfall near the place you pick.</li>
+      </ul>
+    </div>
+    <div class="right">
+      <h2 id="wtitle">Get flood information<br>for <em>your area</em></h2>
+      <label for="wSearch">Enter your location</label>
+      <div class="searchbox" style="max-width:none;"><input type="text" id="wSearch" placeholder="Search a place or tehsil, e.g. Islamabad I-8" autocomplete="off"><div class="hits" id="wHits"></div></div>
+      <label>Choose a scenario</label>
+      <div class="chips" id="wChips"><button class="chip on" data-s="moderate">Moderate rain</button><button class="chip" data-s="extreme">Extreme rain</button></div>
+      <button class="btn primary go" id="wGo">Get flood information</button>
+      <p class="fine">A screening estimate at about 30 m terrain detail. It shows where water could collect, not how a flood unfolds. For depth over time, buildings, roads and loss, open the <a href="/app" style="color:#086660;">physical model</a>.</p>
+    </div>
+  </div>
+</div>
+
+<div id="panel" class="glass">
+  <h3 id="pTitle">Your area</h3>
+  <div class="sub" id="pSub"></div>
+  <div class="chips" id="pChips"><button class="chip" data-s="moderate">Moderate rain</button><button class="chip" data-s="extreme">Extreme rain</button><button class="chip" data-s="custom">Custom</button></div>
+  <div class="row"><label for="rain">Rain intensity</label><b><span id="rainVal">15</span> mm/hr</b></div>
+  <input type="range" id="rain" min="1" max="100" step="0.5" value="15" aria-label="Rain intensity in millimetres per hour">
+  <div class="row"><label for="dur">Storm length</label>
+    <select id="dur" style="width:auto;"><option value="1">1 hour</option><option value="3" selected>3 hours</option><option value="6">6 hours</option><option value="12">12 hours</option><option value="24">24 hours</option></select></div>
+  <div class="stats">
+    <div class="stat"><span>Flooded area</span><strong id="sArea">&ndash;</strong></div>
+    <div class="stat"><span>Deepest water</span><strong id="sDepth">&ndash;</strong></div>
+  </div>
+  <p id="sNote">&nbsp;</p>
+  <p id="sBasis"></p>
+  <a class="btn" href="/app" style="margin-top:8px;">Run the full physical model &rarr;</a>
+</div>
+
+<div id="legend" class="glass">
+  <h4>Flood depth (m)</h4>
+  <div><i style="background:#b0e0f5"></i>0.05</div><div><i style="background:#8cc8f0"></i>0.1</div><div><i style="background:#56a6e2"></i>0.25</div>
+  <div><i style="background:#227ecc"></i>0.5</div><div><i style="background:#105aaa"></i>1</div><div><i style="background:#0a3878"></i>2</div><div><i style="background:#061e4e"></i>5</div>
+</div>
+
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
 <script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.4.3/dist/mapbox-gl-draw.js"></script>
 <script>
@@ -106,122 +162,147 @@
 const MAPBOX_TOKEN = __MAPBOX_TOKEN__;
 mapboxgl.accessToken = MAPBOX_TOKEN;
 const $ = id => document.getElementById(id);
-let geom = null, library = null, areaToken = 0, viewTimer = null, viewToken = 0;
+const BASE = 'mapbox://styles/mapbox/satellite-streets-v12';
+let geom = null, label = '', scen = null, scenKey = 'moderate', areaToken = 0, ovToken = 0, ovTimer = null, lastOv = null, is3D = false;
 
-const map = new mapboxgl.Map({ container: 'map', style: 'mapbox://styles/mapbox/satellite-streets-v12', center: [69.3, 30.4], zoom: 4.8, preserveDrawingBuffer: true });
-map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-const draw = new MapboxDraw({ displayControlsDefault: false, controls: { polygon: true, trash: true } });
-map.addControl(draw, 'top-left');
-const onDraw = () => {
-  const polys = draw.getAll().features.filter(f => f.geometry.type === 'Polygon');
-  if (polys.length > 1) { polys.slice(0, -1).forEach(f => draw.delete(f.id)); }
-  const last = draw.getAll().features.filter(f => f.geometry.type === 'Polygon').pop();
-  if (!last) { geom = null; library = null; $('areaKm2').textContent = '–'; $('qSlider').disabled = true; $('status').textContent = 'Pick an area to begin.'; return; }
-  clearTimeout(onDraw.t); onDraw.t = setTimeout(() => setArea(last.geometry), 400);   // a vertex drag fires many events
-};
-map.on('draw.create', onDraw); map.on('draw.update', onDraw); map.on('draw.delete', onDraw);
+const map = new mapboxgl.Map({ container: 'map', style: BASE, center: [69.3, 30.4], zoom: 4.8, preserveDrawingBuffer: true });
+map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+const draw = new MapboxDraw({ displayControlsDefault: false });
+map.addControl(draw);
 
-function fmtArea(v) { return v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2); }
+function busy(msg) { const b = $('busy'); if (msg) { b.textContent = msg; b.style.display = 'block'; } else b.style.display = 'none'; }
+const fmtArea = v => v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2);
+const boxAround = (lon, lat, km) => { const dl = km / 2 / 111.32, dn = dl / Math.cos(lat * Math.PI / 180);
+  return { type: 'Polygon', coordinates: [[[lon - dn, lat - dl], [lon + dn, lat - dl], [lon + dn, lat + dl], [lon - dn, lat + dl], [lon - dn, lat - dl]]] }; };
+const boundsOf = g => { const b = new mapboxgl.LngLatBounds(); (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).forEach(p => p[0].forEach(c => b.extend(c))); return b; };
 
-async function setArea(g) {
-  const my = ++areaToken; geom = g; library = null; $('qSlider').disabled = true;
-  $('status').textContent = 'Reading terrain for this area...';
-  try {
-    const a = await fetch('/area/polygon', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ geometry: g }) }).then(r => r.json());
-    if (my !== areaToken) return;
-    $('areaKm2').textContent = a.area_km2.toFixed(2) + ' km²';
-    const d = await fetch('/area/instant-flood-library', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ geometry: g }) }).then(r => r.json());
-    if (my !== areaToken) return;
-    if (d.error || !d.library || !d.library.length) { $('status').innerHTML = '<span class="err">' + (d.error || 'No terrain data for this area.') + '</span>'; return; }
-    library = d.library;
-    const sl = $('qSlider');
-    sl.min = Math.log10(library[0].discharge_m3s); sl.max = Math.log10(library[library.length - 1].discharge_m3s);
-    sl.disabled = false; sync('number');
-    $('status').textContent = 'Terrain: ' + d.dem_source + '. Move the slider; the estimate updates immediately.';
-    scheduleView(0);
-  } catch (e) { $('status').innerHTML = '<span class="err">Failed: ' + e + '</span>'; }
+// ---------- search (places + tehsils) ----------
+function wireSearch(input, hitsEl, onPick) {
+  let t = null;
+  input.addEventListener('input', () => {
+    clearTimeout(t); const q = input.value.trim();
+    if (q.length < 2) { hitsEl.style.display = 'none'; return; }
+    t = setTimeout(async () => {
+      const [teh, geo] = await Promise.all([
+        fetch('/tehsils/search?q=' + encodeURIComponent(q)).then(r => r.json()).catch(() => ({})),
+        fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q + ', Pakistan') + '.json?access_token=' + encodeURIComponent(MAPBOX_TOKEN) +
+              '&limit=5&country=pk&bbox=60.87,23.63,77.84,37.13').then(r => r.json()).catch(() => ({})),
+      ]);
+      hitsEl.innerHTML = '';
+      const add = (txt, sub, fn) => { const b = document.createElement('button'); b.innerHTML = txt + (sub ? '<small>' + sub + '</small>' : ''); b.onclick = () => { hitsEl.style.display = 'none'; fn(); }; hitsEl.appendChild(b); };
+      const places = (geo.features || []);
+      if (places.length) { const g = document.createElement('div'); g.className = 'grp'; g.textContent = 'Places'; hitsEl.appendChild(g);
+        places.forEach(f => add(f.text, f.place_name, () => onPick({ kind: 'place', name: f.place_name, lon: f.center[0], lat: f.center[1] }))); }
+      const th = (teh.results || []).slice(0, 4);
+      if (th.length) { const g = document.createElement('div'); g.className = 'grp'; g.textContent = 'Tehsils (whole area)'; hitsEl.appendChild(g);
+        th.forEach(x => add(x.name, [x.district, x.province].filter(Boolean).join(', '), () => onPick({ kind: 'tehsil', id: x.id, name: x.name + ', ' + (x.district || '') }))); }
+      if (!hitsEl.children.length) add('No match', '', () => {});
+      hitsEl.style.display = 'block';
+    }, 250);
+  });
+  document.addEventListener('click', e => { if (!hitsEl.contains(e.target) && e.target !== input) hitsEl.style.display = 'none'; });
+}
+let pendingPick = null;
+wireSearch($('wSearch'), $('wHits'), p => { pendingPick = p; $('wSearch').value = p.name; });
+wireSearch($('barSearch'), $('barHits'), p => { $('barSearch').value = p.name; usePick(p); });
+
+async function usePick(p) {
+  if (p.kind === 'tehsil') {
+    busy('Loading the area...');
+    const d = await fetch('/tehsils/' + p.id).then(r => r.json()).catch(() => null);
+    busy(); if (!d || !d.geometry) return;
+    setArea(d.geometry, p.name);
+  } else setArea(boxAround(p.lon, p.lat, 6), p.name);
 }
 
-function interp(q) {
-  if (!library) return null;
-  const L = library;
-  if (q <= L[0].discharge_m3s) return L[0];
-  if (q >= L[L.length - 1].discharge_m3s) return L[L.length - 1];
-  let i = 0; while (i < L.length - 1 && L[i + 1].discharge_m3s < q) i++;
-  const a = L[i], b = L[i + 1], f = (Math.log(q) - Math.log(a.discharge_m3s)) / (Math.log(b.discharge_m3s) - Math.log(a.discharge_m3s));
-  return { flooded_area_km2: a.flooded_area_km2 + f * (b.flooded_area_km2 - a.flooded_area_km2), max_depth_m: a.max_depth_m + f * (b.max_depth_m - a.max_depth_m) };
-}
-function sync(src) {
-  const sl = $('qSlider'), num = $('q');
-  if (src === 'slider') { const q = Math.pow(10, parseFloat(sl.value)); num.value = q < 10 ? q.toFixed(1) : Math.round(q); }
-  else { const q = parseFloat(num.value) || 0; if (q > 0) sl.value = Math.log10(q); }
-  const est = interp(parseFloat(num.value) || 0);
-  if (est) { $('outArea').textContent = fmtArea(est.flooded_area_km2) + ' km²'; $('outDepth').textContent = est.max_depth_m.toFixed(2) + ' m'; }
-}
-function scheduleView(delay) {
-  clearTimeout(viewTimer);
-  viewTimer = setTimeout(async () => {
-    if (!geom) return;
-    const my = ++viewToken;
-    try {
-      const html = await fetch('/area/instant-flood-mapbox3d', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ geometry: geom, discharge_m3s: parseFloat($('q').value) || 0 }) }).then(r => r.text());
-      if (my === viewToken) $('view').srcdoc = html;
-    } catch (e) { /* the numbers above still work */ }
-  }, delay);
-}
-$('qSlider').addEventListener('input', () => { sync('slider'); scheduleView(700); });
-$('q').addEventListener('input', () => { sync('number'); scheduleView(700); });
-document.querySelectorAll('button.chip').forEach(b => b.addEventListener('click', () => { $('q').value = b.dataset.q; sync('number'); scheduleView(0); }));
+// ---------- welcome ----------
+let wScen = 'moderate';
+$('wChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; wScen = b.dataset.s; scenKey = wScen;
+  document.querySelectorAll('#wChips .chip').forEach(x => x.classList.toggle('on', x === b)); });
+$('wclose').onclick = () => { $('welcome').style.display = 'none'; };
+$('wGo').onclick = () => { if (!pendingPick) { $('wSearch').focus(); $('wSearch').placeholder = 'Pick a place from the list first'; return; } $('welcome').style.display = 'none'; usePick(pendingPick); };
+$('wSearch').addEventListener('keydown', e => { if (e.key === 'Enter') $('wGo').click(); });
 
-function useGeometry(g) {
+// ---------- area ----------
+async function setArea(g, name) {
+  const my = ++areaToken; geom = g; label = name || 'Your area'; lastOv = null; clearOverlay();
   draw.getAll().features.forEach(f => draw.delete(f.id));
-  draw.add({ type: 'Feature', properties: {}, geometry: g });
-  const b = new mapboxgl.LngLatBounds();
-  (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).forEach(poly => poly[0].forEach(c => b.extend(c)));
-  map.fitBounds(b, { padding: 50, duration: 1200 });
-  setArea(g);
+  map.fitBounds(boundsOf(g), { padding: { top: 90, bottom: 60, left: 380, right: 120 }, duration: 1400, pitch: is3D ? 60 : 0 });
+  $('panel').style.display = 'block'; $('legend').style.display = 'block';
+  $('pTitle').textContent = label; $('pSub').textContent = 'Reading the terrain...'; $('sArea').textContent = '–'; $('sDepth').textContent = '–';
+  busy('Reading the terrain for this area...');
+  try {
+    const sc = await fetch('/area/instant-scenarios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ geometry: g }) }).then(r => r.json());
+    if (my !== areaToken) return;
+    scen = sc; applyScenario(scenKey === 'custom' ? 'moderate' : scenKey, false);
+    await refreshOverlay(my);
+  } catch (e) { $('sNote').className = 'err'; $('sNote').textContent = 'Failed: ' + e; busy(); }
 }
-$('uploadFile').addEventListener('change', async () => {
-  const f = $('uploadFile').files[0]; if (!f) return;
-  const fd = new FormData(); fd.append('file', f);
-  const d = await fetch('/area/upload', { method: 'POST', body: fd }).then(r => r.json());
-  if (d.error) { $('status').innerHTML = '<span class="err">' + d.error + '</span>'; return; }
-  useGeometry(d.geometry);
-});
+function applyScenario(k, refresh) {
+  scenKey = k; document.querySelectorAll('#pChips .chip').forEach(x => x.classList.toggle('on', x.dataset.s === k));
+  if (k !== 'custom' && scen) { const v = k === 'extreme' ? scen.extreme_mm_hr : scen.moderate_mm_hr; $('rain').value = Math.min(100, v); $('rainVal').textContent = v; $('dur').value = String(scen.duration_hr); }
+  if (refresh) scheduleOverlay(0);
+}
+$('pChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) applyScenario(b.dataset.s, true); });
+$('rain').addEventListener('input', () => { $('rainVal').textContent = $('rain').value; applyScenario('custom', false); scheduleOverlay(350); });
+$('dur').addEventListener('change', () => { applyScenario('custom', false); scheduleOverlay(0); });
 
-// tehsil search
-let searchTimer = null;
-$('mapSearch').addEventListener('input', () => {
-  clearTimeout(searchTimer);
-  const q = $('mapSearch').value.trim();
-  if (q.length < 2) { $('hits').style.display = 'none'; return; }
-  searchTimer = setTimeout(async () => {
-    const d = await fetch('/tehsils/search?q=' + encodeURIComponent(q)).then(r => r.json()).catch(() => null);
-    const hits = $('hits'); hits.innerHTML = '';
-    const rows = (d && (d.results || d.tehsils)) || [];
-    if (!rows.length) { hits.innerHTML = '<button disabled>No tehsil found</button>'; hits.style.display = 'block'; return; }
-    rows.slice(0, 8).forEach(t => {
-      const b = document.createElement('button');
-      b.textContent = (t.name || t.tehsil || 'Tehsil') + (t.district ? ', ' + t.district : '') + (t.province ? ' (' + t.province + ')' : '');
-      b.onclick = async () => {
-        hits.style.display = 'none'; $('mapSearch').value = '';
-        const g = await fetch('/tehsils/' + (t.id ?? t.tehsil_id)).then(r => r.json());
-        if (g.geometry) useGeometry(g.geometry);
-      };
-      hits.appendChild(b);
-    });
-    hits.style.display = 'block';
-  }, 250);
-});
-// deep link: /instant#tehsil=158 opens that tehsil straight away
+// ---------- flood overlay on the main map ----------
+function clearOverlay() { if (map.getLayer('flood')) map.removeLayer('flood'); if (map.getSource('flood')) map.removeSource('flood'); }
+function paintOverlay(ov) {
+  clearOverlay();
+  map.addSource('flood', { type: 'image', url: ov.image, coordinates: ov.coordinates });
+  map.addLayer({ id: 'flood', type: 'raster', source: 'flood', paint: { 'raster-opacity': 0.92, 'raster-resampling': 'linear', 'raster-fade-duration': 150 } });
+}
+map.on('style.load', () => { if (lastOv) paintOverlay(lastOv); if (is3D) enableTerrain(); });
+function scheduleOverlay(d) { clearTimeout(ovTimer); const my = areaToken; ovTimer = setTimeout(() => refreshOverlay(my), d); }
+async function refreshOverlay(my) {
+  if (!geom) return; const tok = ++ovToken;
+  busy('Calculating the flood...');
+  try {
+    const ov = await fetch('/area/instant-flood-overlay', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ geometry: geom, rain_mm_hr: parseFloat($('rain').value), duration_hr: parseFloat($('dur').value) }) }).then(r => r.json());
+    if (tok !== ovToken || my !== areaToken) return;
+    busy();
+    if (ov.error) { $('pSub').textContent = ''; $('sNote').className = 'err'; $('sNote').textContent = ov.error; return; }
+    lastOv = ov; paintOverlay(ov);
+    $('pSub').textContent = fmtArea(ov.area_km2) + ' km² area · terrain ' + ov.cellsize_m.toFixed(0) + ' m cells';
+    $('sArea').textContent = fmtArea(ov.flooded_area_km2) + ' km²'; $('sDepth').textContent = ov.max_depth_m.toFixed(2) + ' m';
+    $('sNote').className = '';
+    $('sNote').textContent = 'Rain depth ' + ov.rain_depth_mm + ' mm. Water along drainage lines: ' + fmtArea(ov.channel_area_km2) + ' km²; ponding in low ground: ' + fmtArea(ov.ponded_area_km2) + ' km².';
+    $('sBasis').textContent = (scen && scen.source ? 'Rainfall: ' + scen.source + '. ' : '') + 'Half the rain is assumed to run off. Screening estimate, not a simulation.';
+  } catch (e) { busy(); $('sNote').className = 'err'; $('sNote').textContent = 'Failed: ' + e; }
+}
+
+// ---------- 3D, draw, upload-free controls ----------
+function enableTerrain() {
+  if (!map.getSource('dem')) map.addSource('dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
+  map.setTerrain({ source: 'dem', exaggeration: 1.5 });
+}
+$('threeD').onclick = () => {
+  is3D = !is3D; $('threeD').classList.toggle('on', is3D);
+  if (is3D) { enableTerrain(); map.easeTo({ pitch: 62, duration: 900 }); } else { map.setTerrain(null); map.easeTo({ pitch: 0, bearing: 0, duration: 700 }); }
+};
+$('drawBtn').onclick = () => { $('welcome').style.display = 'none'; draw.changeMode('draw_polygon'); busy('Click the map to outline your area; double-click to finish.'); };
+const onDraw = () => {
+  busy();
+  const polys = draw.getAll().features.filter(f => f.geometry.type === 'Polygon'); if (!polys.length) return;
+  const last = polys[polys.length - 1]; polys.slice(0, -1).forEach(f => draw.delete(f.id));
+  clearTimeout(onDraw.t); onDraw.t = setTimeout(() => setAreaKeepDrawing(last.geometry), 400);
+};
+async function setAreaKeepDrawing(g) {   // keep the drawn outline on the map
+  const keep = JSON.parse(JSON.stringify(g)); await setArea(g, 'Drawn area');
+  draw.add({ type: 'Feature', properties: {}, geometry: keep });
+}
+map.on('draw.create', onDraw); map.on('draw.update', onDraw);
+
+// deep links: /instant#tehsil=158 or /instant#lat=33.67&lon=73.07
 map.on('load', async () => {
-  const m = /tehsil=(\d+)/.exec(location.hash);
-  if (!m) return;
-  const g = await fetch('/tehsils/' + m[1]).then(r => r.json()).catch(() => null);
-  if (g && g.geometry) useGeometry(g.geometry);
+  const h = location.hash;
+  const t = /tehsil=(\d+)/.exec(h), la = /lat=([-\d.]+)/.exec(h), lo = /lon=([-\d.]+)/.exec(h);
+  if (t) { $('welcome').style.display = 'none'; usePick({ kind: 'tehsil', id: t[1], name: 'Tehsil ' + t[1] }); }
+  else if (la && lo) { $('welcome').style.display = 'none'; setArea(boxAround(parseFloat(lo[1]), parseFloat(la[1]), 6), 'Selected place'); }
 });
-document.addEventListener('click', e => { if (!$('hits').contains(e.target) && e.target !== $('mapSearch')) $('hits').style.display = 'none'; });
 </script>
 </body>
 </html>

@@ -32,7 +32,7 @@ from dotenv import load_dotenv
 from polygon_utils import (polygon_geometry_hash, load_polygon_from_upload,
                             polygon_area_km2, crop_dem_to_polygon)
 from global_dem_utils import (fetch_global_dem_mosaic, in_pakistan_srtm_coverage)
-from hand_utils import (compute_hand, discharge_to_inundation, save_hand_result, load_hand_result,
+from hand_utils import (pluvial_ponding_depth, compute_hand, discharge_to_inundation, save_hand_result, load_hand_result,
                          build_inundation_library)
 from pluvial_utils import assess_pluvial_risk
 from progress_utils import read_sim_minutes, latest_progress
@@ -4512,9 +4512,12 @@ def _resolve_hand_result(geom, allow_global):
         hand_key = polygon_geometry_hash({"geometry": geom, "dem": dem_source})
         hand_cache_path = os.path.join(HAND_CACHE, f"{hand_key}.pkl")
 
+        hand_result = None
         if os.path.exists(hand_cache_path):
             hand_result = load_hand_result(hand_cache_path)
-        else:
+            if "filled" not in hand_result:    # cached before the ponding layers existed
+                hand_result = None
+        if hand_result is None:
             header, active_cells, total_cells = crop_dem_to_polygon(
                 dem_source, geom, tmp_tif.replace(".tif", ".dem.ascii"))
             ascii_path = tmp_tif.replace(".tif", ".dem.ascii")
@@ -4581,6 +4584,98 @@ def area_instant_flood_library():
         "dem_source": dem_label,
         "library": library,
     })
+
+
+INSTANT_DEPTH_BINS = [  # lower edge (m), RGB -- same steps as the legend on the Instant page
+    (0.05, (176, 224, 245)), (0.10, (140, 200, 240)), (0.25, (86, 166, 226)), (0.50, (34, 126, 204)),
+    (1.00, (16, 90, 170)), (2.00, (10, 56, 120)), (5.00, (6, 30, 78)),
+]
+
+
+@app.route("/area/instant-flood-overlay", methods=["POST"])
+def area_instant_flood_overlay():
+    """Instant flood depth as a coloured image for the 2D map: PNG + the four corners of the terrain grid in
+    lon/lat (a Mapbox image source takes any quadrilateral, so the grid's real UTM footprint is placed exactly)."""
+    import base64
+    import io
+    from PIL import Image
+    body = request.json
+    geom = body["geometry"]
+    allow_global = bool(body.get("use_global_dem", False))
+    custom_dem_id = body.get("custom_dem_id") or None
+    rain_mm_hr = max(0.0, float(body.get("rain_mm_hr", 10.0)))
+    duration_hr = max(0.1, float(body.get("duration_hr", 3.0)))
+    runoff_c = 0.5
+    area_km2 = polygon_area_km2(geom)
+    discharge = float(body["discharge_m3s"]) if body.get("discharge_m3s") not in (None, "") else runoff_c * rain_mm_hr * area_km2 / 3.6
+    try:
+        hand_result, dem_label, hand_cache_path = _resolve_hand_result(geom, allow_global)
+        header_path = hand_cache_path.replace(".pkl", ".header.json")
+        if os.path.exists(header_path):
+            with open(header_path) as f:
+                header = json.load(f)
+        else:
+            dem_source, _ = current_dem_source(geom, allow_global=allow_global, custom_dem_id=custom_dem_id)
+            tmp = os.path.join(AOI3D_CACHE, f"ovh_{uuid.uuid4().hex}.dem.ascii")
+            try:
+                header, _, _ = crop_dem_to_polygon(dem_source, geom, tmp)
+            finally:
+                if os.path.exists(tmp):
+                    os.remove(tmp)
+            with open(header_path, "w") as f:
+                json.dump(header, f)
+        channel, _ = discharge_to_inundation(hand_result, discharge)
+        ponding = pluvial_ponding_depth(hand_result, runoff_c * rain_mm_hr * duration_hr)
+        depth = np.maximum(channel, ponding)
+    except GlobalDemNotEnabled as e:
+        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
+    except Exception as e:
+        return jsonify({"error": f"instant-flood overlay failed: {e}"}), 400
+    nrows, ncols = depth.shape
+    if (nrows, ncols) != (int(header["nrows"]), int(header["ncols"])):
+        return jsonify({"error": "terrain grid and cached header disagree; clear this area's cache and retry"}), 400
+    rgba = np.zeros((nrows, ncols, 4), dtype="uint8")
+    for lo, rgb in INSTANT_DEPTH_BINS:
+        m = depth >= lo
+        rgba[m, 0], rgba[m, 1], rgba[m, 2], rgba[m, 3] = rgb[0], rgb[1], rgb[2], 215
+    buf = io.BytesIO()
+    Image.fromarray(rgba, "RGBA").save(buf, format="PNG")
+    cs = float(header["cellsize"]); x0, y0 = float(header["xllcorner"]), float(header["yllcorner"])
+    x1, y1 = x0 + ncols * cs, y0 + nrows * cs
+    to_wgs = Transformer.from_crs(header["src_crs"], "EPSG:4326", always_xy=True).transform
+    corners = [list(to_wgs(x0, y1)), list(to_wgs(x1, y1)), list(to_wgs(x1, y0)), list(to_wgs(x0, y0))]  # TL, TR, BR, BL
+    wet = int((depth > 0.05).sum())
+    return jsonify({
+        "image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), "coordinates": corners,
+        "flooded_area_km2": round(wet * cs * cs / 1e6, 4), "max_depth_m": round(float(depth.max()), 3),
+        "discharge_m3s": round(discharge, 2), "rain_mm_hr": rain_mm_hr, "duration_hr": duration_hr,
+        "rain_depth_mm": round(rain_mm_hr * duration_hr, 1), "area_km2": round(area_km2, 3),
+        "ponded_area_km2": round(int((ponding > 0.05).sum()) * cs * cs / 1e6, 4),
+        "channel_area_km2": round(int((channel > 0.05).sum()) * cs * cs / 1e6, 4),
+        "cellsize_m": cs, "dem_source": dem_label,
+    })
+
+
+@app.route("/area/instant-scenarios", methods=["POST"])
+def area_instant_scenarios():
+    """Moderate / extreme rain presets for the Instant page, from the real local ERA5-Land/IMERG IDF curve at the area:
+    a 3-hour storm at the 3-hour intensity (moderate) or at the 1-hour intensity (extreme)."""
+    body = request.json
+    poly = shapely_shape(body["geometry"])
+    out = {"duration_hr": 3.0, "source": None}
+    mod_i = ext_i = None
+    if idf_utils.idf_data_available():
+        try:
+            m = idf_utils.real_design_intensity_for_duration(poly.centroid.y, poly.centroid.x, 3.0)
+            e = idf_utils.real_design_intensity_for_duration(poly.centroid.y, poly.centroid.x, 1.0)
+            if m and e:
+                mod_i, ext_i, out["source"] = m["intensity_mm_hr"], e["intensity_mm_hr"], f"local rainfall curve, {m['season']} {m['year']}"
+        except Exception:
+            pass
+    if mod_i is None:
+        mod_i, ext_i, out["source"] = 6.0, 25.0, "default intensities (no local rainfall curve for this place)"
+    out["moderate_mm_hr"], out["extreme_mm_hr"] = round(mod_i, 1), round(ext_i, 1)
+    return jsonify(out)
 
 
 @app.route("/area/instant-flood", methods=["POST"])

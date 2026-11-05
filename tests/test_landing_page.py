@@ -45,7 +45,7 @@ def test_instant_page_serves_with_token_filled_and_links_back():
     r = fis_app.app.test_client().get("/instant")
     html = r.get_data(as_text=True)
     assert r.status_code == 200 and "__MAPBOX_TOKEN__" not in html
-    assert 'href="/app"' in html and "/area/instant-flood-library" in html and "/area/instant-flood-mapbox3d" in html
+    assert 'href="/app"' in html and "/area/instant-flood-overlay" in html and "/area/instant-scenarios" in html and "Flood depth" in html
 
 
 def test_instant_page_script_parses():
