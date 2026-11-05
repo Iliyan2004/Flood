@@ -74,6 +74,10 @@ import sediment_utils
 import storm_utils
 import monitoring_utils
 import ops_agents
+import custom_dem_utils
+import observed_validation_utils as ov_mod
+import runfile_utils
+import calibration_utils
 import rainfall_csv_utils
 import numpy as np
 import rasterio
@@ -290,7 +294,7 @@ def pipeline_signature():
     return f"v{PIPELINE_VERSION}:{dams_utils.data_signature()}"
 
 
-def current_dem_source(geom_wgs84=None, allow_global=False):
+def current_dem_source(geom_wgs84=None, allow_global=False, custom_dem_id=None):
     """Picks the right DEM for an AOI. `geom_wgs84` is optional (the
     generic "/dem-source" status display calls this with none, and just
     wants the default local source's label) -- every real run/crop call
@@ -310,6 +314,15 @@ def current_dem_source(geom_wgs84=None, allow_global=False):
     - Pakistan SRTM missing from disk -> raises FileNotFoundError (the old
       silent fallback to a small Bahawalpur sample was removed).
     """
+    if custom_dem_id:
+        # A user-uploaded elevation model (custom_dem_utils) overrides the Pakistan SRTM, but only
+        # where it actually covers the area -- a partial cover would silently give NODATA edges.
+        cpath = custom_dem_utils.path_for(custom_dem_id)
+        if cpath is None:
+            raise ValueError("the uploaded elevation model was not found on this server; upload it again")
+        if geom_wgs84 is not None and not custom_dem_utils.covers_bbox(cpath, shapely_shape(geom_wgs84).bounds):
+            raise ValueError("the uploaded elevation model does not fully cover the selected area")
+        return cpath, "Custom DEM (uploaded)"
     if geom_wgs84 is not None:
         bbox = shapely_shape(geom_wgs84).bounds  # (minx, miny, maxx, maxy)
         if os.path.exists(PAKISTAN_DEM) and in_pakistan_srtm_coverage(bbox, PAKISTAN_SRTM_BOUNDS_WGS84):
@@ -570,6 +583,19 @@ details summary:hover {{ color:var(--accent); }}
           Use open-source global DEM (Copernicus DEM GLO-30, AWS, free) for areas outside the downloaded Pakistan SRTM
         </label>
         <p class="note">Off by default — areas outside Pakistan won't fetch external elevation data unless you check this.</p>
+        <div style="margin-top:10px;">
+          <label style="font-weight:600;">Use my own elevation model (optional)</label>
+          <input type="file" id="customDemFile" accept=".tif,.tiff" onchange="uploadCustomDem()" style="max-width:100%;">
+          <button class="secondary" id="customDemClear" style="display:none;" onclick="clearCustomDem()">Remove my DEM</button>
+          <div id="customDemBox"></div>
+          <p class="note">A GeoTIFF with its coordinate system (LiDAR, drone survey or another DEM). It replaces the Pakistan SRTM for runs whose area it fully covers.</p>
+        </div>
+        <div style="margin-top:10px;">
+          <label style="font-weight:600;">Run file</label>
+          <input type="file" id="runFileInput" accept=".json" onchange="loadRunFile()" style="max-width:100%;">
+          <div id="runFileBox"></div>
+          <p class="note">Load a saved run file to restore its area, storm and settings. A finished run offers "Save run file" in its results.</p>
+        </div>
         <div id="globalDemPrompt" style="display:none;">
           <p class="note" style="color:#d9822b;"></p>
         </div>
@@ -3706,6 +3732,8 @@ function runModel() {{
       inflows: boundaryItems.filter(b => b.type === 'inflow' && b.included).map(boundaryItemToRequest),
       outflows: boundaryItems.filter(b => b.type === 'outflow' && b.included).map(boundaryItemToRequest),
       use_global_dem: document.getElementById('useGlobalDem').checked,
+      custom_dem_id: window.customDemId || null,
+      manning_scale: window.manningScale || 1.0,
       enable_arf: document.getElementById('enableArf').checked,
       storm_center_lon: document.getElementById('enableStormCenter').checked ? (parseFloat(document.getElementById('stormCenterLon').value) || null) : null,
       storm_center_lat: document.getElementById('enableStormCenter').checked ? (parseFloat(document.getElementById('stormCenterLat').value) || null) : null,
@@ -3723,6 +3751,104 @@ function runModel() {{
   }});
 }}
 
+
+let customDemInfo = null;
+window.manningScale = 1.0;
+
+function uploadCustomDem() {{
+  const inp = document.getElementById('customDemFile'), box = document.getElementById('customDemBox');
+  if (!inp.files.length) return;
+  const fd = new FormData(); fd.append('file', inp.files[0]);
+  box.innerHTML = '<p class="note">Checking the elevation file...</p>';
+  fetch('/area/upload-dem', {{method:'POST', body: fd}}).then(r => r.json()).then(d => {{
+    if (d.error) {{ customDemInfo = null; window.customDemId = null; box.innerHTML = '<p class="note" style="color:#d03b3b;">' + d.error + '</p>'; return; }}
+    customDemInfo = d; window.customDemId = d.dem_id;
+    document.getElementById('customDemClear').style.display = '';
+    box.innerHTML = '<div class="stat-row"><span>Cell size</span><span>' + d.cellsize_m + ' m</span></div>' +
+      '<div class="stat-row"><span>Elevation range</span><span>' + d.min_m + ' to ' + d.max_m + ' m</span></div>' +
+      '<div class="stat-row"><span>Grid</span><span>' + d.ncols + ' x ' + d.nrows + '</span></div>' +
+      '<p class="note">' + d.note + ' Runs whose area it fully covers will use it instead of the Pakistan SRTM.</p>';
+  }}).catch(e => {{ box.innerHTML = '<p class="note" style="color:#d03b3b;">Upload failed: ' + e + '</p>'; }});
+}}
+
+function clearCustomDem() {{
+  customDemInfo = null; window.customDemId = null;
+  document.getElementById('customDemFile').value = '';
+  document.getElementById('customDemClear').style.display = 'none';
+  document.getElementById('customDemBox').innerHTML = '<p class="note">Back to the Pakistan SRTM.</p>';
+}}
+
+function loadRunFile() {{
+  const inp = document.getElementById('runFileInput'), box = document.getElementById('runFileBox');
+  if (!inp.files.length) return;
+  const fd = new FormData(); fd.append('file', inp.files[0]);
+  fetch('/runfile/parse', {{method:'POST', body: fd}}).then(r => r.json()).then(d => {{
+    if (d.error) {{ box.innerHTML = '<p class="note" style="color:#d03b3b;">' + d.error + '</p>'; return; }}
+    const q = d.request;
+    const setv = (id, v) => {{ const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; }};
+    const setc = (id, v) => {{ const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.checked = !!v; }};
+    setv('rainMmHr', q.rain_mm_hr); setv('durationHr', q.duration_hr); setv('friction', q.friction); setv('cfl', q.cfl);
+    setv('infiltrationMmHr', q.infiltration_mm_hr); setv('amc', q.amc); if (typeof updateAmcLabel === 'function') updateAmcLabel();
+    setc('includeBuildings', q.include_buildings); setc('useSoilInfiltration', q.use_soil_infiltration);
+    setc('useGreenAmpt', q.use_green_ampt); setc('useChannelConditioning', q.use_channel_conditioning);
+    setc('useGlobalDem', q.use_global_dem); setc('enableArf', q.enable_arf);
+    window.manningScale = q.manning_scale || 1.0;
+    window.customDemId = q.custom_dem_id || null;
+    uploadedRainfallSeries = q.rainfall_series || null;
+    boundaryItems = [];
+    (q.inflows || []).forEach(b => boundaryItems.push(Object.assign({{id: boundaryIdSeq++, type:'inflow', included:true, source:'runfile'}}, b)));
+    (q.outflows || []).forEach(b => boundaryItems.push(Object.assign({{id: boundaryIdSeq++, type:'outflow', included:true, source:'runfile'}}, b)));
+    renderBoundaryList();
+    draw.getAll().features.forEach(other => {{ if (other.geometry.type === 'Polygon') draw.delete(other.id); }});
+    draw.add({{type:'Feature', properties:{{}}, geometry: q.geometry}});
+    fetch('/area/polygon', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify({{geometry: q.geometry}})}})
+      .then(r => r.json()).then(a => setArea(q.geometry, a.area_km2));
+    const bounds = new mapboxgl.LngLatBounds();
+    const coords = q.geometry.type === 'Polygon' ? q.geometry.coordinates[0] : q.geometry.coordinates[0][0];
+    coords.forEach(c => bounds.extend(c));
+    map.fitBounds(bounds, {{padding: 40, duration: 1200}});
+    box.innerHTML = '<p class="note">Run file loaded: area, storm and settings restored' +
+      (q.rainfall_series ? ' (including its uploaded rainfall series)' : '') + '. Click Run flood model to run it.' +
+      (window.manningScale !== 1.0 ? ' It carries a calibrated roughness multiplier of ' + window.manningScale + '.' : '') + '</p>' +
+      (d.warnings || []).map(w => '<p class="note" style="color:#d9822b;">' + w + '</p>').join('');
+  }}).catch(e => {{ box.innerHTML = '<p class="note" style="color:#d03b3b;">Could not read the file: ' + e + '</p>'; }});
+}}
+
+function runCalibration() {{
+  const box = document.getElementById('calibBox'), inp = document.getElementById('calibFile');
+  if (!currentRunId || !inp.files.length) {{ box.innerHTML = '<p class="note">Choose an observed flood extent file first.</p>'; return; }}
+  const fd = new FormData(); fd.append('file', inp.files[0]); fd.append('max_evals', document.getElementById('calibBudget').value);
+  document.getElementById('calibBtn').disabled = true;
+  fetch('/runs/' + currentRunId + '/calibrate', {{method:'POST', body: fd}}).then(r => r.json()).then(d => {{
+    if (d.error) {{ box.innerHTML = '<p class="note" style="color:#d03b3b;">' + d.error + '</p>'; document.getElementById('calibBtn').disabled = false; return; }}
+    const poll = () => fetch('/climate-jobs/' + d.job_id + '/progress.json').then(r => r.json()).then(j => {{
+      if (j.status === 'running') {{
+        box.innerHTML = '<p class="note">Trial ' + (j.trial || 0) + ' of ' + (j.max_evals || '?') + ' (each is a real flood run)' +
+          (j.last_csi !== undefined && j.last_csi !== null ? ', last CSI ' + j.last_csi : '') + '...</p>';
+        setTimeout(poll, 4000); return;
+      }}
+      document.getElementById('calibBtn').disabled = false;
+      if (j.status === 'failed') {{ box.innerHTML = '<p class="note" style="color:#d03b3b;">Calibration failed: ' + j.error + '</p>'; return; }}
+      const r = j.result, f = v => (v === null || v === undefined) ? 'n/a' : v;
+      box.innerHTML = '<div class="stat-row"><span>Overlap score (CSI) before</span><span>' + f(r.csi_before) + '</span></div>' +
+        '<div class="stat-row"><span>Overlap score (CSI) after</span><span><b>' + f(r.csi_after) + '</b></span></div>' +
+        '<div class="stat-row"><span>Roughness multiplier</span><span>' + r.apply.manning_scale + '</span></div>' +
+        '<div class="stat-row"><span>Infiltration rate</span><span>' + r.apply.infiltration_mm_hr + ' mm/hr</span></div>' +
+        '<div class="stat-row"><span>Runs used</span><span>' + r.n_trials + (r.n_failed ? ' (' + r.n_failed + ' failed)' : '') + '</span></div>' +
+        '<button class="secondary" onclick="applyCalibration(' + r.apply.manning_scale + ',' + r.apply.infiltration_mm_hr + ')">Use these values for the next run</button>' +
+        '<p class="note">' + r.caveat + '</p>';
+    }});
+    setTimeout(poll, 2000);
+  }}).catch(e => {{ box.innerHTML = '<p class="note" style="color:#d03b3b;">Failed: ' + e + '</p>'; document.getElementById('calibBtn').disabled = false; }});
+}}
+
+function applyCalibration(scale, infil) {{
+  window.manningScale = scale;
+  document.getElementById('infiltrationMmHr').value = infil;
+  document.getElementById('useSoilInfiltration').checked = false;
+  document.getElementById('calibBox').insertAdjacentHTML('beforeend',
+    '<p class="note">Set: roughness multiplier ' + scale + ' and infiltration ' + infil + ' mm/hr. They apply to the next run you start.</p>');
+}}
 
 function validateObserved() {{
   const box = document.getElementById('obsBox'), inp = document.getElementById('obsFile');
@@ -3778,6 +3904,10 @@ function pollStatus() {{
         '<a class="btn secondary" href="/runs/' + currentRunId + '/report.pdf">Export PDF</a>' +
         '<a class="btn secondary" href="/runs/' + currentRunId + '/susceptibility-map.png?download=1" title="Classified peak-depth map with legend, areas and key figures">Susceptibility map (PNG)</a></div>' +
         '<div style="margin-top:8px;"><input type="file" id="obsFile" accept=".tif,.tiff,.geojson,.json,.gpkg,.zip,.shp" style="max-width:100%;"> <button class="secondary" onclick="validateObserved()" title="Upload a mapped flood extent (polygons or GeoTIFF) to score this run against it">Compare with observed flood</button><div id="obsBox"></div></div>' +
+        '<div style="margin-top:8px;"><a class="btn secondary" href="/runs/' + currentRunId + '/runfile" title="Download this run\\'s inputs so it can be reloaded here or on another SAILAB">Save run file</a></div>' +
+        '<div style="margin-top:8px;"><b>Calibrate roughness and infiltration</b><br><input type="file" id="calibFile" accept=".tif,.tiff,.geojson,.json,.gpkg,.zip,.shp" style="max-width:100%;"> ' +
+        '<select id="calibBudget" style="width:auto;"><option value="12">Quick (12 runs)</option><option value="24" selected>Balanced (24 runs)</option><option value="40">Thorough (40 runs)</option></select> ' +
+        '<button class="secondary" id="calibBtn" onclick="runCalibration()" title="Searches a Manning multiplier and an infiltration rate that best reproduce an observed flood extent, using real solver runs">Calibrate</button><div id="calibBox"></div></div>' +
         '<div style="margin-top:8px;"><button class="secondary" onclick="rebuildScene()" title="Redraws the 3D view with the newest viewer from the saved results -- no re-simulation">Rebuild 3D view</button><div id="rebuildSceneBox"></div></div>' +
         (d.summary.solver_selection_reason ? '<p class="note" style="margin-top:10px;" title="' + d.summary.solver_selection_reason.replace(/"/g, "&quot;") + '">Solver auto-selected: ' + d.summary.solver_selection_reason + '</p>' : '') +
         (d.summary.buildings_used ? '<p class="note" style="margin-top:10px;">' + d.summary.buildings_used + ' real buildings conditioned into this run.</p>' : '') +
@@ -4061,6 +4191,16 @@ def index():
 @app.route("/app")
 def main_app():
     return PAGE
+
+
+@app.route("/instant")
+def instant_page():
+    """SAILAB Instant: the general, near-instant HAND flood preview as its own page (the physical model stays at /app)."""
+    with open(os.path.join(BASE_DIR, "instant.html"), encoding="utf-8") as f:
+        html = f.read().replace("__MAPBOX_TOKEN__", json.dumps(MAPBOX_TOKEN))
+    resp = Response(html, mimetype="text/html")
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
 
 
 @app.route("/dem-source")
@@ -6332,9 +6472,11 @@ def execute_fis_run(run_id, run_dir, dem_ascii_path, rain_mm_hr, duration_hr,
                      enable_arf=False, storm_center_lon=None, storm_center_lat=None,
                      storm_velocity_lon_per_hr=None, storm_velocity_lat_per_hr=None,
                      storm_motion_message=None,
-                     use_green_ampt=False, rainfall_series=None, imported=None):
+                     use_green_ampt=False, rainfall_series=None, imported=None, manning_scale=1.0):
     inflows = inflows or []
     outflows = outflows or []
+    if manning_scale != 1.0:
+        friction = max(friction * manning_scale, 0.01)   # fallback roughness follows the per-cell grid's multiplier
     with SIM_SLOT:
         with RUN_STATE_LOCK:
             if run_id in RUN_QUEUE:
@@ -6509,6 +6651,8 @@ def execute_fis_run(run_id, run_dir, dem_ascii_path, rain_mm_hr, duration_hr,
             try:
                 lulc0 = fetch_lulc_for_bounds(lon_min, lat_min, lon_max, lat_max, header0, src_crs)
                 manning_grid = lulc_to_manning_grid(lulc0)
+                if manning_scale != 1.0:   # calibrated roughness multiplier (calibration_utils), floored like the solver wrapper
+                    manning_grid = np.where(manning_grid > 0, np.maximum(manning_grid * manning_scale, 0.01), manning_grid)
                 _write_ascii(manning_path, header0, manning_grid)
                 np.save(os.path.join(run_dir, "lulc.npy"), lulc0)  # reused for damage/hotspot + NbS scenarios
                 manning_result["ok"] = True
@@ -7193,6 +7337,156 @@ def run_validate_observed(run_id):
         return jsonify(res)
     except Exception as e:
         return jsonify({"error": f"could not validate: {e}"}), 400
+
+
+
+# --------------------------------------------------------------------------
+# Custom DEM upload, run files (save / load), and roughness + infiltration calibration
+# --------------------------------------------------------------------------
+CALIBRATION_CACHE = os.path.join(BASE_DIR, "fis_calibration_cache")
+os.makedirs(CALIBRATION_CACHE, exist_ok=True)
+
+
+@app.route("/area/upload-dem", methods=["POST"])
+def area_upload_dem():
+    """Accepts a user's own DEM (GeoTIFF) and stores a solver-ready copy; the returned dem_id goes into /run."""
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "no file"}), 400
+    path = os.path.join(UPLOADS, f"{uuid.uuid4().hex}_{os.path.basename(f.filename or 'dem.tif')}")
+    f.save(path)
+    try:
+        info = custom_dem_utils.prepare_upload(path)
+    except custom_dem_utils.CustomDemError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"could not process this elevation file: {e}"}), 400
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+    return jsonify(info)
+
+
+@app.route("/runs/<run_id>/runfile")
+def run_runfile(run_id):
+    """Downloads the run's inputs as a .sailab.json run file (reload it with 'Load run file')."""
+    run_dir = os.path.join(FIS_CACHE, run_id)
+    if "/" in run_id or ".." in run_id or not os.path.isdir(run_dir):
+        abort(404)
+    rf_path = os.path.join(run_dir, "runfile.json")
+    if os.path.exists(rf_path):
+        with open(rf_path) as f:
+            doc = json.load(f)
+    else:
+        try:
+            with open(os.path.join(run_dir, "run_meta.json")) as f:
+                doc = runfile_utils.runfile_from_meta(json.load(f), APP_VERSION, run_id)
+        except OSError:
+            abort(404)
+    resp = Response(json.dumps(doc, indent=1), mimetype="application/json")
+    resp.headers["Content-Disposition"] = f'attachment; filename="sailab_run_{run_id[:8]}.sailab.json"'
+    return resp
+
+
+@app.route("/runfile/parse", methods=["POST"])
+def runfile_parse():
+    """Validates an uploaded run file and returns its request, plus a note when its custom DEM is missing here."""
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "no file"}), 400
+    try:
+        req = runfile_utils.parse_runfile(f.read().decode("utf-8", "replace"))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    warnings = []
+    cid = req.get("custom_dem_id")
+    if cid and custom_dem_utils.path_for(cid) is None:
+        warnings.append("This run used an uploaded elevation model that is not on this server. Upload the same DEM "
+                        "file again before running (its content id will match).")
+    return jsonify({"request": req, "warnings": warnings})
+
+
+def execute_calibration(job_id, run_id, obs_path, max_evals):
+    """Real search for the roughness multiplier and infiltration rate that best reproduce an observed flood extent."""
+    scratch = os.path.join(CALIBRATION_CACHE, job_id)
+    os.makedirs(scratch, exist_ok=True)
+    try:
+        run_dir = os.path.join(FIS_CACHE, run_id)
+        with open(os.path.join(run_dir, "run_meta.json")) as f:
+            meta = json.load(f)
+        with open(os.path.join(run_dir, "summary.json")) as f:
+            summary = json.load(f)
+        header = meta["header"]
+        src_crs = meta["src_crs"]
+        dem_path = os.path.join(run_dir, "aoi.dem.ascii")
+        _, dem = _read_ascii(dem_path)
+        valid = dem != -9999
+        obs_wet, covered = ov_mod.observed_mask_on_grid(obs_path, header, src_crs)
+        scored = valid & covered
+        if not (obs_wet & scored).any():
+            raise ValueError("no observed flooding falls inside this run's area; check the file's location and coordinate system")
+        factor = 1.0
+        if summary.get("acc_depth_correction_applied"):
+            factor = float(summary.get("acc_depth_correction_factor", 1.0)) or 1.0
+        log_path = os.path.join(scratch, "run.log")
+        open(log_path, "w").close()
+        run_params = _protection_run_params_and_boundary(run_dir, meta, header, src_crs, dem, log_path)
+        run_params["friction"] = float(meta.get("friction", 0.05)) * float(meta.get("manning_scale", 1.0) or 1.0)
+        if meta.get("rainfall_series"):
+            rs = meta["rainfall_series"]
+            sp = os.path.join(scratch, "rain_series.json")
+            with open(sp, "w") as f:
+                json.dump({"times_hr": rs["times_hr"], "rates_mm_hr": rs["rates_mm_hr"], "label": rs.get("label", "observed")}, f)
+            run_params["rain_series_path"] = sp
+        ctx = {"run_params": run_params, "venv_py": VENV_PY, "flood_model_path": FLOOD_MODEL, "dem_path": dem_path,
+               "sim_slot": SIM_SLOT, "scratch_dir": scratch, "obs_wet": obs_wet, "scored": scored,
+               "acc_factor": factor, "cell_km2": (header["cellsize"] ** 2) / 1e6, "seed_key": run_id}
+
+        def progress(i, total, sc):
+            with CLIMATE_JOBS_LOCK:
+                CLIMATE_JOBS[job_id] = {"status": "running", "trial": i, "max_evals": total,
+                                        "last_csi": (sc or {}).get("CSI")}
+
+        res = calibration_utils.calibrate(ctx, max_evals, progress_cb=progress)
+        if res is None:
+            raise ValueError("no trial run produced a result; see calibration_errors.log in the job folder")
+        prev = float(meta.get("manning_scale", 1.0) or 1.0)
+        res["apply"] = {"manning_scale": round(prev * res["best"]["manning_scale"], 4),
+                        "infiltration_mm_hr": res["best"]["infiltration_mm_hr"]}
+        res["source_run_id"] = run_id
+        with CLIMATE_JOBS_LOCK:
+            CLIMATE_JOBS[job_id] = {"status": "done", "result": res}
+    except Exception as e:
+        with CLIMATE_JOBS_LOCK:
+            CLIMATE_JOBS[job_id] = {"status": "failed", "error": str(e)}
+    finally:
+        try:
+            os.remove(obs_path)
+        except OSError:
+            pass
+
+
+@app.route("/runs/<run_id>/calibrate", methods=["POST"])
+def run_calibrate(run_id):
+    run_dir = os.path.join(FIS_CACHE, run_id)
+    if "/" in run_id or ".." in run_id or not os.path.isfile(os.path.join(run_dir, "summary.json")):
+        return jsonify({"error": "run not found or not finished"}), 404
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "upload an observed flood extent (polygons or GeoTIFF) first"}), 400
+    try:
+        max_evals = max(8, min(60, int(request.form.get("max_evals", 24))))
+    except ValueError:
+        max_evals = 24
+    obs_path = os.path.join(UPLOADS, f"{uuid.uuid4().hex}_{os.path.basename(f.filename or 'observed')}")
+    f.save(obs_path)
+    job_id = uuid.uuid4().hex
+    with CLIMATE_JOBS_LOCK:
+        CLIMATE_JOBS[job_id] = {"status": "running", "trial": 0, "max_evals": max_evals + 1}
+    threading.Thread(target=execute_calibration, args=(job_id, run_id, obs_path, max_evals), daemon=True).start()
+    return jsonify({"job_id": job_id})
 
 
 @app.route("/runs/<run_id>/rebuild-scene", methods=["POST"])
@@ -8103,8 +8397,13 @@ def run():
     outflows_req = body.get("outflows", [])
 
     allow_global = bool(body.get("use_global_dem", False))
+    custom_dem_id = body.get("custom_dem_id") or None
     try:
-        dem_source_for_key, _ = current_dem_source(geom, allow_global=allow_global)
+        manning_scale = max(0.2, min(5.0, float(body.get("manning_scale", 1.0) or 1.0)))
+    except (TypeError, ValueError):
+        return jsonify({"error": "manning_scale must be a number"}), 400
+    try:
+        dem_source_for_key, _ = current_dem_source(geom, allow_global=allow_global, custom_dem_id=custom_dem_id)
     except GlobalDemNotEnabled as e:
         return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
     except Exception as e:
@@ -8121,6 +8420,8 @@ def run():
                                   "storm_velocity_lon_per_hr": storm_velocity_lon_per_hr,
                                   "storm_velocity_lat_per_hr": storm_velocity_lat_per_hr,
                                   "rainfall_series": rainfall_series,
+                                  # added only when used, so every pre-existing cached run keeps its key
+                                  **({"manning_scale": manning_scale} if manning_scale != 1.0 else {}),
                                   "pipeline": pipeline_signature()})
     run_dir = os.path.join(FIS_CACHE, key)
     cached_summary = os.path.join(run_dir, "summary.json")
@@ -8134,7 +8435,7 @@ def run():
         return jsonify({"run_id": run_id, "cached": True})
 
     os.makedirs(run_dir, exist_ok=True)
-    dem_source, _ = current_dem_source(geom, allow_global=allow_global)
+    dem_source, _ = current_dem_source(geom, allow_global=allow_global, custom_dem_id=custom_dem_id)
     dem_ascii_path = os.path.join(run_dir, "aoi.dem.ascii")
     try:
         header, active_cells, total_cells = crop_dem_to_polygon(
@@ -8163,7 +8464,16 @@ def run():
                    "storm_velocity_lon_per_hr": storm_velocity_lon_per_hr,
                    "storm_velocity_lat_per_hr": storm_velocity_lat_per_hr,
                    "storm_motion_message": storm_motion_message,
+                   "manning_scale": manning_scale, "custom_dem_id": custom_dem_id,
                    "rainfall_series": rainfall_series}, f)
+    # The request itself, kept so the run can be saved as a run file and reloaded later.
+    try:
+        _rf = runfile_utils.build_runfile(dict(body, rainfall_series=rainfall_series, manning_scale=manning_scale,
+                                               custom_dem_id=custom_dem_id), APP_VERSION, run_id)
+        with open(os.path.join(run_dir, "runfile.json"), "w") as f:
+            json.dump(_rf, f)
+    except Exception:
+        pass
 
     with RUN_STATE_LOCK:
         RUN_STATE[run_id] = {"status": "queued", "stage": "buildings", "queued_at": time.time()}
@@ -8181,7 +8491,8 @@ def run():
                                   storm_velocity_lon_per_hr=storm_velocity_lon_per_hr,
                                   storm_velocity_lat_per_hr=storm_velocity_lat_per_hr,
                                   storm_motion_message=storm_motion_message,
-                                  rainfall_series=rainfall_series, imported=imported),
+                                  rainfall_series=rainfall_series, imported=imported,
+                                  manning_scale=manning_scale),
                       daemon=True).start()
     return jsonify({"run_id": run_id, "cached": False, "grid": f"{header['ncols']}x{header['nrows']}",
                     "active_cells": active_cells})

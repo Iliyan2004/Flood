@@ -111,6 +111,26 @@
     0%, 100% { box-shadow: 0 0 0 0 rgba(85, 230, 218, .0), 0 10px 40px rgba(0, 0, 0, .45), inset 0 0 22px rgba(85, 230, 218, .12); }
     50%      { box-shadow: 0 0 34px 2px rgba(85, 230, 218, .38), 0 10px 40px rgba(0, 0, 0, .45), inset 0 0 22px rgba(85, 230, 218, .12); }
   }
+  .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 2vw, 24px); width: min(880px, 100%); text-align: left; }
+  .choice {
+    display: flex; flex-direction: column; gap: .55em; text-decoration: none; color: var(--ink); cursor: pointer;
+    padding: clamp(18px, 2.6vw, 28px);
+    background: rgba(8, 28, 34, .55);
+    -webkit-backdrop-filter: blur(12px) saturate(1.3); backdrop-filter: blur(12px) saturate(1.3);
+    border: 1.5px solid rgba(85, 230, 218, .45); border-radius: 18px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .45), inset 0 0 22px rgba(85, 230, 218, .08);
+    transition: transform .25s cubic-bezier(.2, .8, .2, 1), border-color .25s, box-shadow .35s, background .25s;
+  }
+  .choice:hover, .choice:focus-visible { transform: translateY(-3px); border-color: var(--aqua); background: rgba(10, 40, 48, .7); box-shadow: 0 0 40px 2px rgba(85, 230, 218, .3), 0 14px 44px rgba(0, 0, 0, .5); outline: none; }
+  .choice:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .choice .tag { font-family: var(--text); font-weight: 600; font-size: .78rem; letter-spacing: .22em; text-transform: uppercase; color: var(--aqua); }
+  .choice h2 { margin: 0; font-family: var(--display); font-weight: 900; font-stretch: 108%; font-size: clamp(1.4rem, 3vw, 2rem); letter-spacing: .06em; line-height: 1.05; }
+  .choice p { margin: 0; font-family: var(--text); font-size: clamp(.95rem, 1.5vw, 1.08rem); line-height: 1.5; color: rgba(243, 251, 250, .82); }
+  .choice .foot { margin-top: auto; padding-top: .6em; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: var(--text); font-size: .86rem; letter-spacing: .12em; text-transform: uppercase; color: rgba(243, 251, 250, .6); }
+  .choice .go { display: inline-flex; align-items: center; gap: .5em; font-family: var(--display); font-weight: 800; letter-spacing: .14em; color: var(--aqua); }
+  .choice .go svg { width: 1.2em; height: 1.2em; transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+  .choice:hover .go svg, .choice:focus-visible .go svg { transform: translateX(5px); }
+  @media (max-width: 720px) { .choices { grid-template-columns: 1fr; } main { justify-content: flex-start; padding-top: 5vh; } body { overflow-y: auto; } }
   .meta {
     position: fixed; z-index: 2; left: 0; right: 0; bottom: max(16px, env(safe-area-inset-bottom));
     text-align: center; font-size: .82rem; letter-spacing: .22em; text-transform: uppercase;
@@ -129,6 +149,7 @@
   @media (prefers-reduced-motion: reduce) {
     .rise > * { animation: none; opacity: 1; transform: none; }
     .open { animation: none; }
+    .choice { transition: none; }
   }
   @media (max-height: 520px) { h1 { font-size: clamp(2.6rem, 11vw, 6rem); } .rule { margin: 10px 0 16px; } }
 </style>
@@ -143,10 +164,20 @@
     <h1>SAILAB</h1>
     <p class="full"><b>S</b>imulation &amp; <b>A</b>nalytics for <b>I</b>nundation, <b>L</b>oss, <b>A</b>ssets &amp; <b>B</b>uilt Environment</p>
     <div class="rule" aria-hidden="true"></div>
-    <a class="open" id="open" href="/app">
-      Open SAILAB
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg>
-    </a>
+    <div class="choices">
+      <a class="choice" id="openInstant" href="/instant">
+        <span class="tag">General &middot; Instant</span>
+        <h2>SAILAB Instant</h2>
+        <p>Draw an area, move the river-flow slider and see the flood reach it in about a second. A terrain-based screening estimate for quick questions.</p>
+        <span class="foot"><span>About 1 second</span><span class="go">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></span></span>
+      </a>
+      <a class="choice" id="openPhysics" href="/app">
+        <span class="tag">Physical model</span>
+        <h2>SAILAB Physics</h2>
+        <p>The full GPU flood solver: depth and speed through the storm, buildings, roads and facilities at risk, loss in PKR, coastal, glacier-lake, dam and protection scenarios.</p>
+        <span class="foot"><span>Minutes</span><span class="go">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></span></span>
+      </a>
+    </div>
   </div>
 </main>
 <div class="meta">Flood intelligence for Pakistan &middot; v__APP_VERSION__</div>
@@ -154,12 +185,13 @@
 <script>
 (function () {
   "use strict";
-  var link = document.getElementById("open");
+  var links = document.querySelectorAll("a.choice");
   var flash = document.getElementById("flash");
   var canvas = document.getElementById("sea");
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   // keep any query string (for example ?import=<id> from SimCity) when entering the app
-  link.href = "/app" + location.search;
+  // keep any query string (for example ?import=<id> from SimCity) when entering the physical model
+  document.getElementById("openPhysics").href = "/app" + location.search;
 
   var VERT = "attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}";
   var FRAG = [
@@ -328,11 +360,13 @@
     }
     requestAnimationFrame(function (n) { last = n; frame(n); });
 
-    link.addEventListener("click", function (e) {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      if (reduce || surging) return;                  // plain navigation
-      e.preventDefault(); surging = true; surgeStart = performance.now();
-      setTimeout(function () { location.href = link.href; }, 1500);
+    Array.prototype.forEach.call(links, function (link) {
+      link.addEventListener("click", function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (reduce || surging) return;                  // plain navigation
+        e.preventDefault(); surging = true; surgeStart = performance.now();
+        setTimeout(function () { location.href = link.href; }, 1500);
+      });
     });
   }
 })();
