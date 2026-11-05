@@ -37,7 +37,7 @@ def test_landing_script_parses():
 
 def test_landing_offers_two_separate_links():
     html = fis_app.app.test_client().get("/").get_data(as_text=True)
-    assert 'id="openInstant" href="/instant"' in html and 'id="openPhysics" href="/app"' in html
+    assert 'id="openInstant" href="/instant"' in html and 'id="open" href="/app"' in html
     assert "SAILAB Instant" in html and "SAILAB Physics" in html
 
 
