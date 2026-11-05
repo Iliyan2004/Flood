@@ -532,42 +532,116 @@ details summary:hover {{ color:var(--accent); }}
 ::placeholder {{ color:var(--muted); opacity:1; }}
 @keyframes revealIn {{ from {{ opacity:0; transform:translateY(7px); }} to {{ opacity:1; transform:translateY(0); }} }}
 .reveal-in {{ animation:revealIn 0.4s var(--ease); }}
+
+/* ---- Map-first layout (FastFlood-style): full-screen map, floating toolbar, floating drawer, flood view on the main screen.
+   Colours and every control are unchanged; only structure, spacing, shape and type scale differ. ---- */
+:root {{ --drawer-w:420px; }}
+html, body {{ overflow:hidden; }}
+.main {{ position:absolute; inset:0; display:block; }}
+.left-col {{ position:absolute; inset:0; display:block; min-width:0; }}
+#mapWrap {{ position:absolute; inset:0; display:block; min-height:0; }}
+#map {{ position:absolute; inset:0; }}
+.vresizer, .resizer {{ display:none !important; }}
+header {{ position:absolute; top:10px; left:10px; right:calc(var(--drawer-w) + 22px); z-index:25; gap:10px; justify-content:flex-start;
+  padding:7px 10px; border:1px solid var(--line); border-radius:16px; background:rgba(14,22,29,0.84);
+  box-shadow:var(--shadow-float); transition:right .3s var(--ease); }}
+header::after {{ display:none; }}
+body.drawer-closed header {{ right:10px; }}
+header .brand {{ font-size:20px; flex:0 0 auto; padding:0 6px 0 2px; }}
+header .brand small {{ display:none; }}
+header #geocoderSlot {{ position:static; transform:none; flex:1 1 220px; min-width:140px; max-width:420px; width:auto; }}
+header #geoInput {{ padding:9px 12px; border-radius:12px; box-shadow:none; background:var(--surface-2); }}
+header .layer-switch {{ position:static; border-radius:12px; box-shadow:none; background:var(--surface-2); flex:0 0 auto; }}
+header .layer-switch button {{ padding:8px 11px; font-size:11.5px; }}
+header .hdr-nav {{ display:flex; gap:6px; margin-left:auto; flex:0 0 auto; }}
+header .hdr-nav a {{ text-decoration:none; color:var(--ink-2); border:1px solid var(--line); border-radius:12px; padding:8px 12px; font-size:12.5px; font-weight:600; background:var(--surface-2); }}
+header .hdr-nav a:hover {{ color:var(--accent); border-color:var(--accent); }}
+header #demSource {{ font-size:11px; flex:0 0 auto; }}
+.mapboxgl-ctrl-top-left {{ top:68px !important; }}
+.mapboxgl-ctrl-top-right, .mapboxgl-ctrl-bottom-right {{ right:calc(var(--drawer-w) + 12px) !important; transition:right .3s var(--ease); }}
+body.drawer-closed .mapboxgl-ctrl-top-right, body.drawer-closed .mapboxgl-ctrl-bottom-right {{ right:0 !important; }}
+.right-col {{ position:absolute; top:10px; right:10px; bottom:10px; width:var(--drawer-w) !important; max-width:none; min-width:0; z-index:22;
+  border:1px solid var(--line); border-radius:20px; background:rgba(14,22,29,0.90); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  box-shadow:var(--shadow-float); padding-bottom:12px; transition:transform .3s var(--ease); }}
+body.drawer-closed .right-col {{ transform:translateX(calc(100% + 24px)); }}
+#drawerToggle {{ position:absolute; z-index:23; top:50%; right:calc(var(--drawer-w) + 14px); width:26px; height:56px; margin-top:-28px;
+  border:1px solid var(--line); border-radius:12px; background:rgba(14,22,29,0.9); color:var(--ink-2); cursor:pointer; font-size:15px;
+  transition:right .3s var(--ease), color .15s; }}
+#drawerToggle:hover {{ color:var(--accent); border-color:var(--accent); }}
+body.drawer-closed #drawerToggle {{ right:10px; }}
+.right-col .panel-section {{ margin:10px 12px 0; padding:15px 16px; border:1px solid var(--line-soft); border-radius:16px; background:rgba(24,32,40,0.55); }}
+.right-col .panel-section:hover {{ background:rgba(24,32,40,0.7); }}
+.panel-section h3 {{ font-family:"Public Sans",system-ui,sans-serif; text-transform:none; font-size:15.5px; font-weight:700; letter-spacing:0; }}
+.panel-section h3::before {{ display:none; }}
+.tier-tabs {{ padding:12px 12px 0; gap:6px; }}
+.tier-tabs button {{ border-radius:999px; font-family:"Public Sans",system-ui,sans-serif; font-weight:600; text-transform:none; letter-spacing:0; font-size:12.5px; padding:10px 6px; }}
+button.action {{ border-radius:14px; font-family:"Public Sans",system-ui,sans-serif; text-transform:none; letter-spacing:0; font-weight:700; font-size:15px; padding:13px; }}
+button.secondary, a.btn {{ border-radius:12px; }}
+input[type=number], input[type=file], input[type=text], select {{ border-radius:12px; }}
+.pill {{ font-size:11px; }}
+.view3d-wrap {{ position:absolute; z-index:9; left:10px; bottom:10px; width:min(48vw, 720px); height:42vh; min-height:0;
+  border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:var(--shadow-float); background:var(--surface); }}
+.view3d-wrap iframe.frame3d {{ border:none; }}
+body.view-main .view3d-wrap {{ top:66px; width:auto; height:auto; right:calc(var(--drawer-w) + 22px); }}
+body.view-main.drawer-closed .view3d-wrap {{ right:10px; }}
+body.view-hidden .view3d-wrap {{ display:none; }}
+.view3d-tabs .v3d-btn {{ flex:0 0 auto; padding:8px 12px; border:none; background:transparent; color:var(--ink-2); cursor:pointer; font-size:12px; font-weight:600; }}
+.view3d-tabs .v3d-btn:hover {{ color:var(--accent); }}
+#viewShowBtn {{ position:absolute; z-index:9; left:10px; bottom:10px; display:none; padding:10px 16px; border-radius:14px; border:1px solid var(--line);
+  background:rgba(14,22,29,0.9); color:var(--ink); font-weight:600; cursor:pointer; box-shadow:var(--shadow-float); }}
+body.view-hidden #viewShowBtn {{ display:block; }}
+#welcomeOverlay {{ position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:16px;
+  background:rgba(4,10,13,0.55); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); }}
+#welcomeOverlay .wcard {{ position:relative; width:min(760px,100%); display:grid; grid-template-columns:1fr 1fr; border-radius:22px; overflow:hidden;
+  border:1px solid var(--line); box-shadow:var(--shadow-float); background:var(--surface); }}
+#welcomeOverlay .wl {{ padding:28px; background:linear-gradient(160deg, var(--accent-soft), var(--surface) 80%); }}
+#welcomeOverlay .wl h2 {{ margin:0 0 14px; font-family:"Barlow Condensed",sans-serif; font-size:30px; text-transform:uppercase; letter-spacing:.05em; }}
+#welcomeOverlay .wl li {{ list-style:none; margin:0 0 12px; font-size:13.5px; color:var(--ink-2); line-height:1.45; }}
+#welcomeOverlay .wl li b {{ display:block; color:var(--ink); font-size:14.5px; }}
+#welcomeOverlay ul {{ margin:0; padding:0; }}
+#welcomeOverlay .wr {{ padding:28px; display:flex; flex-direction:column; gap:10px; background:var(--surface-2); }}
+#welcomeOverlay .wr h3 {{ margin:0 0 4px; font-size:22px; line-height:1.2; }}
+#welcomeOverlay .wr h3 em {{ font-style:normal; color:var(--accent); }}
+#welcomeOverlay .wx {{ position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; font-size:17px; }}
+@media (max-width:860px) {{ :root {{ --drawer-w:340px; }} #welcomeOverlay .wcard {{ grid-template-columns:1fr; }} #welcomeOverlay .wl {{ display:none; }} }}
 </style>
 </head>
-<body>
+<body class="view-hidden">
 <div class="app">
   <header>
-    <div>
-      <div class="brand"><span title="{MODEL_TAGLINE}">{MODEL_NAME}</span> <small style="font-size:10px;opacity:.6;font-weight:500;letter-spacing:.04em;" title="SAILAB version">v{APP_VERSION}</small></div>
-      <div class="note" style="margin-top:2px;">{MODEL_FULL_NAME}</div>
+    <div class="brand"><span title="{MODEL_TAGLINE}">{MODEL_NAME}</span> <small style="font-size:10px;opacity:.6;font-weight:500;letter-spacing:.04em;" title="SAILAB version">v{APP_VERSION}</small></div>
+    <div id="geocoderSlot">
+      <input id="geoInput" type="text" placeholder="Search for a place or a real Pakistan tehsil..." autocomplete="off">
+      <div id="geoResults"></div>
     </div>
+    <div class="layer-switch">
+      <button id="layerSat" class="active" onclick="setMapLayer('satellite')">Satellite</button>
+      <button id="layerStreets" onclick="setMapLayer('streets')">Streets</button>
+      <button id="damsToggleBtn" onclick="toggleDamsLayer()" title="Real existing dams/reservoirs (Global Dam Watch) -- permanently conditioned into any flood run whose area overlaps them">Dams &amp; reservoirs</button>
+      <button onclick="exportMapPng(map, 'map')">Export PNG</button>
+    </div>
+    <div class="hdr-nav"><a href="/instant" title="General, instant flood preview">Instant</a><a href="/" title="Home">Home</a></div>
     <div class="note" id="demSource"></div>
   </header>
   <div class="main">
     <div class="left-col">
       <div id="mapWrap">
         <div id="map" style="flex:1;"></div>
-        <div id="geocoderSlot">
-          <input id="geoInput" type="text" placeholder="Search for a place or a real Pakistan tehsil..." autocomplete="off">
-          <div id="geoResults"></div>
-        </div>
-        <div class="layer-switch">
-          <button id="layerSat" class="active" onclick="setMapLayer('satellite')">Satellite</button>
-          <button id="layerStreets" onclick="setMapLayer('streets')">Streets</button>
-          <button id="damsToggleBtn" onclick="toggleDamsLayer()" title="Real existing dams/reservoirs (Global Dam Watch) -- permanently conditioned into any flood run whose area overlaps them">Dams &amp; reservoirs</button>
-          <button onclick="exportMapPng(map, 'map')">Export PNG</button>
-        </div>
       </div>
       <div class="vresizer" id="vResizer"></div>
       <div class="view3d-wrap">
         <div class="view3d-tabs">
           <span style="flex:1;padding:8px 4px;color:var(--ink-2);font-size:12.5px;">Flood visualization (Mapbox 3D)</span>
+          <button class="v3d-btn" id="viewExpandBtn" onclick="toggleViewMain()" title="Show the flood view on the whole screen">Expand</button>
+          <button class="v3d-btn" id="viewHideBtn" onclick="window.viewUserHidden = true; setViewMode('hidden')" title="Hide this view">Hide</button>
           <a class="v3d-btn" id="v3dFloodMbFullBtn" style="display:none;text-decoration:none;" target="_blank" href="#">Full Page &#8599;</a>
         </div>
         <iframe id="view3dFrame" class="frame3d" allowfullscreen></iframe>
       </div>
     </div>
     <div class="resizer" id="resizerMain"></div>
+    <button id="drawerToggle" onclick="toggleDrawer()" title="Show or hide the side panel" aria-label="Show or hide the side panel">&#8250;</button>
+    <button id="viewShowBtn" onclick="window.viewUserHidden = false; setViewMode('card')">Flood view</button>
     <div class="right-col" id="rightCol">
 
       <div class="panel-section">
@@ -1273,6 +1347,28 @@ details summary:hover {{ color:var(--accent); }}
   </div>
 </div>
 
+
+<div id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="wTitle" style="display:none;">
+  <div class="wcard">
+    <button class="wx" onclick="closeWelcome()" aria-label="Close">&times;</button>
+    <div class="wl">
+      <h2>{MODEL_NAME}</h2>
+      <ul>
+        <li><b>Physical flood model</b>The full GPU solver: depth and speed through the storm, not just a snapshot.</li>
+        <li><b>Impact and loss</b>Buildings, roads and facilities at risk, with loss in PKR.</li>
+        <li><b>Scenarios</b>Coastal, glacier-lake, dam and protection options, and live monitoring.</li>
+      </ul>
+    </div>
+    <div class="wr">
+      <h3>Get flood information<br>for <em>your area</em></h3>
+      <button class="action" onclick="closeWelcome(); document.getElementById('geoInput').focus();">Search a place</button>
+      <button class="secondary" onclick="closeWelcome(); startDrawArea();">Draw an area on the map</button>
+      <button class="secondary" onclick="closeWelcome(); document.getElementById('uploadFile').scrollIntoView({{behavior:'smooth', block:'center'}});">Upload an area file</button>
+      <a class="btn" href="/instant">Open SAILAB Instant (quick estimate)</a>
+      <p class="note">Draw or choose an area, set the storm, then run the flood model. Results appear on the main screen.</p>
+    </div>
+  </div>
+</div>
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
 <script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.4.3/dist/mapbox-gl-draw.js"></script>
 <script>
@@ -1308,6 +1404,22 @@ function initResizerY(resizerId, topId) {{
 }}
 initResizerX('resizerMain', 'rightCol');
 initResizerY('vResizer', 'mapWrap');
+
+// ---- map-first layout helpers ----
+function toggleDrawer() {{ document.body.classList.toggle('drawer-closed'); setTimeout(() => {{ if (map) map.resize(); }}, 320); }}
+function setViewMode(m) {{
+  document.body.classList.toggle('view-main', m === 'main');
+  document.body.classList.toggle('view-hidden', m === 'hidden');
+  const b = document.getElementById('viewExpandBtn'); if (b) b.textContent = (m === 'main') ? 'Shrink' : 'Expand';
+}}
+function toggleViewMain() {{ setViewMode(document.body.classList.contains('view-main') ? 'card' : 'main'); }}
+function startDrawArea() {{ try {{ draw.changeMode('draw_polygon'); }} catch (e) {{}} }}
+function closeWelcome() {{ document.getElementById('welcomeOverlay').style.display = 'none'; try {{ sessionStorage.setItem('sailabWelcome', '1'); }} catch (e) {{}} }}
+(function () {{
+  let seen = false; try {{ seen = !!sessionStorage.getItem('sailabWelcome'); }} catch (e) {{}}
+  if (!seen && !/import=/.test(location.search)) document.getElementById('welcomeOverlay').style.display = 'flex';
+  window.addEventListener('load', () => {{ if (typeof map !== 'undefined' && map) map.resize(); }});
+}})();
 
 const MAP_STYLES = {{
   // "Globe" reuses the SAME real satellite imagery as "Satellite" -- the
@@ -1747,6 +1859,7 @@ function setArea(geojsonGeometry, areaKm2) {{
 let tier3dToken = 0;
 function loadTier3D(n) {{
   if (!currentGeoJSON) return;
+  if (document.body.classList.contains('view-hidden') && !window.viewUserHidden) setViewMode('card');   // first area: show the view
   const frame = document.getElementById('view3dFrame');
   const myToken = ++tier3dToken;
   if (n === 2) {{
@@ -2665,6 +2778,7 @@ function runInstantFlood() {{
       '<div class="stat-row"><span>Max depth</span><span>' + d.max_depth_m + ' m</span></div>' +
       '<div class="stat-row"><span>Wet / total cells</span><span>' + d.wet_cells + ' / ' + d.total_cells + '</span></div>';
     loadTier3D(2);
+    setViewMode('main');
   }});
 }}
 
@@ -3928,6 +4042,7 @@ function pollStatus() {{
       fullBtn.href = '/runs/' + currentRunId + '/mapbox_3d.html';
       fullBtn.style.display = 'inline-block';
       loadTier3D(3);
+      setViewMode('main');
     }} else if (d.status === 'cancelled') {{
       box.innerHTML = '<h3>Cancelled</h3><p class="note">This run was cancelled.</p>';
       document.getElementById('runBtn').disabled = false;

@@ -6519,3 +6519,13 @@ Prompted by a FastFlood Global result for Islamabad I-8 (`s1.png` in the flood f
 - New routes: `/area/instant-flood-overlay` (PNG + the four grid corners in lon/lat; rain-driven) and `/area/instant-scenarios` (moderate = 3 h intensity, extreme = 1 h intensity, both over a 3 h storm, from the local ERA5-Land/IMERG curve).
 - `hand_utils.pluvial_ponding_depth`: each terrain depression receives the effective rain on everything draining into it (flow accumulation at its outlet) and fills from its lowest cell up to its spill level. The overlay shows the larger of this and the channel flood from the rational-method flow Q = 0.5 x i x A / 3.6. HAND cache entries now keep `dem_raw` and `filled`; older entries are recomputed.
 - Honest limits: terrain is 29 m SRTM, so the I-8 area is only about 110 cells across and nullah incision is invisible; on I-8 (35.9 km2, 15 mm/hr x 3 h) the result is 6.4 km2 flooded (6.3 along drainage lines, 0.8 ponded), much wider than FastFlood's narrow channels. Treat the extent as an upper estimate. No observed flood was available to check it; the calibration tool applies only to the physical model, not this page.
+
+## Nov 2026: physical model (/app) restyled map-first, FastFlood-style; colours and functions unchanged
+
+Layout only (a CSS override block at the end of the page stylesheet, plus a few markup moves; every element id and handler is kept):
+- The map fills the screen. The old header is a floating toolbar holding the brand, the place/tehsil search, the Satellite/Streets/Dams/Export switch, links to Instant and Home, and the DEM source (the search and switch are moved into it in markup, not rewritten).
+- The right column is a floating rounded drawer (420 px) with a collapse button; panel sections are rounded cards; headings are sentence case; buttons, inputs and tier tabs are more rounded. Map controls shift left of the drawer.
+- The flood/3D iframe is a floating card at the bottom left, hidden until an area is chosen. "Expand" puts it on the whole main screen, "Hide"/"Flood view" toggle it, and it expands automatically when a run (or the Tier 2 instant preview) finishes.
+- A welcome card (search a place, draw, upload, link to /instant) shows once per browser session (not for SimCity `?import=` links).
+- The old drag splitters are hidden (their code is untouched). Not styled for phones.
+- Tests: frontend smoke, page JS syntax, landing and run-queue tests pass (24). Checked in headless Chromium: welcome card, drawer, area loaded (card), expanded main view. A finished physics run's expanded view was not re-checked after this change.
