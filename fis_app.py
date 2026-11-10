@@ -604,6 +604,64 @@ body.view-hidden #viewShowBtn {{ display:block; }}
 #welcomeOverlay .wr h3 em {{ font-style:normal; color:var(--accent); }}
 #welcomeOverlay .wx {{ position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; font-size:17px; }}
 @media (max-width:860px) {{ :root {{ --drawer-w:340px; }} #welcomeOverlay .wcard {{ grid-template-columns:1fr; }} #welcomeOverlay .wl {{ display:none; }} }}
+/* ---- light theme: same tokens, light values; toggled by data-theme on <html> ---- */
+:root[data-theme="light"] {{
+  --page:#EAF0F4; --page-2:#F3F7FA; --surface:#FFFFFF; --surface-2:#F1F5F8; --surface-3:#D5DFE6;
+  --ink:#10222B; --ink-2:#3F5964; --muted:#6B8490;
+  --line:#CBD8E0; --line-soft:#DCE6EC;
+  --accent:#0C8E98; --accent-2:#0A7C8C; --accent-dim:#5FB6BD; --accent-soft:#D8EFF1;
+  --violet:#6554D6; --amber:#B8730F; --danger:#C93A3D; --success:#1E9C6B;
+  --glow-accent:0 0 0 1px rgba(12,142,152,0.25), 0 0 18px rgba(12,142,152,0.12);
+  --glow-accent-strong:0 0 0 1px rgba(12,142,152,0.5), 0 0 22px rgba(12,142,152,0.25);
+  --shadow-card:0 1px 2px rgba(16,34,43,0.08), 0 8px 24px -10px rgba(16,34,43,0.18);
+  --shadow-float:0 10px 36px -10px rgba(16,34,43,0.28), 0 2px 8px rgba(16,34,43,0.10);
+}}
+:root[data-theme="light"], :root[data-theme="light"] body {{
+  background:radial-gradient(1100px 620px at 14% -8%, rgba(12,142,152,0.07), transparent 60%), linear-gradient(180deg, var(--page-2), var(--page) 70%); }}
+:root[data-theme="light"] ::selection {{ color:#fff; }}
+:root[data-theme="light"] header {{ background:rgba(255,255,255,0.88); }}
+:root[data-theme="light"] .layer-switch, :root[data-theme="light"] #geoInput {{ background:rgba(255,255,255,0.9); }}
+:root[data-theme="light"] #geoResults {{ background:rgba(255,255,255,0.97); }}
+:root[data-theme="light"] .right-col {{ background:rgba(244,248,250,0.92); }}
+:root[data-theme="light"] .tier-tabs {{ background:transparent; }}
+:root[data-theme="light"] .right-col .panel-section {{ background:rgba(255,255,255,0.8); }}
+:root[data-theme="light"] .right-col .panel-section:hover {{ background:#fff; }}
+:root[data-theme="light"] .panel-section:hover, :root[data-theme="light"] .stat-row:hover, :root[data-theme="light"] .layer-switch button:hover {{ background:rgba(16,34,43,0.04); }}
+:root[data-theme="light"] #drawerToggle, :root[data-theme="light"] #viewShowBtn {{ background:rgba(255,255,255,0.95); }}
+:root[data-theme="light"] #welcomeOverlay {{ background:rgba(234,240,244,0.7); }}
+:root[data-theme="light"] button.action, :root[data-theme="light"] .tier-tabs button.active {{ color:#fff; }}
+:root[data-theme="light"] input, :root[data-theme="light"] select, :root[data-theme="light"] textarea {{ background:#fff; color:var(--ink); }}
+#themeToggle {{ flex:0 0 auto; width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2);
+  color:var(--ink-2); cursor:pointer; font-size:16px; line-height:1; padding:0; }}
+#themeToggle:hover {{ color:var(--ink); border-color:var(--accent); }}
+#queueChip {{ flex:0 0 auto; height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2);
+  color:var(--ink-2); cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap; position:relative; }}
+#queueChip:hover {{ color:var(--ink); border-color:var(--accent); }}
+#queueChip.busy {{ color:var(--accent); border-color:var(--accent); }}
+#queuePop {{ position:absolute; top:calc(100% + 8px); right:0; width:340px; max-height:60vh; overflow:auto; z-index:40; display:none;
+  background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow-float); padding:10px; text-align:left; }}
+#queuePop.open {{ display:block; }}
+#queuePop h4 {{ margin:2px 4px 8px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }}
+.qrow {{ display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--line-soft); border-radius:10px; margin-bottom:6px; font-size:12px; color:var(--ink); }}
+.qrow .qmeta {{ flex:1; min-width:0; }} .qrow .qsub {{ color:var(--muted); font-size:11px; }}
+.qrow button {{ border:1px solid var(--danger); color:var(--danger); background:transparent; border-radius:8px; padding:4px 9px; cursor:pointer; font-size:11px; font-weight:600; }}
+.qrow button:hover {{ background:var(--danger); color:#fff; }}
+.qrow button:disabled {{ opacity:.5; cursor:default; }}
+.qempty {{ color:var(--muted); font-size:12px; padding:6px 4px; }}
+.dg {{ margin-top:10px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; }}
+.dg-title {{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }}
+.dg-svg {{ width:100%; height:auto; display:block; }}
+.dg-water {{ fill:var(--accent, var(--aqua)); opacity:.42; }}
+.dg-surface {{ stroke:var(--accent, var(--aqua)); stroke-width:2; }}
+.dg-person {{ fill:var(--ink); opacity:.78; }}
+.dg-tick {{ stroke:var(--muted); stroke-width:1; }}
+.dg-lbl {{ fill:var(--muted); font-size:9px; font-family:ui-monospace,Menlo,monospace; }}
+.dg-ground {{ fill:var(--muted); opacity:.6; }}
+.dg-row {{ display:flex; align-items:center; gap:8px; margin-top:6px; font-size:12px; color:var(--muted); }}
+.dg-row input[type=range] {{ flex:1; width:auto; }}
+.dg-row b {{ color:var(--ink); min-width:48px; text-align:right; font-variant-numeric:tabular-nums; }}
+.dg-msg {{ margin-top:8px; padding:8px 10px; border-left:3px solid var(--accent, var(--aqua)); border-radius:8px; background:rgba(127,127,127,.12); font-size:13px; font-weight:600; color:var(--ink); }}
+.dg-note {{ margin-top:6px; font-size:11px; color:var(--muted); line-height:1.4; }}
 </style>
 </head>
 <body class="view-hidden">
@@ -621,6 +679,8 @@ body.view-hidden #viewShowBtn {{ display:block; }}
       <button onclick="exportMapPng(map, 'map')">Export PNG</button>
     </div>
     <div class="hdr-nav"><a href="/instant" title="General, instant flood preview">Instant</a><a href="/" title="Home">Home</a></div>
+    <div style="position:relative;flex:0 0 auto;"><button id="queueChip" onclick="toggleQueue()" title="Show running and queued jobs, and cancel them">Queue: idle</button><div id="queuePop"></div></div>
+    <button id="themeToggle" onclick="toggleTheme()" title="Switch between dark and light mode" aria-label="Switch between dark and light mode">&#9680;</button>
     <div class="note" id="demSource"></div>
   </header>
   <div class="main">
@@ -1406,6 +1466,51 @@ initResizerX('resizerMain', 'rightCol');
 initResizerY('vResizer', 'mapWrap');
 
 // ---- map-first layout helpers ----
+var queueTimer = null;
+function toggleQueue() {{ document.getElementById('queuePop').classList.toggle('open'); refreshQueue(); }}
+function fmtAge(sec) {{ if (sec == null) return ''; return sec < 90 ? sec + ' s' : Math.round(sec / 60) + ' min'; }}
+function queueRowHtml(kind, id, title, sub) {{
+  return '<div class="qrow"><div class="qmeta"><div>' + title + '</div><div class="qsub">' + sub + '</div></div>' +
+    '<button onclick="cancelQueued(\\'' + kind + '\\',\\'' + id + '\\',this)">Cancel</button></div>';
+}}
+function refreshQueue() {{
+  fetch('/solver-status').then(r => r.json()).then(d => {{
+    const runs = d.runs || [], jobs = d.jobs || [];
+    const n = runs.length + jobs.length;
+    const chip = document.getElementById('queueChip');
+    chip.textContent = n ? 'Queue: ' + n + ' job' + (n > 1 ? 's' : '') : 'Queue: idle';
+    chip.classList.toggle('busy', n > 0);
+    const pop = document.getElementById('queuePop');
+    if (!pop.classList.contains('open')) return;
+    let h = '<h4>Solver</h4>';
+    h += d.holder ? '<div class="qempty">Running now: ' + d.holder.label + ' (' + fmtAge(Math.round(d.holder.running_s || 0)) + ')</div>' : '<div class="qempty">Idle</div>';
+    h += '<h4>Flood runs</h4>';
+    if (!runs.length) h += '<div class="qempty">None</div>';
+    runs.forEach(r => {{
+      const state = r.status === 'queued' ? 'waiting' + (r.position ? ', position ' + r.position : '') : (r.status === 'postprocessing' ? 'processing results' : 'running');
+      h += queueRowHtml('run', r.id, 'Run ' + r.id.slice(0, 8), state + (r.age_s != null ? ' &middot; ' + fmtAge(r.age_s) : ''));
+    }});
+    h += '<h4>Other jobs</h4>';
+    if (!jobs.length) h += '<div class="qempty">None</div>';
+    jobs.forEach(j => h += queueRowHtml('job', j.id, (j.label || 'Background job') + ' ' + j.id.slice(0, 8), 'running or waiting for the solver'));
+    pop.innerHTML = h;
+  }}).catch(() => {{}});
+}}
+function cancelQueued(kind, id, btn) {{
+  if (!confirm('Cancel this ' + (kind === 'run' ? 'flood run' : 'job') + '?')) return;
+  btn.disabled = true;
+  fetch((kind === 'run' ? '/runs/' : '/jobs/') + id + '/cancel', {{method:'POST'}}).then(r => r.json()).then(d => {{
+    if (d.error) alert(d.error);
+    refreshQueue();
+  }});
+}}
+document.addEventListener('click', e => {{ const pop = document.getElementById('queuePop'); if (pop && !e.target.closest('#queueChip') && !e.target.closest('#queuePop')) pop.classList.remove('open'); }});
+queueTimer = setInterval(refreshQueue, 5000); setTimeout(refreshQueue, 800);
+function applyTheme(t) {{ document.documentElement.setAttribute('data-theme', t);
+  var b = document.getElementById('themeToggle'); if (b) b.innerHTML = t === 'light' ? '&#9790;' : '&#9728;'; }}
+function toggleTheme() {{ var t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  applyTheme(t); try {{ localStorage.setItem('sailabTheme', t); }} catch (e) {{}} }}
+(function () {{ var t = 'dark'; try {{ t = localStorage.getItem('sailabTheme') || 'dark'; }} catch (e) {{}} applyTheme(t); }})();
 function toggleDrawer() {{ document.body.classList.toggle('drawer-closed'); setTimeout(() => {{ if (map) map.resize(); }}, 320); }}
 function setViewMode(m) {{
   document.body.classList.toggle('view-main', m === 'main');
@@ -4001,6 +4106,46 @@ function cancelRun() {{
   }});
 }}
 
+var DEPTH_MARKS = [[0.1, "ankle"], [0.5, "knee"], [1, "waist"], [1.35, "chest"], [1.7, "head"]];
+function depthMessage(d) {{
+  if (d < 0.1) return "Below ankle height. Watch for open drains and moving water.";
+  if (d < 0.5) return "Ankle to knee height. Walking gets difficult. Do not drive through it.";
+  if (d < 1) return "Knee to waist height. Fast water at this depth can knock an adult over. Avoid it.";
+  if (d < 1.35) return "Waist to chest height. Dangerous to wade through. Move to higher ground.";
+  if (d < 1.7) return "Chest height. Dangerous. Move to an upper floor or higher ground.";
+  return "Over head height for most adults. Move to the upper floor or higher ground.";
+}}
+function depthGuideSvg(d) {{
+  var S = 64, H = 150, W = 300, g = H - 14, dd = Math.min(Math.max(d, 0), 2.1), top = g - dd * S, px = 100;
+  var s = '<svg class="dg-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Flood depth compared with a standing adult">';
+  s += '<rect class="dg-water" x="0" y="' + top + '" width="' + W + '" height="' + (g - top) + '"/>';
+  s += '<g class="dg-person"><rect x="' + (px - 10) + '" y="' + (g - 0.85 * S) + '" width="8" height="' + (0.85 * S) + '" rx="2"/>' +
+       '<rect x="' + (px + 2) + '" y="' + (g - 0.85 * S) + '" width="8" height="' + (0.85 * S) + '" rx="2"/>' +
+       '<rect x="' + (px - 14) + '" y="' + (g - 1.5 * S) + '" width="28" height="' + (0.7 * S) + '" rx="6"/>' +
+       '<circle cx="' + px + '" cy="' + (g - 1.62 * S) + '" r="' + (0.12 * S) + '"/></g>';
+  s += '<line class="dg-surface" x1="0" x2="' + W + '" y1="' + top + '" y2="' + top + '"/>';
+  DEPTH_MARKS.forEach(function (m) {{
+    var y = g - m[0] * S;
+    s += '<line class="dg-tick" x1="170" x2="190" y1="' + y + '" y2="' + y + '"/><text class="dg-lbl" x="195" y="' + (y + 3) + '">' + m[1] + ' ' + m[0] + ' m</text>';
+  }});
+  s += '<rect class="dg-ground" x="0" y="' + g + '" width="' + W + '" height="3"/></svg>';
+  return s;
+}}
+function renderDepthGuide(elId, depth) {{
+  var el = document.getElementById(elId); if (!el) return;
+  var d0 = Math.min(Math.max(+depth || 0, 0), 2.1);
+  el.innerHTML = '<div class="dg"><div class="dg-title">What this depth means</div><div id="' + elId + '_svg">' + depthGuideSvg(d0) + '</div>' +
+    '<div class="dg-row"><label for="' + elId + '_s">Depth</label><input type="range" id="' + elId + '_s" min="0" max="2.1" step="0.05" value="' + d0.toFixed(2) + '"><b id="' + elId + '_v">' + d0.toFixed(2) + ' m</b></div>' +
+    '<div class="dg-msg" id="' + elId + '_m">' + depthMessage(d0) + '</div>' +
+    '<div class="dg-note">Speed matters as much as depth, so check whether the water is moving fast. A modelled depth is an estimate.' + ((+depth) > 2.1 ? ' The model shows ' + (+depth).toFixed(1) + ' m at its deepest point, beyond this scale.' : '') + '</div></div>';
+  document.getElementById(elId + '_s').addEventListener('input', function (e) {{
+    var v = parseFloat(e.target.value);
+    document.getElementById(elId + '_svg').innerHTML = depthGuideSvg(v);
+    document.getElementById(elId + '_v').textContent = v.toFixed(2) + ' m';
+    document.getElementById(elId + '_m').textContent = depthMessage(v);
+  }});
+}}
+
 function pollStatus() {{
   fetch('/runs/' + currentRunId + '/progress.json').then(r => r.json()).then(d => {{
     const box = document.getElementById('runStatusBox');
@@ -4013,6 +4158,7 @@ function pollStatus() {{
         '<div class="stat-row"><span>Peak hazard</span><span>' + d.summary.peak_hazard_band + '</span></div>' +
         '<div class="stat-row"><span>Solver</span><span>' + (d.summary.solver_used || 'acc').toUpperCase() + '</span></div>' +
         '<div class="stat-row"><span>Time taken</span><span>' + d.elapsed.toFixed(1) + ' s</span></div>' +
+        '<div id="depthGuideRun"></div>' +
         '<div style="margin-top:14px; display:flex; gap:8px;">' +
         '<a class="btn primary" href="/runs/' + currentRunId + '/report.html" target="_blank">Full 2D report</a>' +
         '<a class="btn secondary" href="/runs/' + currentRunId + '/report.pdf">Export PDF</a>' +
@@ -4031,6 +4177,7 @@ function pollStatus() {{
           d.summary.dams_conditioning.n_reservoirs_conditioned + ' reservoir(s) [' + d.summary.dams_conditioning.reservoir_names.join(', ') + '].</p>' : '') +
         (d.summary.storm_motion ? '<p class="note" style="margin-top:10px;">' + d.summary.storm_motion + '</p>' : '') +
         (d.summary.storm_motion_source ? '<p class="note" style="margin-top:4px;">' + d.summary.storm_motion_source + '</p>' : '');
+      renderDepthGuide('depthGuideRun', d.summary.max_depth_m);
       renderInfra(d.summary);
       renderDamage(d.summary);
       renderSediment(d.summary);
@@ -5695,13 +5842,56 @@ def area_climate_factor():
     return jsonify({"job_id": job_id})
 
 
+JOB_CANCEL = set()      # ids of background jobs (scenarios, optimizers, ...) the user asked to cancel
+
+
+class JobCancelled(Exception):
+    pass
+
+
+def _kill_job_processes(job_id):
+    """SIGTERM every process of this user whose command line mentions the job id (its flood_model.py and solver
+    both carry the job's work directory). Returns how many were signalled."""
+    import signal
+    n = 0
+    me = os.getpid()
+    for pid in [d for d in os.listdir("/proc") if d.isdigit()]:
+        if int(pid) == me:
+            continue
+        try:
+            with open(f"/proc/{pid}/cmdline", "rb") as f:
+                cmd = f.read().replace(b"\0", b" ").decode("utf-8", "replace")
+            if job_id in cmd and ("flood_model" in cmd or "lisflood" in cmd):
+                os.kill(int(pid), signal.SIGTERM)
+                n += 1
+        except Exception:
+            continue
+    return n
+
+
 @app.route("/climate-jobs/<job_id>/progress.json")
 def climate_job_progress(job_id):
+    if job_id in JOB_CANCEL:
+        return jsonify({"status": "cancelled"})
     with CLIMATE_JOBS_LOCK:
         job = CLIMATE_JOBS.get(job_id)
     if job is None:
         return jsonify({"error": "unknown job"}), 404
     return jsonify(job)
+
+
+@app.route("/jobs/<job_id>/cancel", methods=["POST"])
+def job_cancel(job_id):
+    """Cancels a background job (protection / nature-based scenario, optimizer, calibration, coastal surge ...):
+    stops its solver processes now and makes the job stop starting new ones."""
+    with CLIMATE_JOBS_LOCK:
+        job = CLIMATE_JOBS.get(job_id)
+    if job is None:
+        abort(404)
+    if job.get("status") != "running":
+        return jsonify({"status": job.get("status"), "note": "already finished"})
+    JOB_CANCEL.add(job_id)
+    return jsonify({"status": "cancelling", "processes_stopped": _kill_job_processes(job_id)})
 
 
 @app.route("/area/idf-design-storm", methods=["POST"])
@@ -7498,6 +7688,19 @@ def solver_status():
     """Who holds the single solver slot and who is waiting (any job type), plus queued /run ids."""
     snap = SIM_SLOT.snapshot()
     snap["queued_runs"] = list(RUN_QUEUE)
+    now = time.time()
+    with RUN_STATE_LOCK:
+        runs = []
+        for rid, st in RUN_STATE.items():
+            if st.get("status") in ("queued", "running", "postprocessing"):
+                runs.append({"id": rid, "kind": "run", "status": st["status"], "stage": st.get("stage"),
+                             "position": (RUN_QUEUE.index(rid) + 1) if rid in RUN_QUEUE else None,
+                             "age_s": round(now - st.get("queued_at", now)) if st.get("queued_at") else None})
+    with CLIMATE_JOBS_LOCK:
+        jobs = [{"id": jid, "kind": "job", "status": "running", "label": j.get("label")}
+                for jid, j in CLIMATE_JOBS.items() if j.get("status") == "running" and jid not in JOB_CANCEL]
+    snap["runs"] = runs
+    snap["jobs"] = jobs
     return jsonify(snap)
 
 
@@ -8075,7 +8278,7 @@ def area_nbs_scenario():
 
     job_id = uuid.uuid4().hex
     with CLIMATE_JOBS_LOCK:
-        CLIMATE_JOBS[job_id] = {"status": "running"}
+        CLIMATE_JOBS[job_id] = {"status": "running", "label": "Nature-based scenario"}
     threading.Thread(target=execute_nbs_run, args=(job_id, baseline_run_id, intervention_key, pathway),
                       daemon=True).start()
     return jsonify({"job_id": job_id})
@@ -8144,6 +8347,8 @@ def execute_nbs_recommend(job_id, baseline_run_id):
         trials = []
         total = len(NBS_RECOMMEND_COMBOS)
         for i, (intervention_key, pathway) in enumerate(NBS_RECOMMEND_COMBOS):
+            if job_id in JOB_CANCEL:
+                return
             trial_job_id = f"{job_id}_t{i}"
             execute_nbs_run(trial_job_id, baseline_run_id, intervention_key, pathway)
             with CLIMATE_JOBS_LOCK:
@@ -8380,7 +8585,7 @@ def area_protect_run():
 
     job_id = uuid.uuid4().hex
     with CLIMATE_JOBS_LOCK:
-        CLIMATE_JOBS[job_id] = {"status": "running"}
+        CLIMATE_JOBS[job_id] = {"status": "running", "label": "Protection scenario"}
     threading.Thread(target=execute_protection_run, args=(job_id, baseline_run_id, structures, extra_buildings),
                      daemon=True).start()
     return jsonify({"job_id": job_id})
@@ -8423,9 +8628,11 @@ def execute_protection_optimize(job_id, baseline_run_id, types, n_structures, ma
         run_params = _protection_run_params_and_boundary(baseline_dir, meta, header, src_crs, baseline_dem, log_path)
 
         def progress_cb(i, total, comparison):
+            if job_id in JOB_CANCEL:
+                raise JobCancelled()
             with CLIMATE_JOBS_LOCK:
                 CLIMATE_JOBS[job_id] = {
-                    "status": "running", "trial": i, "max_evals": total,
+                    "status": "running", "label": "Protection search", "trial": i, "max_evals": total,
                     "last_reduction_pct": comparison.get("reduction_pct") if comparison else None,
                     "last_displacement_pct": comparison.get("displacement_pct") if comparison else None,
                     "last_loss_avoided_pkr": comparison.get("loss_avoided_pkr") if comparison else None,
@@ -8443,6 +8650,8 @@ def execute_protection_optimize(job_id, baseline_run_id, types, n_structures, ma
                 import shutil as _shutil
                 _shutil.rmtree(fn, ignore_errors=True)
 
+        if job_id in JOB_CANCEL:
+            return
         if best is None:
             with CLIMATE_JOBS_LOCK:
                 CLIMATE_JOBS[job_id] = {"status": "failed", "error": "no valid candidate found in the search budget"}

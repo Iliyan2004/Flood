@@ -88,7 +88,34 @@
     #bar .brand + .pill { display: none; } .btn .lbl { display: none; }
     #legend { bottom: auto; top: 64px; }
   }
+  /* light theme (shared choice with /app via localStorage "sailabTheme") */
+  :root[data-theme="light"] {
+    --ink: #10222B; --muted: #4F6A74; --aqua: #0C8E98; --aqua-deep: #0A7A84; --bg: #EAF0F4;
+    --glass: rgba(255, 255, 255, .88); --line: rgba(12, 90, 100, .25); --warn: #B8730F;
+  }
+  :root[data-theme="light"] .glass { box-shadow: 0 10px 30px rgba(16, 34, 43, .18); }
+  :root[data-theme="light"] input[type=text], :root[data-theme="light"] input[type=number], :root[data-theme="light"] select { background: #fff; }
+  :root[data-theme="light"] .pill, :root[data-theme="light"] .btn.on, :root[data-theme="light"] .btn.primary, :root[data-theme="light"] #panel .chip.on { color: #fff; }
+  :root[data-theme="light"] .hits { background: #fff; }
+  :root[data-theme="light"] .stat { background: rgba(255, 255, 255, .7); }
+  :root[data-theme="light"] #panel p.err { color: #C93A3D; }
+  :root[data-theme="light"] #welcome { background: rgba(234, 240, 244, .6); }
+  #themeToggle { width: 36px; padding: 7px 0; justify-content: center; font-size: 1rem; line-height: 1; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  .dg { margin-top:10px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; }
+  .dg-title { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .dg-svg { width:100%; height:auto; display:block; }
+  .dg-water { fill:var(--accent, var(--aqua)); opacity:.42; }
+  .dg-surface { stroke:var(--accent, var(--aqua)); stroke-width:2; }
+  .dg-person { fill:var(--ink); opacity:.78; }
+  .dg-tick { stroke:var(--muted); stroke-width:1; }
+  .dg-lbl { fill:var(--muted); font-size:9px; font-family:ui-monospace,Menlo,monospace; }
+  .dg-ground { fill:var(--muted); opacity:.6; }
+  .dg-row { display:flex; align-items:center; gap:8px; margin-top:6px; font-size:12px; color:var(--muted); }
+  .dg-row input[type=range] { flex:1; width:auto; }
+  .dg-row b { color:var(--ink); min-width:48px; text-align:right; font-variant-numeric:tabular-nums; }
+  .dg-msg { margin-top:8px; padding:8px 10px; border-left:3px solid var(--accent, var(--aqua)); border-radius:8px; background:rgba(127,127,127,.12); font-size:13px; font-weight:600; color:var(--ink); }
+  .dg-note { margin-top:6px; font-size:11px; color:var(--muted); line-height:1.4; }
 </style>
 </head>
 <body>
@@ -102,6 +129,7 @@
   </div>
   <div class="spacer">
     <button class="btn" id="drawBtn" title="Draw your own area on the map">Draw area</button>
+    <button class="btn" id="themeToggle" title="Switch between dark and light mode" aria-label="Switch between dark and light mode">&#9680;</button>
     <button class="btn" id="threeD" title="Tilt the map and show terrain relief">3D</button>
     <a class="btn" href="/app" title="Full physical model">Physical model &rarr;</a>
   </div>
@@ -144,6 +172,7 @@
     <div class="stat"><span>Flooded area</span><strong id="sArea">&ndash;</strong></div>
     <div class="stat"><span>Deepest water</span><strong id="sDepth">&ndash;</strong></div>
   </div>
+  <div id="depthGuide"></div>
   <p id="sNote">&nbsp;</p>
   <p id="sBasis"></p>
   <a class="btn" href="/app" style="margin-top:8px;">Run the full physical model &rarr;</a>
@@ -157,6 +186,21 @@
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
 <script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.4.3/dist/mapbox-gl-draw.js"></script>
+<script>
+(function () {
+  var root = document.documentElement;
+  function apply(t) { root.setAttribute('data-theme', t); var b = document.getElementById('themeToggle'); if (b) b.innerHTML = t === 'light' ? '&#9790;' : '&#9728;'; }
+  var t = 'dark'; try { t = localStorage.getItem('sailabTheme') || 'dark'; } catch (e) {}
+  apply(t);
+  document.addEventListener('DOMContentLoaded', function () {
+    apply(root.getAttribute('data-theme'));
+    document.getElementById('themeToggle').addEventListener('click', function () {
+      var n = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      apply(n); try { localStorage.setItem('sailabTheme', n); } catch (e) {}
+    });
+  });
+})();
+</script>
 <script>
 "use strict";
 const MAPBOX_TOKEN = __MAPBOX_TOKEN__;
@@ -269,6 +313,7 @@ async function refreshOverlay(my) {
     $('pSub').textContent = fmtArea(ov.area_km2) + ' km² area · terrain ' + ov.cellsize_m.toFixed(0) + ' m cells';
     $('sArea').textContent = fmtArea(ov.flooded_area_km2) + ' km²'; $('sDepth').textContent = ov.max_depth_m.toFixed(2) + ' m';
     $('sNote').className = '';
+    renderDepthGuide('depthGuide', ov.max_depth_m);
     $('sNote').textContent = 'Rain depth ' + ov.rain_depth_mm + ' mm. Water along drainage lines: ' + fmtArea(ov.channel_area_km2) + ' km²; ponding in low ground: ' + fmtArea(ov.ponded_area_km2) + ' km².';
     $('sBasis').textContent = (scen && scen.source ? 'Rainfall: ' + scen.source + '. ' : '') + 'Half the rain is assumed to run off. Screening estimate, not a simulation.';
   } catch (e) { busy(); $('sNote').className = 'err'; $('sNote').textContent = 'Failed: ' + e; }
@@ -303,6 +348,45 @@ map.on('load', async () => {
   if (t) { $('welcome').style.display = 'none'; usePick({ kind: 'tehsil', id: t[1], name: 'Tehsil ' + t[1] }); }
   else if (la && lo) { $('welcome').style.display = 'none'; setArea(boxAround(parseFloat(lo[1]), parseFloat(la[1]), 6), 'Selected place'); }
 });
+var DEPTH_MARKS = [[0.1, "ankle"], [0.5, "knee"], [1, "waist"], [1.35, "chest"], [1.7, "head"]];
+function depthMessage(d) {
+  if (d < 0.1) return "Below ankle height. Watch for open drains and moving water.";
+  if (d < 0.5) return "Ankle to knee height. Walking gets difficult. Do not drive through it.";
+  if (d < 1) return "Knee to waist height. Fast water at this depth can knock an adult over. Avoid it.";
+  if (d < 1.35) return "Waist to chest height. Dangerous to wade through. Move to higher ground.";
+  if (d < 1.7) return "Chest height. Dangerous. Move to an upper floor or higher ground.";
+  return "Over head height for most adults. Move to the upper floor or higher ground.";
+}
+function depthGuideSvg(d) {
+  var S = 64, H = 150, W = 300, g = H - 14, dd = Math.min(Math.max(d, 0), 2.1), top = g - dd * S, px = 100;
+  var s = '<svg class="dg-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Flood depth compared with a standing adult">';
+  s += '<rect class="dg-water" x="0" y="' + top + '" width="' + W + '" height="' + (g - top) + '"/>';
+  s += '<g class="dg-person"><rect x="' + (px - 10) + '" y="' + (g - 0.85 * S) + '" width="8" height="' + (0.85 * S) + '" rx="2"/>' +
+       '<rect x="' + (px + 2) + '" y="' + (g - 0.85 * S) + '" width="8" height="' + (0.85 * S) + '" rx="2"/>' +
+       '<rect x="' + (px - 14) + '" y="' + (g - 1.5 * S) + '" width="28" height="' + (0.7 * S) + '" rx="6"/>' +
+       '<circle cx="' + px + '" cy="' + (g - 1.62 * S) + '" r="' + (0.12 * S) + '"/></g>';
+  s += '<line class="dg-surface" x1="0" x2="' + W + '" y1="' + top + '" y2="' + top + '"/>';
+  DEPTH_MARKS.forEach(function (m) {
+    var y = g - m[0] * S;
+    s += '<line class="dg-tick" x1="170" x2="190" y1="' + y + '" y2="' + y + '"/><text class="dg-lbl" x="195" y="' + (y + 3) + '">' + m[1] + ' ' + m[0] + ' m</text>';
+  });
+  s += '<rect class="dg-ground" x="0" y="' + g + '" width="' + W + '" height="3"/></svg>';
+  return s;
+}
+function renderDepthGuide(elId, depth) {
+  var el = document.getElementById(elId); if (!el) return;
+  var d0 = Math.min(Math.max(+depth || 0, 0), 2.1);
+  el.innerHTML = '<div class="dg"><div class="dg-title">What this depth means</div><div id="' + elId + '_svg">' + depthGuideSvg(d0) + '</div>' +
+    '<div class="dg-row"><label for="' + elId + '_s">Depth</label><input type="range" id="' + elId + '_s" min="0" max="2.1" step="0.05" value="' + d0.toFixed(2) + '"><b id="' + elId + '_v">' + d0.toFixed(2) + ' m</b></div>' +
+    '<div class="dg-msg" id="' + elId + '_m">' + depthMessage(d0) + '</div>' +
+    '<div class="dg-note">Speed matters as much as depth, so check whether the water is moving fast. A modelled depth is an estimate.' + ((+depth) > 2.1 ? ' The model shows ' + (+depth).toFixed(1) + ' m at its deepest point, beyond this scale.' : '') + '</div></div>';
+  document.getElementById(elId + '_s').addEventListener('input', function (e) {
+    var v = parseFloat(e.target.value);
+    document.getElementById(elId + '_svg').innerHTML = depthGuideSvg(v);
+    document.getElementById(elId + '_v').textContent = v.toFixed(2) + ' m';
+    document.getElementById(elId + '_m').textContent = depthMessage(v);
+  });
+}
 </script>
 </body>
 </html>

@@ -6537,3 +6537,12 @@ Switching the 3D viewer to Dark, Light, Night (or Satellite the first time) remo
 ## Nov 2026: landing page switched to the deployed (/srv/flood, sailab.aigeo360.com) design
 
 `landing.html` is now the design served by the deployed app (fetched from its port 8120, since /srv/flood is not readable from this account): black flood scene with buildings and rain, AI Geo Navigators logo bar, footer. Two changes from the deployed page: the single "Open SAILAB" button is two buttons in the same style, "SAILAB Instant" (`/instant`) and "SAILAB Physics" (`/app`), and the footer version is the `__APP_VERSION__` placeholder. The earlier two-card landing is in git history (commit 2f9bfb6). The deploy package patch applies this as a separate small patch against the deployed landing page.
+
+## Nov 2026: working-copy folder cleaned and organised
+
+Non-code files moved out of the root (nothing the app reads was moved; every Python module, template, test and symlink target stays where it was, because `~/flood` links into this folder):
+- `docs/plans/` (PROGRESS notes, model plan, research brief), `docs/reports/` (technical reference, architecture, survey, data-sources, one-pagers, Word notes, glacier methodology), `docs/previous-versions/` (older editions and the review notes), `docs/reference/` (the FastFlood Islamabad I-8 screenshot).
+- `data/raw_downloads/` (GRDC zip, the Glacier thickness and Dams zips already extracted elsewhere, the old landcover_masks.nc), `data/samples/` (MACH rainfall CSV used by a test).
+- `archive/` (the Oct 3 sync backup, the Gilgit demo, old logs); `solvers/lisflood_patches/` (kernel patch sources).
+- Removed: `__pycache__`, six empty cache folders, duplicate copies (`h147b.csv`, a second `s1.png`) and the duplicate 13.5 GB `Pak_srtm.tif` (the DEM the app reads is `3. Raster Data/DEM_SRTM/pakDEM/Pak_srtm.tif`).
+- Python modules were not regrouped into packages; that would change every import, the tests and the deploy patch.
