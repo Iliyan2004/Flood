@@ -173,6 +173,7 @@
     <div class="stat"><span>Deepest water</span><strong id="sDepth">&ndash;</strong></div>
   </div>
   <div id="depthGuide"></div>
+  <label id="learnedRow" style="display:flex;gap:8px;align-items:center;font-size:12px;margin:6px 0;cursor:pointer"><input type="checkbox" id="learned"> Learned estimate (beta) &mdash; trained on real solver runs</label>
   <p id="sNote">&nbsp;</p>
   <p id="sBasis"></p>
   <a class="btn" href="/app" style="margin-top:8px;">Run the full physical model &rarr;</a>
@@ -305,7 +306,7 @@ async function refreshOverlay(my) {
   busy('Calculating the flood...');
   try {
     const ov = await fetch('/area/instant-flood-overlay', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ geometry: geom, rain_mm_hr: parseFloat($('rain').value), duration_hr: parseFloat($('dur').value) }) }).then(r => r.json());
+      body: JSON.stringify({ geometry: geom, rain_mm_hr: parseFloat($('rain').value), duration_hr: parseFloat($('dur').value), method: $('learned').checked ? 'learned' : 'terrain' }) }).then(r => r.json());
     if (tok !== ovToken || my !== areaToken) return;
     busy();
     if (ov.error) { $('pSub').textContent = ''; $('sNote').className = 'err'; $('sNote').textContent = ov.error; return; }
@@ -315,6 +316,11 @@ async function refreshOverlay(my) {
     $('sNote').className = '';
     renderDepthGuide('depthGuide', ov.max_depth_m);
     $('sNote').textContent = 'Rain depth ' + ov.rain_depth_mm + ' mm. Water along drainage lines: ' + fmtArea(ov.channel_area_km2) + ' km²; ponding in low ground: ' + fmtArea(ov.ponded_area_km2) + ' km².';
+    if (ov.method === 'learned') {
+      $('sNote').textContent = 'Rain depth ' + ov.rain_depth_mm + ' mm. Learned estimate: a neural network trained on real flood-model runs predicts the depth, so small details can be off.';
+      $('sBasis').textContent = 'Beta. On areas it had not seen, it found about 72% of the flooding a real run produced and still overstated the flooded area by about 1.9 times. Rain-driven flooding only, no buildings or river inflow.';
+      return;
+    }
     $('sBasis').textContent = (scen && scen.source ? 'Rainfall: ' + scen.source + '. ' : '') + 'Half the rain is assumed to run off. Screening estimate, not a simulation.';
   } catch (e) { busy(); $('sNote').className = 'err'; $('sNote').textContent = 'Failed: ' + e; }
 }
@@ -328,6 +334,7 @@ $('threeD').onclick = () => {
   is3D = !is3D; $('threeD').classList.toggle('on', is3D);
   if (is3D) { enableTerrain(); map.easeTo({ pitch: 62, duration: 900 }); } else { map.setTerrain(null); map.easeTo({ pitch: 0, bearing: 0, duration: 700 }); }
 };
+$('learned').onchange = () => { if (geom) scheduleOverlay(0); };
 $('drawBtn').onclick = () => { $('welcome').style.display = 'none'; draw.changeMode('draw_polygon'); busy('Click the map to outline your area; double-click to finish.'); };
 const onDraw = () => {
   busy();

@@ -6546,3 +6546,9 @@ Non-code files moved out of the root (nothing the app reads was moved; every Pyt
 - `archive/` (the Oct 3 sync backup, the Gilgit demo, old logs); `solvers/lisflood_patches/` (kernel patch sources).
 - Removed: `__pycache__`, six empty cache folders, duplicate copies (`h147b.csv`, a second `s1.png`) and the duplicate 13.5 GB `Pak_srtm.tif` (the DEM the app reads is `3. Raster Data/DEM_SRTM/pakDEM/Pak_srtm.tif`).
 - Python modules were not regrouped into packages; that would change every import, the tests and the deploy patch.
+
+## Nov 2026: learned flood estimate (U-Net surrogate) added to SAILAB Instant as an optional beta layer
+
+- `surrogate/` holds the generator (`gen_data2.py`: Latin-hypercube design inside Pakistan, one real LISFLOOD-FP run per sample with varied rain, duration, roughness, infiltration), trainer (`train_eval2.py`) and reports. Round 2 (233 train / 70 held-out terrain windows, whole 58 km blocks held out): CSI 0.435 vs 0.341 for the terrain-based Instant estimate (gain +0.094, 95% interval +0.067 to +0.120; better on 79% of windows), POD 0.72 vs 0.68, FAR 0.50 vs 0.56, depth error 0.15 m vs 1.56 m. It still overstates flooded area about 1.9x (Instant: 3.1x). An earlier "55% failures" was design points outside Pakistan, not solver failures.
+- `surrogate_utils.py` runs it in 128x128 tiles (stride 96, Hann blend, HAND recomputed per tile as in training; limit 150 tiles, minimum 128x128 cells). `/area/instant-flood-overlay` takes `method: "learned"`; `instant.html` has a "Learned estimate (beta)" checkbox. Rain-driven only: no buildings, no river inflow. 49 km2 area took 6 s.
+- Weights (`surrogate/unet_final.pt`, else `unet_pilot2.pt`) and sample data are NOT in git; retrain with `gen_data2.py 500` then `train_eval2.py`. The generator reads the SRTM from the shared drive and stalls when the drive is slow; it resumes by skipping finished samples.

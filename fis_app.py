@@ -4889,8 +4889,19 @@ def area_instant_flood_overlay():
         channel, _ = discharge_to_inundation(hand_result, discharge)
         ponding = pluvial_ponding_depth(hand_result, runoff_c * rain_mm_hr * duration_hr)
         depth = np.maximum(channel, ponding)
+        learned_used = None
+        if body.get("method") == "learned":
+            import surrogate_utils
+            if not surrogate_utils.available():
+                return jsonify({"error": "the learned estimate is not installed on this server"}), 400
+            raw = hand_result["dem_raw"]
+            depth = surrogate_utils.predict_depth(raw, header, rain_mm_hr, duration_hr, float(body.get("friction", 0.05)),
+                                                  float(body.get("infiltration_mm_hr", 5.0)), valid=raw > -9000)
+            learned_used = surrogate_utils.model_name()
     except GlobalDemNotEnabled as e:
         return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"instant-flood overlay failed: {e}"}), 400
     nrows, ncols = depth.shape
@@ -4914,7 +4925,7 @@ def area_instant_flood_overlay():
         "rain_depth_mm": round(rain_mm_hr * duration_hr, 1), "area_km2": round(area_km2, 3),
         "ponded_area_km2": round(int((ponding > 0.05).sum()) * cs * cs / 1e6, 4),
         "channel_area_km2": round(int((channel > 0.05).sum()) * cs * cs / 1e6, 4),
-        "cellsize_m": cs, "dem_source": dem_label,
+        "cellsize_m": cs, "dem_source": dem_label, "method": "learned" if learned_used else "terrain", "model": learned_used,
     })
 
 
