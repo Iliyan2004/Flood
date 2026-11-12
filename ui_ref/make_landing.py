@@ -28,7 +28,7 @@ sub('SAILAB v2.2 · interface study', 'SAILAB v__APP_VERSION__')
 
 # --- nav ----------------------------------------------------------------------------------------
 sub('<a class="btn p" href="modes.html">Open the console</a>\n  </nav>', '<a class="btn p" href="/app">SAILAB Physics</a>\n  </nav>')
-sub('<a href="#modes" data-go>Modes</a>', '<a href="#modes" data-go>Two ways in</a>')
+sub('<a href="#modes" data-go>Modes</a>', '<a href="#modes" data-go>Two ways to solve</a>')
 
 # --- hero ---------------------------------------------------------------------------------------
 sub('<p class="acro-full">[SAILAB full form goes here]</p>', '<p class="acro-full">' + FULL + '</p>')
@@ -95,8 +95,8 @@ pins = re.sub(r'<p>A height-above-drainage.*?</p>', '<p>A terrain-based estimate
 pins = re.sub(r'<div class="chips">.*?</div>', '<div class="chips"><span>Moderate rain</span><span>Extreme rain</span><span>Your own rain</span><span>3D view</span></div>', pins, 1, re.S)
 pins = pins.replace('href="modes.html#instant">Open Instant', 'href="/instant">Open SAILAB Instant')
 intro = re.search(r'    <div class="panel intro-p">.*?\n    </div>\n', m, re.S).group(0)
-intro = intro.replace('<b>04</b> Modes', '<b>04</b> Two ways in').replace('Six hazards.<br><em>One console.</em>', 'Two ways in.<br><em>One map.</em>')
-intro = re.sub(r'<p>Each mode has.*?</p>', '<p>Start with Instant when you need an answer now. Switch to Physics when the decision needs a modelled flood, the buildings and roads in it, and a loss figure.</p>', intro, 1, re.S)
+intro = intro.replace('<b>04</b> Modes', '<b>04</b> Two ways to solve').replace('Six hazards.<br><em>One console.</em>', 'Two ways to solve.<br><em>One map.</em>')
+intro = re.sub(r'<p>Each mode has.*?</p>', '<p>Solve it fast with a terrain-based estimate, or solve it properly with the full 2D physics model. Either way you draw one area and see the result on one map.</p>', intro, 1, re.S)
 new_modes = ('<section id="modes">\n  <div class="m-track" id="mTrack">\n' + intro + '\n' + p2d + '\n' + pins + '  </div>\n'
              '  <div class="m-dots" id="mDots" aria-label="Modes"></div>\n  <div class="m-count micro" id="mCount">Modes</div>\n</section>')
 h = h.replace(m, new_modes)
