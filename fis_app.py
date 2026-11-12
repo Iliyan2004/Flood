@@ -2207,18 +2207,43 @@ function fetchDesignStormAsPromise(returnPeriodYears) {{
 // deliberately separate from pollStatus() (which mutates the single
 // "current run" UI via the global currentRunId) so a batch of runs in
 // the background never fights the main single-run status panel.
-function pollRunProgressAsPromise(runId) {{
+// Overall progress of one run, 0-100: each finished stage fills its share of the bar, and the simulation
+// stage fills by simulated time. Weights are rough shares of the wall-clock time of a typical run.
+const STAGE_START = {{dem:0, buildings:5, model:20, postprocess:70, scene:90, done:100}};
+const STAGE_SHARE = {{dem:5, buildings:15, model:50, postprocess:20, scene:10, done:0}};
+function overallPct(d) {{
+  if (d.status === 'done') return 100;
+  if (d.status === 'queued') return 0;
+  const st = d.stage || 'dem';
+  let p = STAGE_START[st] != null ? STAGE_START[st] : 0;
+  if (st === 'model') p += STAGE_SHARE.model * Math.min(100, Math.max(0, d.pct || 0)) / 100;
+  return Math.min(99, Math.round(p));
+}}
+function stageLabel(d) {{
+  if (d.status === 'queued') return 'Waiting for the solver';
+  const row = (d.stages || []).find(x => x[0] === d.stage);
+  return row ? row[1] : 'Working';
+}}
+function pollRunProgressAsPromise(runId, onProgress) {{
   return new Promise((resolve, reject) => {{
     const tick = () => {{
       fetch('/runs/' + runId + '/progress.json').then(r => r.json()).then(d => {{
+        if (onProgress) {{ try {{ onProgress(d); }} catch (e) {{}} }}
         if (d.status === 'done') resolve(d.summary);
         else if (d.status === 'failed') reject(d.log_tail || 'run failed');
         else if (d.status === 'cancelled') reject('run cancelled');
-        else setTimeout(tick, 3000);
-      }});
+        else setTimeout(tick, 1000);
+      }}).catch(() => setTimeout(tick, 2000));
     }};
     tick();
   }});
+}}
+function batchBar(done, total, d, head) {{
+  const frac = (done + (d ? overallPct(d) / 100 : 0)) / total;
+  const pct = Math.min(100, Math.round(frac * 100));
+  return '<p class="note">' + head + (d ? ' &middot; ' + stageLabel(d) : '') + '</p>' +
+    '<div class="progress-track" style="margin:6px 0 4px;"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+    '<p class="note" style="margin:0 0 6px;">' + pct + '% of ' + total + ' run' + (total > 1 ? 's' : '') + '</p>';
 }}
 
 async function runBatchReturnPeriods() {{
@@ -2240,10 +2265,11 @@ async function runBatchReturnPeriods() {{
     use_global_dem: document.getElementById('useGlobalDem').checked,
   }};
   for (const rp of periods) {{
-    box.innerHTML = '<p class="note">Return period ' + rp + 'yr: fetching real design storm...</p>' + renderBatchRows(rows);
+    const head = periods.indexOf(rp) + 1 + ' of ' + periods.length + ' &middot; ' + rp + '-year storm';
+    box.innerHTML = batchBar(rows.length, periods.length, null, head + ' &middot; fetching design storm') + renderBatchRows(rows);
     try {{
       const storm = await fetchDesignStormAsPromise(rp);
-      box.innerHTML = '<p class="note">Return period ' + rp + 'yr: running real physics (peak ' + storm.peak_mm_hr.toFixed(2) + ' mm/hr, 24h)...</p>' + renderBatchRows(rows);
+      box.innerHTML = batchBar(rows.length, periods.length, null, head + ' &middot; starting') + renderBatchRows(rows);
       const runResp = await fetch('/run', {{
         method:'POST', headers:{{'Content-Type':'application/json'}},
         body: JSON.stringify(Object.assign({{}}, baseBody, {{
@@ -2251,7 +2277,9 @@ async function runBatchReturnPeriods() {{
         }}))
       }}).then(r => r.json());
       if (runResp.error) {{ rows.push({{rp, error: runResp.error}}); continue; }}
-      const summary = await pollRunProgressAsPromise(runResp.run_id);
+      const summary = await pollRunProgressAsPromise(runResp.run_id, d => {{
+        box.innerHTML = batchBar(rows.length, periods.length, d, head) + renderBatchRows(rows);
+      }});
       const loss = summary.estimated_building_loss;
       rows.push({{rp, run_id: runResp.run_id, depth_mm_24hr: storm.depth_mm_24hr,
         flooded_area_km2: summary.flooded_area_km2, max_depth_m: summary.max_depth_m,
@@ -2327,10 +2355,11 @@ async function runAALCompute() {{
   }};
   let hadError = false;
   for (const rp of periods) {{
-    box.innerHTML = '<p class="note">Return period ' + rp + 'yr: fetching real design storm...</p>';
+    const head = periods.indexOf(rp) + 1 + ' of ' + periods.length + ' &middot; ' + rp + '-year storm';
+    box.innerHTML = batchBar(points.length, periods.length, null, head + ' &middot; fetching design storm');
     try {{
       const storm = await fetchDesignStormAsPromise(rp);
-      box.innerHTML = '<p class="note">Return period ' + rp + 'yr: running real physics (peak ' + storm.peak_mm_hr.toFixed(2) + ' mm/hr, 24h)...</p>';
+      box.innerHTML = batchBar(points.length, periods.length, null, head + ' &middot; starting');
       const runResp = await fetch('/run', {{
         method:'POST', headers:{{'Content-Type':'application/json'}},
         body: JSON.stringify(Object.assign({{}}, baseBody, {{
@@ -2338,7 +2367,7 @@ async function runAALCompute() {{
         }}))
       }}).then(r => r.json());
       if (runResp.error) {{ throw new Error(runResp.error); }}
-      await pollRunProgressAsPromise(runResp.run_id);
+      await pollRunProgressAsPromise(runResp.run_id, d => {{ box.innerHTML = batchBar(points.length, periods.length, d, head); }});
       points.push({{return_period_years: rp, run_id: runResp.run_id}});
     }} catch (e) {{
       box.innerHTML = '<p class="note" style="color:#d03b3b;">Return period ' + rp + 'yr failed: ' + e + '</p>';
@@ -2348,7 +2377,7 @@ async function runAALCompute() {{
   }}
   if (hadError) {{ btn.disabled = false; return; }}
 
-  box.innerHTML = '<p class="note">All real runs finished -- computing real Average Annual Loss...</p>';
+  box.innerHTML = '<p class="note">All runs finished &middot; computing the average annual loss</p><div class="progress-track" style="margin:6px 0;"><div class="progress-fill" style="width:97%"></div></div>';
   fetch('/area/compute-aal', {{
     method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify({{points}})
   }}).then(r => r.json()).then(d => {{
@@ -4205,10 +4234,10 @@ function pollStatus() {{
           ((d.waiting_on && d.waiting_on.length) ? 'Another run is using the solver now (' + d.waiting_on[0].stage + ', ' + Math.round(d.waiting_on[0].elapsed) + ' s in).' : ((d.solver && d.solver.holder) ? 'The solver is busy with: ' + d.solver.holder.label + ' (' + Math.round(d.solver.holder.running_s) + ' s in).' : 'Waiting for another job on the solver.')) + '</p>'
         : '';
       const cancelHtml = d.can_cancel ? '<button class="secondary" style="margin-top:8px;" onclick="cancelRun()">Cancel this run</button>' : '';
-      box.innerHTML = '<h3>' + (d.status === 'queued' ? 'Queued' : 'Running') + '</h3>' + queuedHtml + stepsHtml +
-        (curIdx >= 0 && stages[curIdx][0] === 'model'
-          ? '<div class="progress-track" style="margin-top:8px;"><div class="progress-fill" style="width:' + pct + '%"></div></div>'
-          : '') + cancelHtml;
+      const overall = overallPct(d);
+      box.innerHTML = '<h3>' + (d.status === 'queued' ? 'Queued' : 'Running') + '</h3>' + queuedHtml +
+        '<div class="progress-track" style="margin:6px 0 4px;"><div class="progress-fill" style="width:' + Math.max(overall, 2) + '%"></div></div>' +
+        '<p class="note" style="margin:0 0 8px;">' + overall + '% &middot; ' + stageLabel(d) + '</p>' + stepsHtml + cancelHtml;
       setTimeout(pollStatus, 1000);
     }}
   }});
