@@ -906,6 +906,16 @@ body.view-hidden #viewShowBtn {{ display:block; }}
             </div>
           </details>
           <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="includeBuildings" checked style="width:auto;"> Include real buildings (affects flow)</label>
+      <div class="bc-block" style="margin:12px 0 4px;">
+        <h3 style="margin:0 0 6px;font-size:14px;">Boundary conditions</h3>
+        <button class="secondary" id="detectBoundariesBtn" disabled onclick="detectAllBoundaries()">Detect rivers automatically</button>
+        <p class="note" id="boundaryDetectNote"></p>
+        <div id="boundaryList"></div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="secondary" onclick="addManualBoundary('inflow')">+ Add manual inflow</button>
+          <button class="secondary" onclick="addManualBoundary('outflow')">+ Add manual outflow</button>
+        </div>
+      </div>
           <details style="margin:2px 0;">
             <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Advanced settings</summary>
             <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
@@ -916,37 +926,6 @@ body.view-hidden #viewShowBtn {{ display:block; }}
               <div>
                 <label>CFL number (inertial solver stability, 0-1)</label>
                 <input type="number" id="cfl" value="0.7" step="0.05" min="0.05" max="1">
-              </div>
-              <div>
-                <label>Infiltration rate (mm/hr, subtracted from rainfall -- treated as the AMC-II/average baseline below)</label>
-                <input type="number" id="infiltrationMmHr" value="0" step="1" min="0">
-                <label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-weight:normal;">
-                  <input type="checkbox" id="useSoilInfiltration" style="width:auto;" onchange="if(this.checked)document.getElementById('useGreenAmpt').checked=false;">
-                  Use real soil-derived rate (SoilGrids, Pakistan only) instead of the value above
-                </label>
-                <label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-weight:normal;">
-                  <input type="checkbox" id="useGreenAmpt" style="width:auto;" onchange="if(this.checked)document.getElementById('useSoilInfiltration').checked=false;">
-                  Use real Green-Ampt infiltration (SoilGrids + this run's own AMC below, Pakistan only)
-                </label>
-              </div>
-              <div>
-                <label>Antecedent Moisture Condition (soil saturation before this storm)</label>
-                <input type="range" id="amc" min="0" max="100" step="1" value="50" oninput="updateAmcLabel()">
-                <div class="stat-row" style="margin-top:2px;">
-                  <span class="note">Dry (AMC-I)</span>
-                  <span class="note" id="amcLabel">Average (AMC-II) &middot; 50/100</span>
-                  <span class="note">Wet / saturated (AMC-III)</span>
-                </div>
-              </div>
-              <div class="panel-section" style="border:1px solid var(--line);border-radius:8px;padding:10px;margin:4px 0;">
-                <h3 style="margin-top:0;">Boundary conditions: inflows &amp; outflows</h3>
-                <button class="secondary" id="detectBoundariesBtn" disabled onclick="detectAllBoundaries()">Detect all rivers automatically (360&deg;) &rarr;</button>
-                <p class="note" id="boundaryDetectNote"></p>
-                <div id="boundaryList"></div>
-                <div style="display:flex;gap:8px;margin-top:8px;">
-                  <button class="secondary" onclick="addManualBoundary('inflow')">+ Add manual inflow</button>
-                  <button class="secondary" onclick="addManualBoundary('outflow')">+ Add manual outflow</button>
-                </div>
               </div>
               <details class="phys-off" style="margin:2px 0;" id="glofDetails">
                 <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">GLOF scenario (Gilgit-Baltistan glacial lakes)</summary>
@@ -1123,6 +1102,36 @@ body.view-hidden #viewShowBtn {{ display:block; }}
               </div>
             </div>
           </details>
+        </div>
+
+        <div class="panel-section" data-pane="scenario">
+          <h3>Soil &amp; infiltration</h3>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <label>Infiltration rate (mm/hr)</label>
+        <input type="number" id="infiltrationMmHr" value="0" step="1" min="0">
+        <label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-weight:normal;">
+          <input type="checkbox" id="useSoilInfiltration" style="width:auto;" onchange="if(this.checked)document.getElementById('useGreenAmpt').checked=false;">
+          Use soil-derived rate (SoilGrids)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-weight:normal;">
+          <input type="checkbox" id="useGreenAmpt" style="width:auto;" onchange="if(this.checked)document.getElementById('useSoilInfiltration').checked=false;">
+          Use Green-Ampt infiltration
+        </label>
+      </div>
+      <div>
+        <label>Soil moisture before the storm</label>
+        <input type="range" id="amc" min="0" max="100" step="1" value="50" oninput="updateAmcLabel()" style="width:100%;">
+        <div class="stat-row" style="margin-top:2px;">
+          <span class="note">Dry</span>
+          <span class="note" id="amcLabel">Average (AMC-II) &middot; 50/100</span>
+          <span class="note">Wet</span>
+        </div>
+      </div>
+          </div>
+        </div>
+
+        <div class="panel-section" data-pane="scenario">
           <button class="action" id="runBtn" disabled onclick="runModel()">Run flood model</button>
           <p class="note" id="statusNote"></p>
         </div>
