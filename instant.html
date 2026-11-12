@@ -170,8 +170,7 @@
 
 <div id="legend" class="glass">
   <h4>Flood depth (m)</h4>
-  <div><i style="background:#b0e0f5"></i>0.05</div><div><i style="background:#8cc8f0"></i>0.1</div><div><i style="background:#56a6e2"></i>0.25</div>
-  <div><i style="background:#227ecc"></i>0.5</div><div><i style="background:#105aaa"></i>1</div><div><i style="background:#0a3878"></i>2</div><div><i style="background:#061e4e"></i>5</div>
+  <span id="legendRows"></span>
 </div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
@@ -304,6 +303,7 @@ async function refreshOverlay(my) {
     $('sArea').textContent = fmtArea(ov.flooded_area_km2) + ' km²'; $('sDepth').textContent = ov.max_depth_m.toFixed(2) + ' m';
     $('sNote').className = '';
     renderDepthGuide('depthGuide', ov.max_depth_m);
+    $('legendRows').innerHTML = (ov.legend || []).map(function (l) { var v = l.depth_m < 1 ? l.depth_m.toFixed(2) : l.depth_m.toFixed(1); return '<div><i style="background:rgb(' + l.rgb.join(',') + ')"></i>' + v + (l === ov.legend[ov.legend.length - 1] ? '+' : '') + '</div>'; }).join('');
     $('sNote').textContent = '';
   } catch (e) { busy(); $('sNote').className = 'err'; $('sNote').textContent = 'Failed: ' + e; }
 }

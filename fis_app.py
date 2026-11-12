@@ -4839,6 +4839,7 @@ INSTANT_DEPTH_BINS = [  # lower edge (m), RGB -- same steps as the legend on the
     (0.05, (176, 224, 245)), (0.10, (140, 200, 240)), (0.25, (86, 166, 226)), (0.50, (34, 126, 204)),
     (1.00, (16, 90, 170)), (2.00, (10, 56, 120)), (5.00, (6, 30, 78)),
 ]
+INSTANT_DEPTH_FRACTIONS = [0.0, 0.05, 0.10, 0.20, 0.35, 0.55, 0.80]   # class lower edges as a share of the deepest water
 
 
 @app.route("/area/instant-flood-overlay", methods=["POST"])
@@ -4895,7 +4896,11 @@ def area_instant_flood_overlay():
     if (nrows, ncols) != (int(header["nrows"]), int(header["ncols"])):
         return jsonify({"error": "terrain grid and cached header disagree; clear this area's cache and retry"}), 400
     rgba = np.zeros((nrows, ncols, 4), dtype="uint8")
-    for lo, rgb in INSTANT_DEPTH_BINS:
+    # relative legend: the class edges are fractions of THIS result's deepest water, so the colours always span
+    # the result (a 0.3 m flood and a 5 m flood both use the whole ramp); 0.05 m stays the wet threshold
+    dmax = float(depth.max())
+    edges = [max(0.05, dmax * f) for f in INSTANT_DEPTH_FRACTIONS]
+    for lo, (_, rgb) in zip(edges, INSTANT_DEPTH_BINS):
         m = depth >= lo
         rgba[m, 0], rgba[m, 1], rgba[m, 2], rgba[m, 3] = rgb[0], rgb[1], rgb[2], 215
     buf = io.BytesIO()
@@ -4907,6 +4912,7 @@ def area_instant_flood_overlay():
     wet = int((depth > 0.05).sum())
     return jsonify({
         "image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), "coordinates": corners,
+        "legend": [{"depth_m": round(e, 3), "rgb": list(rgb)} for e, (_, rgb) in zip(edges, INSTANT_DEPTH_BINS)],
         "flooded_area_km2": round(wet * cs * cs / 1e6, 4), "max_depth_m": round(float(depth.max()), 3),
         "discharge_m3s": round(discharge, 2), "rain_mm_hr": rain_mm_hr, "duration_hr": duration_hr,
         "rain_depth_mm": round(rain_mm_hr * duration_hr, 1), "area_km2": round(area_km2, 3),
