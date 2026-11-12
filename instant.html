@@ -43,7 +43,7 @@
 
   /* welcome */
   #welcome { position: fixed; z-index: 30; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(2, 8, 9, .55); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
-  #welcome .card { position: relative; width: min(860px, 100%); display: grid; grid-template-columns: 1fr 1fr; border-radius: 22px; overflow: hidden; }
+  #welcome .card { position: relative; width: min(480px, 100%); display: grid; grid-template-columns: 1fr; border-radius: 22px; overflow: hidden; }
   #welcome .left { padding: 30px; background: linear-gradient(160deg, #0b3a3c 0%, #0a2a30 60%, #06161b 100%); }
   #welcome .left h1 { margin: 0 0 18px; font-family: var(--display); font-weight: 900; font-stretch: 110%; letter-spacing: .08em; font-size: 2rem; }
   #welcome .left li { list-style: none; margin: 0 0 14px; line-height: 1.4; color: rgba(234, 246, 245, .88); }
@@ -131,7 +131,7 @@
     <button class="btn" id="drawBtn" title="Draw your own area on the map">Draw area</button>
     <button class="btn" id="themeToggle" title="Switch between dark and light mode" aria-label="Switch between dark and light mode">&#9680;</button>
     <button class="btn" id="threeD" title="Tilt the map and show terrain relief">3D</button>
-    <a class="btn" href="/app" title="Full physical model">Physical model &rarr;</a>
+    <a class="btn" href="/app">Physics &rarr;</a>
   </div>
 </div>
 
@@ -140,14 +140,6 @@
 <div id="welcome" role="dialog" aria-modal="true" aria-labelledby="wtitle">
   <div class="card glass">
     <button class="close" id="wclose" aria-label="Close and explore the map">&times;</button>
-    <div class="left">
-      <h1>SAILAB Instant</h1>
-      <ul>
-        <li><b>Where rain water collects</b>Rain falls on every part of the area and gathers in low ground and along the drainage lines.</li>
-        <li><b>Answer in about a second</b>Computed from the terrain alone, no flood simulation to wait for.</li>
-        <li><b>Real Pakistan rainfall</b>Moderate and extreme storms come from recorded rainfall near the place you pick.</li>
-      </ul>
-    </div>
     <div class="right">
       <h2 id="wtitle">Get flood information<br>for <em>your area</em></h2>
       <label for="wSearch">Enter your location</label>
@@ -155,7 +147,6 @@
       <label>Choose a scenario</label>
       <div class="chips" id="wChips"><button class="chip on" data-s="moderate">Moderate rain</button><button class="chip" data-s="extreme">Extreme rain</button></div>
       <button class="btn primary go" id="wGo">Get flood information</button>
-      <p class="fine">A screening estimate at about 30 m terrain detail. It shows where water could collect, not how a flood unfolds. For depth over time, buildings, roads and loss, open the <a href="/app" style="color:#086660;">physical model</a>.</p>
     </div>
   </div>
 </div>
@@ -173,10 +164,8 @@
     <div class="stat"><span>Deepest water</span><strong id="sDepth">&ndash;</strong></div>
   </div>
   <div id="depthGuide"></div>
-  <label id="learnedRow" style="display:flex;gap:8px;align-items:center;font-size:12px;margin:6px 0;cursor:pointer"><input type="checkbox" id="learned"> Learned estimate (beta) &mdash; trained on real solver runs</label>
-  <p id="sNote">&nbsp;</p>
-  <p id="sBasis"></p>
-  <a class="btn" href="/app" style="margin-top:8px;">Run the full physical model &rarr;</a>
+  <label id="learnedRow" style="display:flex;gap:8px;align-items:center;font-size:12px;margin:6px 0;cursor:pointer"><input type="checkbox" id="learned"> Learned model (beta)</label>
+  <p id="sNote"></p>
 </div>
 
 <div id="legend" class="glass">
@@ -253,7 +242,7 @@ wireSearch($('barSearch'), $('barHits'), p => { $('barSearch').value = p.name; u
 
 async function usePick(p) {
   if (p.kind === 'tehsil') {
-    busy('Loading the area...');
+    busy('Working...');
     const d = await fetch('/tehsils/' + p.id).then(r => r.json()).catch(() => null);
     busy(); if (!d || !d.geometry) return;
     setArea(d.geometry, p.name);
@@ -274,8 +263,8 @@ async function setArea(g, name) {
   draw.getAll().features.forEach(f => draw.delete(f.id));
   map.fitBounds(boundsOf(g), { padding: { top: 90, bottom: 60, left: 380, right: 120 }, duration: 1400, pitch: is3D ? 60 : 0 });
   $('panel').style.display = 'block'; $('legend').style.display = 'block';
-  $('pTitle').textContent = label; $('pSub').textContent = 'Reading the terrain...'; $('sArea').textContent = '–'; $('sDepth').textContent = '–';
-  busy('Reading the terrain for this area...');
+  $('pTitle').textContent = label; $('pSub').textContent = ''; $('sArea').textContent = '–'; $('sDepth').textContent = '–';
+  busy('Working...');
   try {
     const sc = await fetch('/area/instant-scenarios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ geometry: g }) }).then(r => r.json());
     if (my !== areaToken) return;
@@ -311,17 +300,11 @@ async function refreshOverlay(my) {
     busy();
     if (ov.error) { $('pSub').textContent = ''; $('sNote').className = 'err'; $('sNote').textContent = ov.error; return; }
     lastOv = ov; paintOverlay(ov);
-    $('pSub').textContent = fmtArea(ov.area_km2) + ' km² area · terrain ' + ov.cellsize_m.toFixed(0) + ' m cells';
+    $('pSub').textContent = fmtArea(ov.area_km2) + ' km²';
     $('sArea').textContent = fmtArea(ov.flooded_area_km2) + ' km²'; $('sDepth').textContent = ov.max_depth_m.toFixed(2) + ' m';
     $('sNote').className = '';
     renderDepthGuide('depthGuide', ov.max_depth_m);
-    $('sNote').textContent = 'Rain depth ' + ov.rain_depth_mm + ' mm. Water along drainage lines: ' + fmtArea(ov.channel_area_km2) + ' km²; ponding in low ground: ' + fmtArea(ov.ponded_area_km2) + ' km².';
-    if (ov.method === 'learned') {
-      $('sNote').textContent = 'Rain depth ' + ov.rain_depth_mm + ' mm. Learned estimate: a neural network trained on real flood-model runs predicts the depth, so small details can be off.';
-      $('sBasis').textContent = 'Beta. On areas it had not seen, it found about 72% of the flooding a real run produced and still overstated the flooded area by about 1.9 times. Rain-driven flooding only, no buildings or river inflow.';
-      return;
-    }
-    $('sBasis').textContent = (scen && scen.source ? 'Rainfall: ' + scen.source + '. ' : '') + 'Half the rain is assumed to run off. Screening estimate, not a simulation.';
+    $('sNote').textContent = '';
   } catch (e) { busy(); $('sNote').className = 'err'; $('sNote').textContent = 'Failed: ' + e; }
 }
 
@@ -386,7 +369,7 @@ function renderDepthGuide(elId, depth) {
   el.innerHTML = '<div class="dg"><div class="dg-title">What this depth means</div><div id="' + elId + '_svg">' + depthGuideSvg(d0) + '</div>' +
     '<div class="dg-row"><label for="' + elId + '_s">Depth</label><input type="range" id="' + elId + '_s" min="0" max="2.1" step="0.05" value="' + d0.toFixed(2) + '"><b id="' + elId + '_v">' + d0.toFixed(2) + ' m</b></div>' +
     '<div class="dg-msg" id="' + elId + '_m">' + depthMessage(d0) + '</div>' +
-    '<div class="dg-note">Speed matters as much as depth, so check whether the water is moving fast. A modelled depth is an estimate.' + ((+depth) > 2.1 ? ' The model shows ' + (+depth).toFixed(1) + ' m at its deepest point, beyond this scale.' : '') + '</div></div>';
+    '</div>';
   document.getElementById(elId + '_s').addEventListener('input', function (e) {
     var v = parseFloat(e.target.value);
     document.getElementById(elId + '_svg').innerHTML = depthGuideSvg(v);
