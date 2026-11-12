@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="75" height="110" viewBox="0 0 75 110" role="img" aria-label="02 child" data-scale="100-svg-units-per-metre" data-ground-y="110" data-palette="css-custom-properties" data-object-height-m="1.1" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>02 Child</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <circle id="head" cx="37" cy="15" r="12" fill="var(--light,#F2E6CD)" class="part part-head"/>
+    <path id="hair" d="M25 14 Q25 0 38 3 Q52 3 50 16 L46 11 L30 12 Z" fill="var(--slate,#637A7C)" class="part part-hair"/>
+    <path id="shirt" d="M25 37 L18 64 L29 71 L28 80 L47 80 L44 69 L56 64 L49 37 Z" fill="var(--teal,#159A9C)" class="part part-shirt"/>
+    <path id="left_arm" d="M26 40 L16 50 L13 78 L23 80 L32 57 Z" fill="var(--light,#F2E6CD)" class="part part-left_arm"/>
+    <path id="right_arm" d="M47 41 L59 53 L64 78 L54 80 L43 57 Z" fill="var(--light,#F2E6CD)" class="part part-right_arm"/>
+    <path id="left_leg" d="M29 79 L28 100 L22 108 L38 108 L40 79 Z" fill="var(--sand,#D8B88A)" class="part part-left_leg"/>
+    <path id="right_leg" d="M39 79 L48 79 L55 108 L40 108 Z" fill="var(--sand,#D8B88A)" class="part part-right_leg"/>
+    <path id="left_shoe" d="M22 105 L37 105 L38 110 L18 110 Z" fill="var(--slate,#637A7C)" class="part part-left_shoe"/>
+    <path id="right_shoe" d="M41 105 L55 105 L61 110 L40 110 Z" fill="var(--slate,#637A7C)" class="part part-right_shoe"/>
+    <g id="child-details" fill="none" stroke="var(--ink,#123B5D)" stroke-width="1.4">
+      <path id="shirt-collar" d="M28 41 L37 47 L45 41"/>
+      <path id="shirt-pocket" d="M43 59 v8 h-7 v-8"/>
+      <path id="trouser-creases" d="M30 89 l-2 9 M44 88 l2 10"/>
+    </g>
+  <g id="v3-child-finish" stroke="var(--ink,#123B5D)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+ <path id="hair-strands" d="M26 15 q5 -7 10 -4 q5 -2 10 4" fill="none"/><circle cx="32" cy="24" r="1"/><circle cx="41" cy="24" r="1"/><path id="smile" d="M33 30 q4 3 7 0" fill="none"/>
+ <path id="collar" d="M31 43 L37 49 L44 43" stroke="var(--cream,#F2E6CD)" stroke-width="2.2" fill="none"/><path id="shirt-stitch" d="M37 49 v18" fill="none" stroke="var(--teal-dark,#0B707D)"/><circle cx="38" cy="55" r="1"/><circle cx="38" cy="63" r="1"/>
+ <path id="rolled-sleeves" d="M16 69 l9 3 M51 70 l9 -4" fill="none" stroke-width="2"/><path id="trouser-pleats" d="M29 87 l-1 14 M46 87 l2 13" stroke="var(--sand-dark,#A88963)" fill="none"/><path id="laces" d="M20 108 l7 -4 M48 104 l7 4" fill="none"/>
+ </g></g>
+</svg>

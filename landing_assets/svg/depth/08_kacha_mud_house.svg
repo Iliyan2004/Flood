@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="275" height="300" viewBox="0 0 275 300" role="img" aria-label="08 kacha mud house" data-scale="100-svg-units-per-metre" data-ground-y="300" data-palette="css-custom-properties" data-object-height-m="3.0" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>08 Kacha Mud House</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <path id="mud_walls" d="M18 87 L255 87 L255 300 L18 300 Z" fill="var(--sand,#D8B88A)" class="part part-mud_walls"/>
+    <path id="thatch_roof" d="M5 88 L137 13 L267 88 L252 97 L137 38 L18 97 Z" fill="var(--slate,#637A7C)" class="part part-thatch_roof"/>
+    <rect id="mud_door" x="106" y="179" width="62" height="121" rx="3" fill="var(--terracotta,#B66B54)" class="part part-mud_door"/>
+    <rect id="mud_door_frame" x="110" y="182" width="53" height="118" rx="0" fill="var(--sand,#D8B88A)" stroke-dasharray="0" class="part part-mud_door_frame"/>
+    <circle id="door_latch" cx="154" cy="249" r="3" fill="var(--ink,#123B5D)" class="part part-door_latch"/>
+    <rect id="mud_window" x="34" y="143" width="47" height="53" rx="2" fill="var(--light,#F2E6CD)" class="part part-mud_window"/>
+    <rect id="mud_window_opening" x="40" y="149" width="35" height="41" rx="0" fill="var(--slate,#637A7C)" class="part part-mud_window_opening"/>
+    <path id="window_mullion" d="M58 149 L58 190" fill="none" class="part part-window_mullion"/>
+    <path id="wall_crack" d="M213 153 L200 177 L214 191 L205 214" fill="none" class="part part-wall_crack"/>
+    <path id="roof_ridges" d="M40 83 L137 29 L224 79" fill="none" class="part part-roof_ridges"/>
+    <g id="mud-house-details" stroke="var(--ink,#123B5D)" fill="none" stroke-width="1.8" stroke-linecap="round">
+      <path id="mud-plaster-lines" d="M45 178 l17 -8 M207 191 l19 -4 M45 245 l13 4 M204 250 l24 -4 M92 146 l10 -4"/>
+      <path id="door_vertical_planks" d="M115 205 V299 M134 206 V299"/>
+      <path id="thatch-lines" d="M37 79 L137 17 L243 79 M49 85 L137 31 L231 85"/>
+      <path id="foundation-line" d="M34 288 H239"/>
+    </g>
+  <g id="v3-mud-house-finish" stroke="var(--ink,#123B5D)" stroke-linecap="round" stroke-linejoin="round">
+ <path id="thatch-straw-lines" d="M24 85 L137 22 L253 84 M37 89 L137 33 L238 89" stroke="var(--sand-dark,#A88963)" stroke-width="2" fill="none"/>
+ <path id="roof-thatch-ends" d="M20 93 l-7 8 m22 -2 l-5 11 m29 -21 l-3 8 m163 -8 l5 8 m18 -9 l5 9" stroke-width="1.8" fill="none"/>
+ <path id="plaster-patches" d="M29 115 q20 -9 40 -2 M192 119 q25 5 42 -3 M28 240 q21 -6 37 3 M188 252 q24 -9 44 -2" stroke="var(--sand-dark,#A88963)" stroke-width="1.2" fill="none"/>
+ <path id="door-panels" d="M121 183 V299 M139 183 V299 M156 183 V299" stroke="var(--sand-dark,#A88963)" stroke-width="1.4" fill="none"/>
+ <rect id="door-top-lintel" x="103" y="174" width="69" height="6" fill="var(--metal,#637A7C)" stroke-width="1.4"/>
+ <path id="window-cross" d="M40 170 H75 M58 150 V190" stroke-width="1.7" fill="none"/><path id="mud-foundation" d="M19 290 H254" stroke="var(--sand-dark,#A88963)" stroke-width="4" fill="none"/>
+ <path id="mud-crack-right" d="M229 143 l-9 15 8 12 -7 16" stroke="var(--sand-dark,#A88963)" stroke-width="1.6" fill="none"/>
+ </g></g>
+</svg>

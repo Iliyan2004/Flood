@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="302" height="330" viewBox="0 0 302 330" role="img" aria-label="09 pakka brick house raised plinth" data-scale="100-svg-units-per-metre" data-ground-y="330" data-palette="css-custom-properties" data-object-height-m="3.3" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>09 Pakka Brick House Raised Plinth</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <rect id="raised_plinth" x="2" y="299" width="298" height="31" rx="0" fill="var(--slate,#637A7C)" class="part part-raised_plinth"/>
+    <rect id="brick_walls" x="23" y="49" width="257" height="250" rx="0" fill="var(--terracotta,#B66B54)" class="part part-brick_walls"/>
+    <rect id="roof_slab" x="13" y="34" width="277" height="18" rx="0" fill="var(--light,#F2E6CD)" class="part part-roof_slab"/>
+    <rect id="roof_parapet" x="19" y="5" width="264" height="29" rx="0" fill="var(--sand,#D8B88A)" class="part part-roof_parapet"/>
+    <rect id="main_door" x="52" y="99" width="69" height="200" rx="0" fill="var(--slate,#637A7C)" class="part part-main_door"/>
+    <rect id="door_panel" x="59" y="106" width="55" height="193" rx="0" fill="var(--sand,#D8B88A)" class="part part-door_panel"/>
+    <circle id="door_handle" cx="105" cy="208" r="4" fill="var(--ink,#123B5D)" class="part part-door_handle"/>
+    <rect id="window_frame" x="158" y="117" width="83" height="88" rx="0" fill="var(--light,#F2E6CD)" class="part part-window_frame"/>
+    <rect id="window_opening" x="165" y="124" width="69" height="74" rx="0" fill="var(--teal,#159A9C)" class="part part-window_opening"/>
+    <path id="window_vertical_mullion" d="M200 124 L200 198" fill="none" class="part part-window_vertical_mullion"/>
+    <path id="window_horizontal_mullion" d="M165 161 L234 161" fill="none" class="part part-window_horizontal_mullion"/>
+    <path id="brick_courses" d="M26 72 H278 M26 92 H278 M126 116 H158 M242 117 H277 M126 141 H158 M242 141 H277 M126 166 H158 M242 166 H277 M126 191 H158 M242 191 H277 M126 216 H277 M26 240 H278 M26 265 H278" fill="none" class="part part-brick_courses"/>
+    <rect id="step_1" x="121" y="303" width="47" height="9" rx="0" fill="var(--sand,#D8B88A)" class="part part-step_1"/>
+    <rect id="step_2" x="121" y="312" width="65" height="9" rx="0" fill="var(--sand,#D8B88A)" class="part part-step_2"/>
+    <rect id="step_3" x="121" y="321" width="82" height="9" rx="0" fill="var(--sand,#D8B88A)" class="part part-step_3"/>
+    <g id="brick-house-details" fill="none" stroke="var(--ink,#123B5D)" stroke-width="1.6" stroke-linecap="round">
+      <path id="brick-joints" d="M65 52 V73 M156 52 V73 M232 52 V73 M110 74 V91 M209 74 V91 M53 218 V239 M155 218 V239 M247 218 V239 M107 241 V264 M199 241 V264"/>
+      <path id="window-sill" d="M150 208 H251" stroke-width="3"/>
+      <path id="door-panel-inset" d="M70 123 H104 V191 H70 Z M70 215 H104 V282 H70 Z"/>
+      <path id="plinth-level" d="M3 302 H299" stroke-width="2"/>
+    </g>
+  <g id="v3-pakka-finish" stroke="var(--ink,#123B5D)" stroke-linejoin="round" stroke-linecap="round">
+ <path id="parapet-cap" d="M17 5 H284" stroke="var(--cream,#F2E6CD)" stroke-width="4" fill="none"/>
+ <path id="brick-mortar" d="M25 76 H51 M125 76 H280 M25 102 H51 M125 102 H280 M25 224 H51 M125 224 H280 M25 249 H51 M125 249 H280 M25 276 H51 M125 276 H280 M40 52 V76 M178 52 V76 M145 77 V102 M248 77 V102 M32 224 V249 M142 224 V249 M237 224 V249 M75 249 V276 M178 249 V276" stroke="var(--brick-dark,#944D3E)" stroke-width="1.5" fill="none"/>
+ <path id="door-emboss" d="M68 118 H105 V181 H68 Z M68 201 H105 V279 H68 Z" stroke="var(--sand-dark,#A88963)" stroke-width="1.8" fill="none"/><path id="window-glass-highlight" d="M167 129 L177 129 L164 196 L160 196 Z" fill="var(--glass,#9DC7D0)" stroke="none"/>
+ <path id="steps-nosing" d="M73 299 H170 M91 311 H181 M105 320 H194" stroke="var(--cream,#F2E6CD)" stroke-width="2" fill="none"/>
+ <path id="plinth-joint" d="M10 313 H68 M214 313 H293" stroke="var(--metal-dark,#435E69)" stroke-width="2.3" fill="none"/>
+ <path id="vent-blocks" d="M244 64 h18 v10 h-18 z M220 64 h18 v10 h-18 z" fill="var(--metal-dark,#435E69)" stroke-width="1.4"/>
+ </g></g>
+</svg>

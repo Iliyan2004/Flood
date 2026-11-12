@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="110" height="170" viewBox="0 0 110 170" role="img" aria-label="01 adult shalwar kameez" data-scale="100-svg-units-per-metre" data-ground-y="170" data-palette="css-custom-properties" data-object-height-m="1.7" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>01 Adult Shalwar Kameez</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(0 0) scale(0.63)">
+      <circle id="head" cx="52" cy="16" r="13" fill="var(--light,#F2E6CD)" class="part part-head"/>
+      <path id="hair" d="M40 14 Q40 -1 52 2 Q66 1 65 17 L61 13 Q52 7 43 15 Z" fill="var(--slate,#637A7C)" class="part part-hair"/>
+      <path id="torso_kameez" d="M36 38 L25 106 L40 112 L36 167 L68 167 L64 112 L78 106 L68 38 Q52 32 36 38 Z" fill="var(--teal,#159A9C)" class="part part-torso_kameez"/>
+      <path id="left_arm" d="M35 42 L23 56 L16 106 L27 109 L39 73 Z" fill="var(--light,#F2E6CD)" class="part part-left_arm"/>
+      <path id="right_arm" d="M68 42 L80 55 L89 105 L78 109 L65 73 Z" fill="var(--light,#F2E6CD)" class="part part-right_arm"/>
+      <path id="shalwar_left" d="M37 165 L35 198 L23 246 L17 269 L47 269 L53 223 L55 170 Z" fill="var(--sand,#D8B88A)" class="part part-shalwar_left"/>
+      <path id="shalwar_right" d="M54 165 L69 167 L76 230 L88 269 L58 269 L52 223 Z" fill="var(--sand,#D8B88A)" class="part part-shalwar_right"/>
+      <path id="shoe_left" d="M17 265 Q9 268 9 270 L47 270 L47 262 Z" fill="var(--slate,#637A7C)" class="part part-shoe_left"/>
+      <path id="shoe_right" d="M60 263 L88 263 Q98 269 98 270 L58 270 Z" fill="var(--slate,#637A7C)" class="part part-shoe_right"/>
+    </g>
+    <path id="baseline_marker" d="M0 170 L0 170" fill="none"/>
+    <g id="garment-details" fill="none" stroke="var(--ink,#123B5D)" stroke-width="1.6" stroke-linecap="round">
+      <path id="kameez-placket" d="M33 28 L33 51 M30 35 L36 35 M30 42 L36 42"/>
+      <path id="kameez-hem" d="M23 106 Q33 110 43 106"/>
+      <path id="shalwar-folds" d="M24 124 L20 143 M46 122 L49 148"/>
+    </g>
+  <g id="v3-character-finish" stroke="var(--ink,#123B5D)" stroke-linejoin="round" stroke-linecap="round">
+ <path id="hairline" d="M27 9 Q33 5 39 10" fill="none" stroke-width="1.5"/><path id="eyebrows" d="M29 13 h2 m5 0 h2" fill="none" stroke-width="1.1"/><circle cx="31" cy="15" r=".8" fill="var(--ink)" stroke="none"/><circle cx="37" cy="15" r=".8" fill="var(--ink)" stroke="none"/><path d="M32 19 q2 2 4 0" fill="none" stroke-width="1"/>
+ <path id="neckline-embroidery" d="M27 25 Q34 29 41 25 L40 34 M34 29 v11" fill="none" stroke="var(--cream,#F2E6CD)" stroke-width="1.5"/>
+ <path id="kameez-side-seam" d="M21 70 Q24 90 24 104 M46 71 L44 106" fill="none" stroke="var(--teal-dark,#0B707D)" stroke-width="1.5"/>
+ <path id="fabric-fold-left" d="M29 109 L26 137 M31 116 L30 152 M47 121 L49 150" fill="none" stroke="var(--sand-dark,#A88963)" stroke-width="1.5"/>
+ <path id="kurta-bottom-hem" d="M22 103 Q32 107 43 103" stroke="var(--cream,#F2E6CD)" stroke-width="1.7" fill="none"/>
+ <path id="sandal-left" d="M7 166 H27 M37 166 H60" fill="none" stroke-width="2.8"/>
+ </g></g>
+</svg>

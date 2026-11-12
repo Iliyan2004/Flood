@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="105" height="160" viewBox="0 0 105 160" role="img" aria-label="03 woman dupatta" data-scale="100-svg-units-per-metre" data-ground-y="160" data-palette="css-custom-properties" data-object-height-m="1.6" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>03 Woman Dupatta</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <path id="dupatta" d="M37 15 Q45 -1 62 7 L85 54 L91 91 L73 90 L65 42 L37 43 L27 89 L12 89 L19 45 Z" fill="var(--teal,#159A9C)" class="part part-dupatta"/>
+    <circle id="face" cx="52" cy="22" r="12" fill="var(--light,#F2E6CD)" class="part part-face"/>
+    <path id="kameez" d="M36 43 L67 43 L73 97 L81 117 L24 117 L31 94 Z" fill="var(--terracotta,#B66B54)" class="part part-kameez"/>
+    <path id="left_hand" d="M29 65 L18 101 L26 106 L38 71 Z" fill="var(--light,#F2E6CD)" class="part part-left_hand"/>
+    <path id="right_hand" d="M73 65 L82 105 L91 103 L83 65 Z" fill="var(--light,#F2E6CD)" class="part part-right_hand"/>
+    <path id="shalwar_left" d="M26 115 L49 115 L48 157 L22 157 Z" fill="var(--sand,#D8B88A)" class="part part-shalwar_left"/>
+    <path id="shalwar_right" d="M49 115 L77 115 L82 157 L54 157 Z" fill="var(--sand,#D8B88A)" class="part part-shalwar_right"/>
+    <path id="left_foot" d="M22 153 L48 153 L49 160 L18 160 Z" fill="var(--slate,#637A7C)" class="part part-left_foot"/>
+    <path id="right_foot" d="M54 153 L82 153 L88 160 L54 160 Z" fill="var(--slate,#637A7C)" class="part part-right_foot"/>
+    <path id="dupatta_edge" d="M24 43 Q52 34 75 44" fill="none" class="part part-dupatta_edge"/>
+    <g id="dupatta-detail" fill="none" stroke="var(--ink,#123B5D)" stroke-width="1.5">
+      <path id="dupatta-folds" d="M25 45 Q30 34 38 22 M75 37 Q68 24 64 18"/>
+      <path id="kameez-border" d="M34 116 Q52 121 73 116"/>
+      <path id="neckline" d="M45 53 Q52 59 59 53"/>
+    </g>
+  <g id="v3-dupatta-finish" stroke="var(--ink,#123B5D)" stroke-width="1.35" stroke-linecap="round">
+ <path id="dupatta-edge-decoration" d="M28 41 Q27 20 45 7 Q55 0 66 15 Q80 31 79 47" stroke="var(--cream,#F2E6CD)" stroke-width="2" fill="none"/>
+ <path id="dupatta-folds" d="M30 53 Q32 25 43 20 M76 59 Q67 38 64 24" stroke="var(--teal-dark,#0B707D)" fill="none"/>
+ <path id="kameez-embroidered-neck" d="M45 50 Q53 58 60 50 M52 55 v15" stroke="var(--cream,#F2E6CD)" stroke-width="1.7" fill="none"/><path id="kameez-side-panel" d="M42 70 L39 111 M64 71 L69 112" stroke="var(--brick-dark,#944D3E)" fill="none"/>
+ <path id="sleeve-cuffs" d="M24 92 L35 96 M74 92 L85 90" stroke="var(--cream,#F2E6CD)" stroke-width="2" fill="none"/><path id="shalwar-folds" d="M42 123 L40 146 M68 122 L70 144" stroke="var(--sand-dark,#A88963)" fill="none"/><path id="shoe-line" d="M33 158 H55 M61 158 H85" stroke-width="2.3" fill="none"/>
+ </g></g>
+</svg>

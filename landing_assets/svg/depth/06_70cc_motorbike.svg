@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="230" height="110" viewBox="0 0 230 110" role="img" aria-label="06 70cc motorbike" data-scale="100-svg-units-per-metre" data-ground-y="110" data-palette="css-custom-properties" data-object-height-m="1.1" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>06 70Cc Motorbike</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <circle id="rear_wheel" cx="43" cy="83" r="27" fill="var(--slate,#637A7C)" class="part part-rear_wheel"/>
+    <circle id="rear_wheel_hub" cx="43" cy="83" r="10" fill="var(--light,#F2E6CD)" class="part part-rear_wheel_hub"/>
+    <circle id="front_wheel" cx="191" cy="83" r="27" fill="var(--slate,#637A7C)" class="part part-front_wheel"/>
+    <circle id="front_wheel_hub" cx="191" cy="83" r="10" fill="var(--light,#F2E6CD)" class="part part-front_wheel_hub"/>
+    <path id="frame" d="M43 83 L99 48 L134 83 L81 83 L99 48 L159 45 L191 83" fill="none" class="part part-frame"/>
+    <path id="fuel_tank" d="M103 41 Q121 22 153 37 L159 48 L113 57 Z" fill="var(--teal,#159A9C)" class="part part-fuel_tank"/>
+    <rect id="seat" x="60" y="30" width="63" height="12" rx="6" fill="var(--slate,#637A7C)" class="part part-seat"/>
+    <path id="engine" d="M102 68 L127 65 L140 88 L100 91 Z" fill="var(--sand,#D8B88A)" class="part part-engine"/>
+    <path id="fork" d="M170 30 L191 83" fill="none" class="part part-fork"/>
+    <path id="handlebar" d="M163 29 L180 25 L187 17" fill="none" class="part part-handlebar"/>
+    <rect id="headlight" x="174" y="38" width="15" height="16" rx="7" fill="var(--light,#F2E6CD)" class="part part-headlight"/>
+    <path id="exhaust" d="M103 93 L157 101 L171 95" fill="none" class="part part-exhaust"/>
+    <rect id="rear_fender" x="13" y="49" width="42" height="7" rx="4" fill="var(--terracotta,#B66B54)" class="part part-rear_fender"/>
+    <g id="motorcycle-detailing" stroke="var(--ink,#123B5D)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle id="engine_case" cx="121" cy="81" r="13" fill="var(--slate,#637A7C)"/>
+      <path id="engine_fins" d="M113 76 H129 M111 81 H131 M113 86 H129" fill="none"/>
+      <path id="tank-stripe" d="M123 39 q23 -7 37 6" fill="none" stroke="var(--light,#F2E6CD)" stroke-width="2.5"/>
+      <path id="chain_guard" d="M85 95 L131 95" fill="none"/>
+      <path id="front_brake" d="M198 79 L212 72" fill="none"/>
+      <path id="rear_spokes" d="M40 74 V106 M25 90 H55" fill="none" stroke-width="1"/>
+    </g>
+  <g id="v3-motorbike-finish" stroke="var(--ink,#123B5D)" stroke-linecap="round" stroke-linejoin="round">
+ <path id="headlight-bucket" d="M179 39 q12 -6 19 4 l-2 11 h-16 z" fill="var(--cream,#F2E6CD)" stroke-width="2"/>
+ <path id="fuel-tank-stripe" d="M121 37 Q146 30 161 46" fill="none" stroke="var(--cream,#F2E6CD)" stroke-width="3"/><path id="seat-stitch" d="M77 31 H117" fill="none" stroke="var(--cream,#F2E6CD)" stroke-width="1.2"/>
+ <path id="frame-triangle" d="M81 91 L120 48 L151 91 Z" fill="none" stroke-width="2.1"/><path id="engine-head" d="M104 69 h31 v23 h-31 z" fill="var(--metal,#637A7C)" stroke-width="2"/><path id="engine-fins" d="M103 74 H137 M103 79 H137 M103 84 H137" fill="none" stroke-width="1.5"/><circle id="clutch-cover" cx="122" cy="91" r="12" fill="var(--metal,#637A7C)" stroke-width="2"/>
+ <path id="exhaust-pipe" d="M121 98 Q166 101 182 91 L192 94" fill="none" stroke="var(--metal,#637A7C)" stroke-width="5"/><path id="exhaust-highlight" d="M134 98 H179" stroke="var(--cream,#F2E6CD)" stroke-width="1.3" fill="none"/>
+ <path id="spokes-rear" d="M40 73 v34 M23 90 H57 M29 78 L51 103 M51 78 L29 102" fill="none" stroke-width="1"/><path id="spokes-front" d="M208 73 V107 M191 90 H225 M197 78 L219 102 M219 78 L197 102" fill="none" stroke-width="1"/><path id="chain-guard" d="M67 99 L123 99" fill="none" stroke-width="2.5"/><path id="kickstand" d="M125 96 L115 109" fill="none" stroke-width="2"/>
+ </g></g>
+</svg>

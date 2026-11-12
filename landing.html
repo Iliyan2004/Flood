@@ -2,470 +2,1231 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SAILAB</title>
-<meta name="description" content="SAILAB - Simulation & Analytics for Inundation, Loss, Assets & Built Environment. Flood hazard and impact modelling for Pakistan.">
-<meta name="theme-color" content="#000">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23000'/%3E%3Cpath d='M3 21c4-7 7-7 10-2s6 4 9-3c2-4 4-4 7-2v11H3z' fill='%2340d9cf'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAILAB: Flood intelligence for Pakistan</title>
+<meta name="description" content="SAILAB tells you where the water goes, how deep it gets, who is in it and what it costs — with a fast estimate in seconds and a full 2D physics run when it matters.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,800..900&family=Archivo+Narrow:wght@500;600&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --ink: #6ff2e6;
-    --aqua: #2fd6c9;
-    --aqua-deep: #0c8f88;
-    --bg: #000;
-    --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
-    --text: "Archivo Narrow", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--text);
-    overflow: hidden;
-    -webkit-font-smoothing: antialiased;
-  }
-  /* CSS-only sea shown if WebGL is unavailable */
-  body.no-gl {
-    background:
-      radial-gradient(120% 60% at 50% 0%, #0f3a3a 0%, transparent 60%),
-      linear-gradient(180deg, #050a0a 0%, #0a2a2b 38%, #031012 70%, #000 100%);
-  }
-  canvas#sea { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-  .veil {
-    position: fixed; inset: 0; pointer-events: none;
-    background:
-      radial-gradient(60% 46% at 50% 50%, rgba(0, 0, 0, .6) 0%, rgba(0, 0, 0, .28) 55%, transparent 100%),
-      radial-gradient(130% 100% at 50% 50%, transparent 55%, rgba(0, 4, 6, .6) 100%);
-  }
-  header.top, footer.meta {
-    position: fixed; z-index: 3; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; gap: 16px;
-    padding: 0 clamp(16px, 4vw, 48px); font-size: .74rem; letter-spacing: .26em; text-transform: uppercase;
-    color: rgba(255, 255, 255, .72);
-  }
-  header.top { top: 0; height: 58px; border-bottom: 1px solid rgba(111, 242, 230, .2); background: linear-gradient(180deg, rgba(0, 0, 0, .75), rgba(0, 0, 0, .25)); }
-  header.top .left { display: flex; align-items: center; gap: 14px; min-width: 0; }
-  header.top .brand { font-family: var(--display); font-weight: 800; letter-spacing: .3em; color: #fff; }
-  header.top .agn-logo {
-    display: inline-flex; align-items: center; line-height: 0; flex: 0 0 auto;
-    background: #fff; border-radius: 6px; padding: 3px 8px;
-    border: 1px solid rgba(111, 242, 230, .25); text-decoration: none;
-  }
-  header.top .agn-logo img { height: 28px; width: auto; display: block; }
-  footer.meta { bottom: 0; height: 52px; border-top: 1px solid rgba(111, 242, 230, .2); background: linear-gradient(0deg, rgba(0, 0, 0, .75), rgba(0, 0, 0, .25)); padding-bottom: env(safe-area-inset-bottom); }
-  @media (max-width: 640px) { header.top .tag { display: none; } footer.meta span:first-child { display: none; } footer.meta { justify-content: center; } }
-  main {
-    position: relative; z-index: 2;
-    min-height: 100%;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 14vh 20px 14vh;
-    text-align: center;
-  }
-  h1 {
-    margin: 0;
-    font-family: var(--display);
-    font-weight: 800;
-    font-stretch: 100%;
-    font-size: clamp(2.2rem, 7.2vw, 5.2rem);
-    line-height: 1;
-    letter-spacing: .16em;
-    padding-left: .16em; /* optical centering against trailing letter-spacing */
-    color: #fff;
-    text-shadow: 0 0 30px rgba(47, 214, 201, .4), 0 0 80px rgba(47, 214, 201, .22), 0 2px 24px rgba(0, 0, 0, .8);
-  }
-  .full {
-    margin: clamp(16px, 3vh, 30px) 0 0;
-    max-width: 40em;
-    font-family: var(--text);
-    font-weight: 500;
-    font-size: clamp(.78rem, 1.3vw, .98rem);
-    letter-spacing: .28em;
-    text-transform: uppercase;
-    line-height: 2;
-    text-wrap: balance;
-    color: #fff;
-    text-shadow: 0 2px 14px rgba(0, 0, 0, .9);
-  }
-  .full b { color: #fff; font-weight: 700; }
-  .rule {
-    width: 64px; height: 1px; margin: clamp(22px, 4vh, 40px) 0;
-    background: var(--aqua);
-    opacity: .9;
-  }
-  .choices { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
-  .open {
-    appearance: none; text-decoration: none; cursor: pointer;
-    display: inline-flex; align-items: center; gap: .9em;
-    padding: 1em 2.2em;
-    font-family: var(--display); font-weight: 700; font-stretch: 100%;
-    font-size: clamp(.8rem, 1.2vw, .92rem);
-    letter-spacing: .24em; text-transform: uppercase;
-    color: #fff;
-    background: rgba(0, 0, 0, .55);
-    border: 1px solid var(--aqua);
-    border-radius: 2px;
-    transition: background .25s, color .25s, border-color .25s;
-  }
-  .open svg { width: 1.2em; height: 1.2em; transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
-  .open:hover, .open:focus-visible { background: var(--aqua); color: #000; }
-  .open:hover svg, .open:focus-visible svg { transform: translateX(4px); }
-  .open:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
-  .rise > * { opacity: 0; transform: translateY(18px); animation: rise .9s cubic-bezier(.2, .8, .2, 1) forwards; }
-  .rise > :nth-child(1) { animation-delay: .15s; }
-  .rise > :nth-child(2) { animation-delay: .4s; }
-  .rise > :nth-child(3) { animation-delay: .6s; }
-  .rise > :nth-child(4) { animation-delay: .75s; }
-  @keyframes rise { to { opacity: 1; transform: none; } }
-  .flash {
-    position: fixed; inset: 0; z-index: 5; pointer-events: none; opacity: 0;
-    background: radial-gradient(circle at 50% 55%, #7ff5ea 0%, #12766f 38%, #000 100%);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .rise > * { animation: none; opacity: 1; transform: none; }
-    .open::before { animation: none; }
-  }
-  @media (max-width: 520px) { main { padding-left: 14px; padding-right: 14px; } h1 { letter-spacing: .12em; } .full { letter-spacing: .14em; font-size: .72rem; line-height: 1.9; max-width: 100%; overflow-wrap: anywhere; } .open { padding-left: 22px; padding-right: 22px; } }
-  @media (max-height: 520px) { h1 { font-size: clamp(2rem, 8vw, 4.5rem); } .rule { margin: 10px 0 16px; } }
+/* =========================================================================
+   SAILAB · landing · "Watercolour"
+   Light, textured blues from a pigment chart: Manganese, Cerulean, Cobalt Teal,
+   Phthalo Turquoise, Prussian. Washes are generated textures (/landing-assets/img/wash-*)
+   laid under a real hillshade and real contours of the Peshawar valley.
+   ========================================================================= */
+:root{
+  /* earth & water */
+  --earth-9:#0B2F43; --earth-8:#124657; --earth-7:#1D6273; --earth-6:#2D7F8C;
+  --silt:#1F7F8C; --silt-l:#8FD6D0; --khaki:#EEF6F7; --khaki-2:#DCEBEE; --paper:#F8FBFB;
+  --overcast:#8E938C; --rescue:#5CD1CA; --rescue-h:#7FDDD7; --rescue-ink:#062A36;
+  /* water depth, silt ramp: shallow = pale and thin, deep = dark and thick */
+  --w1:#D3ECF5; --w2:#A6D8EC; --w3:#6FBCE0; --w4:#3E98C8; --w5:#1E6E9C; --w6:#0E4567;
+  /* text + lines on dark (default) */
+  --fg:#F2F8F9; --fg2:#C3D9DE; --fg3:#93B2BA; --ln:rgba(242,248,249,.13); --ln2:rgba(242,248,249,.24);
+  --card:rgba(236,235,230,.04);
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --disp:"Archivo","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,monospace;
+  --serif:"Instrument Serif",Georgia,serif;
+  --ease:cubic-bezier(.22,.61,.36,1); --spring:cubic-bezier(.34,1.26,.64,1);
+  --gut:clamp(16px,4vw,56px); --wide:1320px;
+}
+/* light "field report" sections flip the text variables */
+.paper{--rescue:#0F6E73;--rescue-h:#0C5C60;--rescue-ink:#F8FBFB;--fg:#0B2F43;--fg2:#1C4557;--fg3:#335C6C;--ln:rgba(11,47,67,.14);--ln2:rgba(11,47,67,.26);--card:rgba(248,251,251,.82);
+       background:var(--khaki);color:var(--fg)}
+
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--earth-9)}
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+body{margin:0;background:var(--earth-9);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.55;
+     -webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img,svg,video,canvas{display:block}
+.micro{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3)}
+.wrap{max-width:var(--wide);margin:0 auto;padding:0 var(--gut)}
+.sec-tag{display:inline-flex;align-items:center;gap:10px}
+.sec-tag::before{content:"";width:28px;height:2px;background:var(--rescue)}
+.sec-tag b{color:var(--rescue);font-weight:500}
+.disp{font-family:var(--disp);font-stretch:72%;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;line-height:.9}
+/* accent words on the light watercolour sections: deep phthalo ink, never pale teal */
+.paper .disp em,.paper h2 em,.paper h3 em{color:#0A5A66!important}
+.disp em,.serif{font-family:var(--serif);font-style:italic;font-weight:400;text-transform:none;letter-spacing:-.01em;font-stretch:100%}
+
+/* film grain: kills the flat, synthetic look */
+.grain{position:fixed;inset:-50%;z-index:90;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
+
+/* terrain texture: a real hillshade + real contours of the Peshawar valley
+   (Copernicus GLO-30), laid under a section in layers */
+.tex-layer{position:absolute;top:0;bottom:0;left:50%;width:100vw;transform:translateX(-50%);z-index:0;pointer-events:none;overflow:hidden;
+  background:var(--wash,none) center/cover no-repeat,var(--tex-bg,var(--earth-9))}
+.tex-layer::before,.tex-layer::after{content:"";position:absolute;inset:-2%;background-position:var(--tp,center);background-size:cover;background-repeat:no-repeat}
+.tex-layer::before{background-image:url(/landing-assets/img/terrain-hillshade.jpg);mix-blend-mode:soft-light;opacity:.95}
+.tex-layer::after{background-image:url(/landing-assets/img/contours-light.png);opacity:.17}
+.paper .tex-layer::before{opacity:.55}
+.paper .tex-layer::after{background-image:url(/landing-assets/img/contours-dark.png);opacity:.2}
+.tex-layer i{position:absolute;inset:0;z-index:1;background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(0,0,0,.28) 100%)}
+.paper .tex-layer i{background:linear-gradient(var(--veil,90deg),rgba(248,251,251,.7) 0%,rgba(248,251,251,.42) 36%,rgba(248,251,251,0) 64%)}
+.paper .micro{font-weight:500}
+
+/* buttons: one accent only, lichen green on dark, moss on paper */
+.btn{display:inline-flex;align-items:center;gap:10px;height:50px;padding:0 24px;border-radius:999px;font-size:15px;font-weight:600;
+     border:1px solid var(--ln2);color:var(--fg);background:rgba(236,235,230,.06);backdrop-filter:blur(8px);
+     transition:background .25s,transform .25s var(--spring)}
+.btn:hover{background:rgba(236,235,230,.14);transform:translateY(-2px)}
+.btn.p{background:var(--rescue);border-color:var(--rescue);color:var(--rescue-ink)}
+.btn.p:hover{background:var(--rescue-h)}
+.btn svg{transition:transform .25s var(--spring)}
+.btn:hover svg{transform:translateX(3px)}
+.paper .btn:not(.p){background:var(--paper);border-color:var(--ln2)}
+.btn:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--rescue);outline-offset:3px}
+
+/* nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:50;height:70px;display:flex;align-items:center;gap:18px;padding:0 var(--gut);
+     transition:background .35s,border-color .35s,color .35s,height .35s;border-bottom:1px solid transparent;color:#ECEBE6}
+.nav.solid{background:rgba(21,25,24,.78);backdrop-filter:blur(14px);border-color:rgba(236,235,230,.1);height:60px}
+.nav.light{background:rgba(238,246,247,.86);color:#0B2F43;border-color:rgba(11,47,67,.12)}
+.nav .wm{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-stretch:80%;font-weight:800;letter-spacing:.12em;font-size:16px;text-transform:uppercase}
+.nav .links{margin-left:auto;display:flex;gap:4px;align-items:center}
+.nav .links a{font-size:14px;padding:8px 12px;border-radius:999px;opacity:.8;transition:opacity .2s,background .2s}
+.nav .links a:hover{opacity:1;background:rgba(169,194,184,.18)}
+.nav .btn{height:40px;padding:0 18px;font-size:13.5px}
+@media (max-width:900px){.nav .links a:not(.btn){display:none}}
+
+/* water-level gauge: page progress read as a staff gauge */
+.tide{position:fixed;right:22px;top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:10px;
+      pointer-events:none;transition:opacity .4s;mix-blend-mode:difference}
+.tide .bar{width:3px;height:34vh;background:rgba(236,235,230,.2);border-radius:3px;position:relative;overflow:hidden}
+.tide .fill{position:absolute;inset:0;background:#ECEBE6;transform-origin:bottom;transform:scaleY(0)}
+.tide .read{font-family:var(--mono);font-size:11px;color:#ECEBE6;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.1em}
+.tide.hide{opacity:0}
+@media (max-width:900px){.tide{display:none}}
+
+/* ============================ HERO ============================ */
+/* screen 1: SAILAB filled with liquid over the flood footage.
+   screen 2: the headline, rising in on calm water as you scroll. */
+#hero{position:relative;height:100vh;height:100svh;min-height:620px;overflow:hidden;background:var(--earth-9)}
+.screen1{position:absolute;inset:0}
+.hero-media{position:absolute;inset:0}
+.hero-media canvas,.hero-media video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero-media video{opacity:0;transition:opacity 1.4s}
+.hero-media video.ready{opacity:1}
+.hero-media canvas{z-index:1}
+.title-shade{position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(70% 55% at 50% 48%,rgba(0,0,0,.2),transparent 72%),
+             linear-gradient(180deg,rgba(0,0,0,.32) 0%,transparent 24%,transparent 76%,rgba(0,0,0,.38) 100%)}
+.title{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:70px var(--gut) 96px}
+.liquid-word{width:min(94vw,1500px,165vh);height:auto;overflow:visible;filter:drop-shadow(0 14px 40px rgba(0,0,0,.35))}
+.liquid-word .wtxt{font-family:var(--disp);font-stretch:66%;font-weight:900;font-size:290px}
+.liquid-word .outline{fill:none;stroke:#fff;stroke-width:2.4;stroke-linejoin:round}
+.title .acro-full{margin:16px 0 0;font-family:var(--mono);font-size:clamp(12px,1.3vw,16px);letter-spacing:.22em;text-transform:uppercase;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.55)}
+.title .kick{margin-top:12px;color:#E3EEF0;text-shadow:0 1px 10px rgba(0,0,0,.5)}
+.cover-cap{position:absolute;left:var(--gut);bottom:26px;z-index:3;color:#E3EEF0;opacity:.75}
+.hero-vig{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,0,0,.66) 0%,rgba(0,0,0,.3) 48%,rgba(0,0,0,0) 75%),
+             linear-gradient(180deg,rgba(0,0,0,.35) 0%,transparent 22%,transparent 70%,rgba(0,0,0,.55) 100%)}
+.hero-copy{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;justify-content:center;max-width:var(--wide);margin:0 auto;padding:84px var(--gut) 96px}
+/* sized by width AND height so it never outgrows a short, wide screen */
+h1{font-size:clamp(42px,min(7.4vw,11vh),124px);margin:16px 0 0;max-width:13ch}
+h1 em{color:#ECEBE6}
+.w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.06em;margin-bottom:-.06em}
+.wi{display:inline-block;will-change:transform}
+h1 em .w{padding-right:.06em}
+.acro{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:24px 0 0;font-family:var(--mono);font-size:clamp(11px,1vw,13px);
+      letter-spacing:.2em;text-transform:uppercase;color:var(--fg2)}
+.acro b{font-weight:500;color:var(--rescue);padding-right:14px;border-right:1px solid var(--ln2)}
+.hero-copy .lede{font-size:clamp(15px,min(1.4vw,2.2vh),19px);color:#DCDDD8;max-width:52ch;margin:min(22px,2.4vh) 0 min(30px,3.2vh)}
+.hero-copy .acro{margin-top:min(24px,2.6vh)}
+@media (max-height:640px){.scroll-cue{display:none}}
+.hero-copy .cta{display:flex;gap:12px;flex-wrap:wrap}
+.scroll-cue{position:absolute;z-index:3;left:50%;bottom:66px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;color:#DCDDD8}
+.scroll-cue i{width:1px;height:46px;background:linear-gradient(#ECEBE6,transparent);animation:drip 2s var(--ease) infinite;transform-origin:top}
+@keyframes drip{0%{transform:scaleY(0);opacity:1}60%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+.ticker{position:absolute;z-index:3;left:0;right:0;bottom:0;height:40px;border-top:1px solid rgba(236,235,230,.14);overflow:hidden;
+        background:rgba(21,25,24,.6);backdrop-filter:blur(6px);display:flex;align-items:center}
+.ticker .tr{display:flex;gap:48px;white-space:nowrap;animation:tick 42s linear infinite;padding-left:48px}
+.ticker span{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;color:#B4B8B2}
+.ticker span b{color:#ECEBE6;font-weight:500}
+.ticker span.ex{color:var(--rescue)}
+@keyframes tick{to{transform:translateX(-50%)}}
+
+/* screen 2 rises over screen 1: a short, slow, calm water edge */
+.cover{position:absolute;inset:0;z-index:5;background:var(--earth-9);transform:translateY(calc(100% + 80px))}
+.edge{position:absolute;left:0;width:100%;height:56px;overflow:hidden;pointer-events:none}
+.cover > .edge{bottom:calc(100% - 2px)}
+.wave{position:absolute;left:0;bottom:0;width:200%;height:100%}
+.wave.a{animation:drift 24s linear infinite}
+.wave.b{animation:drift 17s linear infinite reverse;height:78%}
+.wave.c{animation:drift 13s linear infinite;height:58%}
+@keyframes drift{to{transform:translateX(-50%)}}
+.cover-media{position:absolute;inset:0;overflow:hidden}
+.cover-media video{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s}
+.cover-media video.ready{opacity:1}
+.cover-top{position:absolute;left:0;right:0;top:0;height:12%;z-index:1;pointer-events:none;background:linear-gradient(#1E6E9C,rgba(30,110,156,0))}
+.divide.up{position:absolute;left:0;right:0;bottom:100%;top:auto;margin:0;height:56px;z-index:3}
+
+/* ============================ 2022 ============================ */
+#y2022{position:relative;z-index:2;background:var(--khaki)}
+.y-stage{height:100vh;height:100svh;min-height:640px;max-width:var(--wide);margin:0 auto;padding:90px var(--gut) 40px;
+         display:grid;grid-template-columns:1fr auto;gap:clamp(24px,5vw,80px);align-items:center}
+.y-copy h2{font-size:clamp(40px,min(6vw,10vh),100px);margin:18px 0 20px}
+.y-copy h2 em{color:var(--silt-l)}
+.y-date{display:flex;align-items:baseline;gap:16px;margin-bottom:26px}
+.y-date b{font-family:var(--mono);font-weight:400;font-size:clamp(28px,3vw,42px);letter-spacing:-.02em}
+.y-date span{font-family:var(--mono);font-size:13px;color:var(--rescue);letter-spacing:.08em}
+.y-stats{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--ln);max-width:560px}
+.y-stats div{padding:18px 18px 0 0}
+.y-stats b{display:block;font-family:var(--disp);font-stretch:72%;font-weight:800;font-size:clamp(40px,4.6vw,72px);line-height:.95}
+.y-stats .micro{display:block;margin-top:8px;line-height:1.5}
+.y-src{margin-top:26px;font-size:12px;color:var(--fg3);max-width:52ch;line-height:1.5}
+.sat{position:relative;height:min(78vh,760px);aspect-ratio:985/1280;border-radius:4px;overflow:hidden;box-shadow:0 30px 70px -30px rgba(11,47,67,.45)}
+.sat img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sat .after{clip-path:inset(0 0 100% 0)}
+.sat .front{position:absolute;left:0;right:0;top:0;height:2px;background:var(--rescue);box-shadow:0 0 0 1px rgba(21,25,24,.3)}
+.sat .front span{position:absolute;right:10px;top:6px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;background:var(--rescue);color:var(--rescue-ink);padding:3px 7px;border-radius:3px}
+.sat .lab{position:absolute;left:10px;top:10px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;background:rgba(21,25,24,.75);color:#ECEBE6;padding:4px 8px;border-radius:3px}
+.sat .key{position:absolute;left:10px;bottom:10px;right:10px;display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;color:#ECEBE6;
+          background:rgba(21,25,24,.72);padding:6px 9px;border-radius:3px}
+.sat .key i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+@media (max-width:900px){
+  .y-stage{grid-template-columns:1fr;grid-template-rows:auto auto;align-content:center;gap:18px;padding-top:76px}
+  .sat{height:44vh;justify-self:center;order:-1}
+  .y-copy h2{font-size:40px;margin:10px 0 12px}.y-src{display:none}.y-stats b{font-size:36px}
+}
+
+/* wave divider into the next section */
+.divide{position:relative;height:56px;margin-top:-56px;z-index:2;pointer-events:none;overflow:hidden}
+.divide .wave.a{opacity:.35}.divide .wave.b{opacity:.6}
+
+/* ============================ INTRO (paper) ============================ */
+#intro{position:relative;padding:16vh 0 20vh;overflow:hidden}
+.intro-big{font-family:var(--disp);font-stretch:78%;font-weight:700;font-size:clamp(34px,5vw,78px);line-height:1;letter-spacing:-.01em;text-transform:uppercase;margin:28px 0 0;max-width:20ch}
+.intro-big em{font-family:var(--serif);font-style:italic;font-weight:400;text-transform:none;color:var(--silt)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:13vh;position:relative}
+.steps .line{position:absolute;top:27px;left:28px;right:28px;height:2px;background:repeating-linear-gradient(90deg,var(--silt) 0 10px,transparent 10px 16px);transform-origin:left}
+.step .n{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--khaki);border:2px solid var(--fg);
+         font-family:var(--mono);font-size:13px;position:relative;z-index:1}
+.step h3{font-family:var(--disp);font-stretch:80%;font-weight:800;text-transform:uppercase;font-size:26px;letter-spacing:0;margin:22px 0 8px}
+.step p{margin:0;color:var(--fg2);max-width:34ch;font-size:15.5px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);margin-top:13vh;border-top:2px solid var(--fg);border-bottom:1px solid var(--ln2)}
+.stat{padding:26px 22px 24px 0;border-right:1px solid var(--ln2);padding-left:22px}
+.stat:first-child{padding-left:0}
+.stat:last-child{border-right:0}
+.stat b{display:block;font-family:var(--disp);font-stretch:72%;font-weight:800;font-size:clamp(46px,5.6vw,88px);line-height:.9;font-variant-numeric:tabular-nums}
+.stat b small{font-size:.38em;font-weight:600;margin-left:4px;color:var(--fg2)}
+.stat .micro{display:block;margin-top:12px}
+@media (max-width:900px){.steps{grid-template-columns:1fr;gap:40px}.steps .line{display:none}
+  .stats{grid-template-columns:1fr 1fr}.stat{padding-left:0!important}.stat:nth-child(2){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid var(--ln2)}}
+
+/* ============================ DEPTH (scroll-driven flood) ============================ */
+/* A 600vh track; the scene sticks for the whole track. Left rail = readout (21%),
+   right = the village stage. Everything reads one value: depthM. */
+#depth{position:relative;background:var(--khaki)}
+.d-track{position:relative;height:600vh}
+.d-sticky{position:sticky;top:0;height:100vh;height:100svh;display:grid;grid-template-columns:minmax(270px,21%) 1fr;overflow:hidden}
+.d-sticky > *:not(.tex-layer){position:relative;z-index:1}
+.d-rail{padding:80px 20px 20px max(var(--gut),20px);display:flex;flex-direction:column;gap:min(14px,1.6vh);overflow:hidden;
+        background:linear-gradient(90deg,rgba(248,251,251,.72),rgba(248,251,251,.35))}
+.d-rail h2{font-size:clamp(24px,min(2.3vw,4.2vh),40px);margin:4px 0 0;line-height:.95}
+.d-sub{margin:0;font-size:13px;color:var(--fg2);line-height:1.45}
+.d-num{display:flex;align-items:baseline;gap:6px}
+.d-num b{font-family:var(--disp);font-stretch:72%;font-weight:800;font-size:clamp(54px,min(5.2vw,10vh),100px);line-height:.85;font-variant-numeric:tabular-nums;color:var(--fg)}
+.d-num span{font-family:var(--mono);font-size:16px;color:var(--fg2)}
+.d-gauge{position:relative;height:6px;border-radius:6px;background:var(--ln);margin-top:10px}
+.d-gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:linear-gradient(90deg,#6FBCE0,#1E6E9C);width:0}
+.d-gauge s{position:absolute;top:-3px;width:1px;height:12px;background:var(--ln2)}
+.d-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.d-steps li{display:grid;grid-template-columns:24px 78px 1fr;gap:8px;align-items:center;padding:3px 6px;border-radius:6px;opacity:.36;filter:grayscale(1);
+            transition:opacity .3s,filter .3s,background .3s}
+.d-steps li.past{opacity:.6;filter:grayscale(.6)}
+.d-steps li.on{opacity:1;filter:none;background:rgba(255,255,255,.75)}
+.d-steps .rg{font-family:var(--mono);font-size:11px;color:var(--fg2)}
+.d-steps b{font-size:12.5px;font-weight:600;line-height:1.2}
+.sym{width:24px;height:24px;flex:none;--ink:#0B2F43;--accent:#1F8FA0;--pale:#DCEEF2;--alert:#B5523F;--paper:#F8FBFB}
+.d-more summary{cursor:pointer;list-style:none;margin-bottom:8px}
+.d-more summary::-webkit-details-marker{display:none}
+.d-ticker{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:start;padding:11px 12px;border-radius:8px;background:rgba(255,255,255,.78);border:1px solid var(--ln)}
+.d-ticker .sym{width:40px;height:40px}
+.d-ticker b{display:block;font-size:14px;line-height:1.3}
+.d-ticker span{display:block;font-size:12.5px;color:var(--fg2);margin-top:4px;line-height:1.4}
+.d-ticker.swap{animation:tickIn .45s var(--ease)}
+@keyframes tickIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.d-expo{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.d-expo li{display:grid;grid-template-columns:24px 72px 1fr 10px;gap:8px;align-items:center;font-size:12.5px;line-height:1.25}
+.d-expo b{font-weight:500;color:var(--fg)}
+.lvl{width:9px;height:9px;border-radius:50%;background:var(--ln2)}
+.lvl[data-l="1"]{background:#6FBCE0}.lvl[data-l="2"]{background:#1F8FA0}.lvl[data-l="3"]{background:#B5523F}
+.d-note{margin:auto 0 0;font-size:11.5px;color:var(--fg3);line-height:1.4}
+.d-stage2{position:relative;height:100%;overflow:hidden}
+#village{position:absolute;left:0;right:0;bottom:0;width:100%;height:86%;overflow:visible}
+#village .rl line{stroke:#0B2F43;stroke-opacity:.6}
+#village .rl text{font-family:var(--mono);fill:#0B2F43}
+.d-callouts{position:absolute;inset:0;pointer-events:none}
+.co{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);color:#0B2F43}
+.co .lbl{white-space:nowrap;font-size:12.5px;padding:5px 10px;border-radius:999px;background:rgba(248,251,251,.94);border:1px solid rgba(11,47,67,.22)}
+.co.major .lbl{font-size:14px;font-weight:600;padding:9px 13px;border-radius:8px;background:rgba(11,47,67,.88);color:#F2F8F9;border:0;backdrop-filter:blur(6px)}
+.co .lead{width:1px;height:42px;background:currentColor;opacity:.65}
+.co.major .lead{height:66px}
+.co .dot{width:7px;height:7px;border-radius:50%;background:currentColor;margin-top:-1px;box-shadow:0 0 0 3px rgba(255,255,255,.7)}
+.d-overlay{position:absolute;left:4%;right:4%;top:11%;text-align:center;opacity:0;pointer-events:none}
+.d-overlay p{margin:0;font-family:var(--disp);font-stretch:72%;font-weight:900;text-transform:uppercase;font-size:clamp(28px,min(4.6vw,8vh),80px);line-height:.95;color:#0B2F43}
+.d-overlay p + p{color:#0A5A66}
+.d-close{position:absolute;right:5%;top:12%;max-width:22ch;text-align:right;font-family:var(--serif);font-style:italic;font-size:clamp(20px,2vw,30px);line-height:1.15;color:#0B2F43;opacity:0}
+.d-mini{display:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tide.hide-d{opacity:0}
+@media (max-width:900px){
+  .d-sticky{grid-template-columns:1fr;grid-template-rows:60% 40%}
+  .d-stage2{grid-row:1}
+  .d-rail{grid-row:2;padding:12px var(--gut) 14px;gap:8px;overflow:auto}
+  .d-rail > .sec-tag,.d-rail h2,.d-sub,.d-meter,.d-steps{display:none}
+  .d-mini{display:block;position:absolute;left:12px;top:70px;padding:6px 10px;border-radius:8px;background:rgba(11,47,67,.86);color:#F2F8F9;font-family:var(--mono);font-size:13px}
+  .d-mini b{font-family:var(--disp);font-stretch:72%;font-size:28px;font-weight:800;margin-right:4px}
+  #village{height:82%}
+  .co .lbl{font-size:11px}.co.major .lbl{font-size:12px;padding:7px 10px}
+  .d-close{top:auto;bottom:4%;right:4%;font-size:18px}
+}
+
+/* ============================ CAPABILITIES (paper) ============================ */
+/* one screen: heading + 8 cards in a 4 x 2 grid that shares the viewport height */
+#caps{position:relative;overflow:hidden}
+#caps > .wrap{height:100vh;height:100svh;min-height:640px;display:flex;flex-direction:column;padding-top:max(96px,12vh);padding-bottom:max(28px,4vh)}
+.caps-head{display:grid;grid-template-columns:1.25fr 1fr;gap:40px;align-items:end;margin-bottom:min(28px,3vh);flex:none}
+.caps-head h2{font-size:clamp(32px,min(4.4vw,7.4vh),68px);margin:12px 0 0}
+#caps .cards{flex:1;min-height:0;grid-template-rows:1fr 1fr}
+#caps .card{min-height:0;padding:min(20px,2.2vh) 18px}
+#caps .cv{height:auto;flex:1;min-height:40px;max-height:96px;margin:min(14px,1.4vh) 0}
+#caps .card h3{font-size:clamp(15px,min(1.35vw,2.3vh),20px);margin:0 0 6px}
+#caps .card p{font-size:clamp(12.5px,min(1vw,1.7vh),14px);line-height:1.45}
+@media (max-width:1100px),(max-height:620px){
+  #caps > .wrap{height:auto;min-height:0;padding-top:120px;padding-bottom:12vh}
+  #caps .cards{grid-template-rows:none}#caps .card{min-height:260px}
+}
+.caps-head h2 em{color:var(--silt)}
+.caps-head p{margin:0;color:var(--fg2);max-width:44ch}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{position:relative;border:1px solid var(--ln2);border-radius:10px;background:var(--paper);padding:22px;min-height:300px;display:flex;flex-direction:column;
+      overflow:hidden;isolation:isolate;transition:transform .4s var(--spring),box-shadow .4s}
+.card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:0;background:var(--w1);z-index:-1;transition:height .5s var(--ease)}
+.card:hover{transform:translateY(-4px);box-shadow:0 18px 40px -22px rgba(21,25,24,.45)}
+.card:hover::after{height:34%}
+.card .waterline{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--silt);transform-origin:left}
+.card .ix{font-family:var(--mono);font-size:11px;color:var(--fg3)}
+.card h3{font-family:var(--disp);font-stretch:80%;font-weight:800;text-transform:uppercase;font-size:21px;line-height:1.05;margin:auto 0 8px}
+.card p{margin:0;font-size:14.5px;color:var(--fg2);line-height:1.5}
+.cv{height:96px;margin:18px 0 22px;position:relative;display:flex;align-items:center}
+@media (max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:900px){.caps-head{grid-template-columns:1fr;gap:18px}}
+@media (max-width:560px){.cards{grid-template-columns:1fr}.card{min-height:0}}
+.cv-type{font-family:var(--mono);font-size:13px;line-height:1.5;border-left:3px solid var(--rescue);padding-left:12px}
+.cv-type span{display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:bottom;width:0;animation:typing 5s steps(26) infinite}
+.cv-type span:nth-of-type(2){animation-name:typing2}
+@keyframes typing{0%{width:0}35%,85%{width:26ch}100%{width:0}}
+@keyframes typing2{0%,35%{width:0}70%,85%{width:26ch}100%{width:0}}
+.cv-bars{width:100%;display:flex;flex-direction:column;gap:12px}
+.cv-bars div{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center;font-family:var(--mono);font-size:10.5px;color:var(--fg2);letter-spacing:.06em}
+.cv-bars s{display:block;height:7px;border-radius:7px;background:var(--ln);position:relative;overflow:hidden}
+.cv-bars s::after{content:"";position:absolute;inset:0;background:var(--w3);transform-origin:left;transform:scaleX(0)}
+.cv-bars div:first-child s::after{animation:barA 6s infinite}
+.cv-bars div:last-child s::after{background:var(--w6);animation:barB 6s infinite}
+@keyframes barA{0%{transform:scaleX(0)}6%,90%{transform:scaleX(1)}100%{transform:scaleX(0)}}
+@keyframes barB{0%,8%{transform:scaleX(0)}80%,90%{transform:scaleX(1)}100%{transform:scaleX(0)}}
+.cv-impact{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;width:100%}
+.cv-impact div{font-family:var(--mono);font-size:19px;letter-spacing:-.02em}
+.cv-impact div small{display:block;font-size:10px;letter-spacing:.1em;color:var(--fg3);text-transform:uppercase}
+.cv svg{width:100%;height:100%}
+.cv-src{display:flex;flex-direction:column;gap:6px}
+.cv-src span{font-family:var(--mono);font-size:11px;padding:4px 9px;border:1px solid var(--ln2);border-radius:999px;color:var(--fg2);width:max-content;animation:chip 4.5s var(--ease) infinite;opacity:0}
+.cv-src span:nth-child(2){animation-delay:.25s;margin-left:14px}.cv-src span:nth-child(3){animation-delay:.5s;margin-left:28px}
+@keyframes chip{0%{opacity:0;transform:translateX(-8px)}12%,80%{opacity:1;transform:none}100%{opacity:0}}
+.cv-run{font-family:var(--mono);font-size:13px;display:flex;align-items:center;gap:10px}
+.cv-run .v{display:inline-grid;height:22px;overflow:hidden;padding:0 8px;border-radius:5px;background:rgba(92,209,202,.14);color:#0F6E73}
+.cv-run .v i{font-style:normal;line-height:22px;animation:roll 6s steps(1) infinite}
+@keyframes roll{0%{transform:translateY(0)}33%{transform:translateY(-22px)}66%{transform:translateY(-44px)}}
+.kbd{width:52px;height:52px;border-radius:10px;border:1px solid var(--ln2);border-bottom-width:4px;display:grid;place-items:center;font-family:var(--mono);font-size:20px;background:var(--khaki);animation:press 3s infinite}
+@keyframes press{0%,40%,100%{transform:none;border-bottom-width:4px}45%,55%{transform:translateY(3px);border-bottom-width:1px}}
+.proj{flex:1;height:80px;margin-left:16px;border:1px solid var(--ln2);border-radius:6px;position:relative;overflow:hidden;background:var(--earth-8);color:#ECEBE6}
+.proj::before{content:"528 km²";position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:13px;animation:big 3s infinite}
+@keyframes big{0%,45%{font-size:13px;opacity:.5}60%,100%{font-size:26px;opacity:1}}
+.cv-words{display:flex;flex-wrap:wrap;gap:6px}
+.cv-words span{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid var(--ln2);color:var(--fg2);animation:word 5s infinite}
+.cv-words span:nth-child(2){animation-delay:1s}.cv-words span:nth-child(3){animation-delay:2s}.cv-words span:nth-child(4){animation-delay:3s}.cv-words span:nth-child(5){animation-delay:4s}
+@keyframes word{0%,18%{background:var(--rescue);border-color:var(--rescue);color:var(--rescue-ink)}22%,100%{background:transparent}}
+
+/* ============================ MODES ============================ */
+#modes{position:relative;background:var(--earth-9);overflow:hidden}
+.m-track{display:flex;height:100vh;height:100svh;min-height:640px;width:max-content;will-change:transform}
+.panel{position:relative;width:100vw;height:100%;flex:none;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(24px,4vw,64px);
+       align-items:center;padding:90px max(var(--gut),calc((100vw - var(--wide))/2 + var(--gut))) 80px;overflow:hidden;background:var(--earth-9)}
+.p-bg{position:absolute;inset:0;z-index:0}
+.p-bg video{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1s}
+/* footage at true colour; a neutral shade only where the text sits */
+.p-bg video.ready{opacity:1}
+.p-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.45) 40%,rgba(0,0,0,.08) 70%,rgba(0,0,0,0) 100%)}
+.panel > *:not(.p-bg):not(.tex-layer){position:relative;z-index:1}
+.y-stage,.d-stage{position:relative}
+.y-stage > *:not(.tex-layer),.d-stage > *:not(.tex-layer){position:relative;z-index:1}
+#caps > .wrap,.cta-in{position:relative;z-index:1}
+#caps > .divide{z-index:2}
+/* the drain sits on paper, so its texture must use the dark variant */
+.paper .drain .tex-layer::before{opacity:.95}
+.paper .drain .tex-layer::after{background-image:url(/landing-assets/img/contours-light.png);opacity:.17}
+.paper .drain .tex-layer i{background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(0,0,0,.28) 100%)}
+.panel.intro-p{grid-template-columns:1fr;background:var(--earth-9)}
+.intro-p h2{font-size:clamp(56px,min(10vw,22vh),180px);margin:20px 0 26px}
+.intro-p h2 em{color:var(--silt-l)}
+.intro-p p{color:var(--fg2);max-width:50ch;margin:0;font-size:18px}
+.intro-p .hint{margin-top:40px;display:flex;align-items:center;gap:14px}
+.intro-p .hint i{width:80px;height:2px;background:var(--ln2);position:relative;overflow:hidden}
+.intro-p .hint i::after{content:"";position:absolute;inset:0;background:var(--rescue);animation:slide 2s infinite}
+@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.m-copy .ix{font-family:var(--mono);font-size:13px;color:var(--fg3)}
+.m-copy .ix b{color:var(--rescue);font-weight:500}
+.m-copy h3{font-family:var(--disp);font-stretch:70%;font-weight:900;text-transform:uppercase;font-size:clamp(48px,min(6.4vw,13vh),112px);line-height:.88;margin:14px 0 16px}
+.m-copy h3 em{font-family:var(--serif);font-style:italic;font-weight:400;text-transform:none;color:var(--silt-l);font-stretch:100%}
+.m-copy .eng{display:inline-flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.22);color:#E8E8E8;background:rgba(0,0,0,.35)}
+.m-copy p{text-shadow:0 1px 12px rgba(0,0,0,.5)}
+.m-copy .eng::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--rescue)}
+.m-copy p{color:#DCDDD8;max-width:42ch;margin:22px 0;font-size:16.5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{font-size:13px;padding:6px 12px;border-radius:999px;background:rgba(236,235,230,.1);border:1px solid var(--ln)}
+.m-meta{margin-top:22px;display:flex;gap:28px;flex-wrap:wrap}
+.m-open{margin-top:22px;height:42px;padding:0 20px;font-size:13.5px}
+.m-meta div{display:flex;flex-direction:column;gap:3px}
+.m-meta div b{font-family:var(--mono);font-weight:500;font-size:14px}
+.viz{border:1px solid rgba(255,255,255,.18);border-radius:10px;background:rgba(12,12,12,.62);backdrop-filter:blur(10px);overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.8)}
+.viz .vh{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 16px;border-bottom:1px solid var(--ln)}
+.viz .vh .flag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;padding:3px 8px;border-radius:3px;background:rgba(92,209,202,.16);color:var(--rescue)}
+.viz svg{width:100%;height:auto;aspect-ratio:3/2}
+.m-dots{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);z-index:5;display:flex;gap:6px;align-items:center}
+.m-dots button{all:unset;cursor:pointer;height:6px;width:22px;border-radius:6px;background:var(--ln2);transition:width .4s var(--ease),background .4s}
+.m-dots button.on{width:52px;background:var(--rescue)}
+.m-count{position:absolute;right:var(--gut);bottom:24px;z-index:5}
+@media (max-width:900px){
+  .m-track{flex-direction:column;height:auto;width:100%;min-height:0}
+  .panel{width:100%;height:auto;grid-template-columns:1fr;padding:80px var(--gut)}
+  .m-dots,.m-count{display:none}
+}
+
+/* shared svg */
+.c1{fill:var(--w1)}.c2{fill:var(--w2)}.c3{fill:var(--w3)}.c4{fill:var(--w4)}.c5{fill:var(--w5)}.c6{fill:var(--w6)}.c0{fill:transparent}
+.vt{font-family:var(--mono);font-size:12px;fill:#B4B8B2}
+.vt.s{font-size:10.5px;fill:#858A85}
+.terr{fill:#2E3532;stroke:rgba(236,235,230,.3);stroke-width:1.5}
+.terr2{fill:#232927}
+.ring{fill:none;stroke-width:2;transform-box:fill-box;transform-origin:center}
+.anim *{animation-play-state:paused}
+.anim.run *{animation-play-state:running}
+.i-water{animation:iRise 5s var(--ease) infinite;transform-box:view-box}
+@keyframes iRise{0%{transform:translateY(0)}18%,78%{transform:translateY(-120px)}92%,100%{transform:translateY(0)}}
+.i-clock{animation:blink 5s infinite}
+@keyframes blink{0%,14%{opacity:0}20%,78%{opacity:1}90%,100%{opacity:0}}
+.dm-res{animation:resDrop 7s var(--ease) infinite;transform-box:view-box}
+@keyframes resDrop{0%,22%{transform:translateY(0)}70%,88%{transform:translateY(96px)}100%{transform:translateY(0)}}
+.dm-chunk{animation:chunk 7s var(--ease) infinite;transform-box:fill-box;transform-origin:center}
+@keyframes chunk{0%,20%{transform:none;opacity:1}32%{transform:translate(30px,150px) rotate(40deg);opacity:0}96%{opacity:0;transform:translate(30px,150px)}100%{opacity:1;transform:none}}
+.dm-surge{animation:surge 7s cubic-bezier(.3,.6,.4,1) infinite;transform-box:fill-box;transform-origin:left bottom}
+@keyframes surge{0%,24%{transform:scaleX(0);opacity:1}62%{transform:scaleX(1);opacity:1}86%{opacity:1}96%,100%{opacity:0;transform:scaleX(1)}}
+.dm-r1,.gl-r1{animation:ringA 7s infinite}.dm-r2,.gl-r2{animation:ringB 7s infinite}
+@keyframes ringA{0%,38%{opacity:0;transform:scale(.4)}42%,84%{opacity:1;transform:scale(1)}92%,100%{opacity:0}}
+@keyframes ringB{0%,54%{opacity:0;transform:scale(.4)}58%,84%{opacity:1;transform:scale(1)}92%,100%{opacity:0}}
+.gl-flow{stroke-dasharray:760;stroke-dashoffset:760;animation:flow 7s var(--ease) infinite}
+@keyframes flow{0%,12%{stroke-dashoffset:760;opacity:1}70%,86%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+.gl-lake{animation:lake 7s var(--ease) infinite;transform-box:fill-box;transform-origin:center}
+@keyframes lake{0%,12%{transform:scale(1)}60%,90%{transform:scale(.55,.4)}100%{transform:scale(1)}}
+.co-sea{animation:sea 9s var(--ease) infinite;transform-box:view-box}
+@keyframes sea{0%,14%{transform:translateY(0)}28%,42%{transform:translateY(-26px)}56%,66%{transform:translateY(-52px)}74%{transform:translateY(-78px)}84%,100%{transform:translateY(0)}}
+.co-wave{animation:drift 3.5s linear infinite}
+.mt-snow{animation:snow 8s var(--ease) infinite;transform-box:fill-box;transform-origin:top center}
+@keyframes snow{0%,10%{transform:scale(1)}65%,85%{transform:scale(.55)}100%{transform:scale(1)}}
+.mt-hyd{stroke-dasharray:640;stroke-dashoffset:640;animation:hyd 8s var(--ease) infinite}
+@keyframes hyd{0%,10%{stroke-dashoffset:640;opacity:1}75%,88%{stroke-dashoffset:0;opacity:1}100%{opacity:0;stroke-dashoffset:0}}
+.mt-sun{animation:sun 8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes sun{0%,100%{transform:scale(.9);opacity:.7}50%{transform:scale(1.12);opacity:1}}
+
+/* ============================ CTA (paper) ============================ */
+#cta{position:relative;overflow:hidden}
+.drain{position:absolute;left:0;right:0;top:0;height:75vh;background:var(--earth-9);z-index:2}
+.drain .edge{top:calc(100% - 2px);transform:scaleY(-1)}
+.cta-in{position:relative;z-index:1;padding:30vh var(--gut) 14vh;max-width:var(--wide);margin:0 auto}
+.cta-in h2{font-size:clamp(56px,9vw,150px);margin:22px 0 26px;max-width:12ch}
+.cta-in h2 em{color:var(--silt)}
+.cta-in p{color:var(--fg2);max-width:48ch;font-size:18px;margin:0 0 34px}
+.note{margin-top:12vh;display:flex;gap:18px;align-items:flex-start;padding:20px 22px;border-radius:8px;border:1px solid var(--ln2);border-left:4px solid var(--rescue);background:var(--paper);max-width:760px}
+.note .micro{color:#0F6E73;white-space:nowrap;margin-top:3px}
+.note p{margin:0;font-size:14.5px;color:var(--fg2)}
+footer{position:relative;overflow:hidden;background:var(--earth-9);color:#C3D9DE}
+footer .in{position:relative;z-index:1;max-width:var(--wide);margin:0 auto;padding:44px var(--gut);display:flex;gap:22px;flex-wrap:wrap;align-items:center}
+footer .micro{color:#C3D9DE}
+footer .sp{margin-left:auto}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}
+  .grain{display:none}
+  #hero{height:auto;overflow:visible}.screen1{position:relative;height:100vh}.cover{position:relative;transform:none;height:100vh}.cover > .edge{display:none}
+  .sat .after{clip-path:none}
+}
 </style>
 </head>
 <body>
-<canvas id="sea" aria-hidden="true"></canvas>
-<div class="veil" aria-hidden="true"></div>
-<div class="flash" id="flash" aria-hidden="true"></div>
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<symbol id="sym-01-wet-ground" viewBox="0 0 96 96"><title>Wet ground</title><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M10 69Q22 62 35 68T60 69T87 67"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M17 76q11 6 23 0m8 3q10 5 20 0"/><path style="fill:var(--accent);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M35 61c-2-7 5-10 11-16l9-13c4-4 9-1 9 4l-6 21 17 4c7 2 7 11-1 12H40c-9 0-13-8-5-12Z"/></symbol>
+<symbol id="sym-02-ankle-shin" viewBox="0 0 96 96"><title>Ankle to shin</title><path style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M35 9h25l-2 45 11 10v15H22V66l14-12Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M35 9v44l-13 13m36-56-1 44 12 11"/><path style="fill:var(--accent);opacity:.25" d="M8 63Q22 58 36 63t28 0t24 0v22H8Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M9 63q14-7 27 0t28 0t23 0"/></symbol>
+<symbol id="sym-03-knee" viewBox="0 0 96 96"><title>Knee depth</title><circle style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" cx="48" cy="15" r="9"/><path style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M35 29h26l6 29-8 4-11-15-10 15-8-5Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M35 34 23 53m38-19 12 19M41 60l-2 25m17-25 4 25"/><path style="fill:var(--accent);opacity:.25" d="M8 66q13-6 26 0t26 0t28 0v19H8Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M8 66q13-6 26 0t26 0t28 0"/></symbol>
+<symbol id="sym-04-waist" viewBox="0 0 96 96"><title>Waist depth</title><circle style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" cx="48" cy="16" r="9"/><path style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M34 32h28l5 29-9 4-10-15-10 15-9-4Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M34 37 21 56m41-19 13 19M40 63l-3 21m19-21 3 21"/><path style="fill:var(--accent);opacity:.25" d="M7 50q13-6 27 0t28 0t27 0v35H7Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M7 50q13-6 27 0t28 0t27 0"/></symbol>
+<symbol id="sym-05-ground-floor" viewBox="0 0 96 96"><title>Ground floor inundation</title><path style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M12 40 48 13 84 40v45H12Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M8 41 48 10 88 41"/><rect style="fill:var(--alert);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" x="39" y="47" width="20" height="38"/><rect style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" x="19" y="49" width="13" height="15"/><path style="fill:var(--accent);opacity:.25" d="M8 64q13-6 27 0t28 0t25 0v21H8Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M8 64q13-6 27 0t28 0t25 0"/></symbol>
+<symbol id="sym-06-deep-inundation" viewBox="0 0 96 96"><title>Deep inundation</title><path style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M14 45 48 14 82 45v40H14Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M9 46 48 10 87 46"/><rect style="fill:var(--alert);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" x="39" y="51" width="18" height="34"/><path style="fill:var(--accent);opacity:.25" d="M5 40q14-7 28 0t28 0t30 0v45H5Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M5 40q14-7 28 0t28 0t30 0"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M12 52q12-5 23 0m19 7q13-4 24 0"/></symbol>
+<symbol id="sym-building" viewBox="0 0 96 96"><title>Building exposure</title><path style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M16 43 48 17 80 43v42H16Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M11 44 48 13 85 44M17 52h62M17 62h62M17 72h62M24 52v10m25 0v10m24-20v10"/><rect style="fill:var(--accent);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" x="30" y="51" width="15" height="16"/><rect style="fill:var(--alert);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" x="53" y="54" width="17" height="31"/></symbol>
+<symbol id="sym-livestock" viewBox="0 0 96 96"><title>Livestock exposure</title><path style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M23 42q7-13 26-12l13 6 7 16-8 15H30l-9-12Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M24 40q-11-11-14-4m49-8q8-16 14-8m-9 14q13-13 18-7M30 65v17m29-17v17M72 53l10 6-5 10"/><circle style="fill:var(--ink)" cx="68" cy="45" r="2"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M8 74q13-6 27 0t27 0t26 0"/></symbol>
+<symbol id="sym-person" viewBox="0 0 96 96"><title>Human exposure</title><circle style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" cx="48" cy="20" r="10"/><path style="fill:var(--accent);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M35 36h26l3 28H32Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M35 40 23 61m38-21 12 21M41 64l-4 19m18-19 4 19"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M9 65q13-6 26 0t26 0t26 0"/></symbol>
+<symbol id="sym-vehicle" viewBox="0 0 96 96"><title>Vehicle exposure</title><path style="fill:var(--accent);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M13 53 25 36h40l16 17 5 4v17H10V60Z"/><path style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M28 39h17v13H19Zm21 0h14l13 13H49Z"/><circle style="fill:var(--ink)" cx="28" cy="75" r="9"/><circle style="fill:var(--ink)" cx="69" cy="75" r="9"/><circle cx="28" cy="75" r="4" style="fill:var(--paper)"/><circle cx="69" cy="75" r="4" style="fill:var(--paper)"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M7 71q13-5 25 0t26 0t31 0"/></symbol>
+<symbol id="sym-warning" viewBox="0 0 96 96"><title>Warning</title><path style="fill:var(--alert);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" d="M48 12 88 81H8Z"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M48 35v22"/><circle style="fill:var(--ink)" cx="48" cy="68" r="3.4"/></symbol>
+<symbol id="sym-water-gauge" viewBox="0 0 96 96"><title>Water gauge</title><rect style="fill:var(--pale);stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round" x="35" y="10" width="26" height="75" rx="5"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M36 24h10m-10 10h7m-7 10h10m-10 10h7m-7 10h10m-10 10h7"/><rect x="49" y="42" width="8" height="38" rx="2" style="fill:var(--accent)"/><path style="fill:none;stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round" d="M9 79q10-5 20 0t19 0t19 0t20 0"/></symbol>
+</svg>
+<div class="grain" aria-hidden="true"></div>
 
-<header class="top">
-  <div class="left">
-    <a class="agn-logo" href="https://sailab.aigeo360.com/" title="SAILAB home">
-      <img src="data:image/png;base64,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" alt="AI Geo Navigators" width="170" height="80">
-    </a>
-    <span class="brand">SAILAB</span>
-  </div>
-  <span class="tag">Flood hazard &amp; impact modelling &middot; Pakistan</span>
+<header class="nav" id="nav">
+  <a class="wm" href="#hero" data-go>
+    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5" fill="#5CD1CA"/>
+      <path d="M3 15.5c3.2-5 5.6-5 8-.9s4.8 2.4 7.2-2.4" stroke="#151918" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M3 19.4c3.2-5 5.6-5 8-.9s4.8 2.4 7.2-2.4" stroke="rgba(21,25,24,.45)" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+    Sailab
+  </a>
+  <nav class="links" aria-label="Sections">
+    <a href="#y2022" data-go>2022</a>
+    <a href="#depth" data-go>Depth</a>
+    <a href="#caps" data-go>Capabilities</a>
+    <a href="#modes" data-go>Two ways in</a>
+    <a class="btn p" href="/app">SAILAB Physics</a>
+  </nav>
 </header>
 
-<main>
-  <div class="rise" style="display:contents">
-    <h1>SAILAB</h1>
-    <p class="full"><b>S</b>imulation &amp; <b>A</b>nalytics for <b>I</b>nundation, <b>L</b>oss, <b>A</b>ssets &amp; <b>B</b>uilt Environment</p>
-    <div class="rule" aria-hidden="true"></div>
-    <div class="choices">
-      <a class="open" id="openInstant" href="/instant" title="Draw an area, pick a rain scenario, see where the water collects in about a second">
-        SAILAB Instant
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg>
-      </a>
-      <a class="open" id="open" href="/app" title="The full physical flood model">
-        SAILAB Physics
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg>
-      </a>
+<div class="tide" id="tide" aria-hidden="true">
+  <span class="read" id="tideRead">+0.00 m</span>
+  <div class="bar"><div class="fill" id="tideFill"></div></div>
+</div>
+
+<!-- ============================ HERO ============================ -->
+<section id="hero">
+  <!-- screen 1: SAILAB, filled with liquid, over the flood -->
+  <div class="screen1" id="screen1">
+    <div class="hero-media">
+      <div class="tex-layer" style="--tex-bg:#0B2F43;--wash:url(/landing-assets/img/wash-prussian.jpg);--tp:20% 30%" aria-hidden="true"><i></i></div>
+      <video id="coverVideo" muted loop playsinline preload="auto" data-src="/landing-assets/video/cover.mp4" aria-hidden="true"></video>
+      <canvas id="storm" aria-hidden="true"></canvas>
+      <div class="title-shade"></div>
+    </div>
+    <div class="title" id="say">
+      <!-- the word is a glass vessel: liquid (pigment ramp x real terrain relief) fills it with a moving surface -->
+      <svg class="liquid-word" viewBox="0 0 1000 300" role="img" aria-label="SAILAB">
+        <defs>
+          <clipPath id="wordClip"><text class="wtxt" x="500" y="262" text-anchor="middle" textLength="990" lengthAdjust="spacingAndGlyphs">SAILAB</text></clipPath>
+          <clipPath id="liqClip"><path id="liqPath" d="M0 300H1000V300H0Z"/></clipPath>
+          <linearGradient id="liqGrad" gradientUnits="userSpaceOnUse" x1="0" y1="40" x2="0" y2="265">
+            <stop offset="0" stop-color="#DDF1F7"/><stop offset=".3" stop-color="#A6D8EC"/><stop offset=".55" stop-color="#6FBCE0"/><stop offset=".8" stop-color="#3BAAB8"/><stop offset="1" stop-color="#1E7F92"/>
+          </linearGradient>
+          <pattern id="reliefPat" patternUnits="userSpaceOnUse" width="1300" height="600"><image href="/landing-assets/img/letter-relief.jpg" width="1300" height="600" preserveAspectRatio="xMidYMid slice"/></pattern>
+        </defs>
+        <g clip-path="url(#wordClip)">
+          <rect width="1000" height="300" fill="rgba(255,255,255,.14)"/>
+          <path id="liqBack" d="" fill="rgba(166,216,236,.55)"/>
+          <g clip-path="url(#liqClip)" style="isolation:isolate">
+            <rect width="1000" height="300" fill="url(#liqGrad)"/>
+            <rect width="1000" height="300" fill="url(#reliefPat)" style="mix-blend-mode:multiply"/>
+          </g>
+          <path id="liqLine" d="" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2.2"/>
+        </g>
+        <text class="wtxt outline" x="500" y="262" text-anchor="middle" textLength="990" lengthAdjust="spacingAndGlyphs">SAILAB</text>
+      </svg>
+      <!-- SAILAB acronym: replace the text in BOTH places (here and in the headline screen below) -->
+      <p class="acro-full">Simulation &amp; Analytics for Inundation, Loss, Assets &amp; Built Environment</p>
+      <span class="micro kick">Flood intelligence · Pakistan</span>
+    </div>
+    <span class="cover-cap micro" aria-hidden="true">Stock footage · for illustration</span>
+    <div class="scroll-cue micro" id="cue">Scroll<i></i></div>
+  </div>
+
+  <!-- screen 2: the headline, rising in on calm water -->
+  <div class="cover" id="cover">
+    <div class="edge" aria-hidden="true">
+      <svg class="wave a" viewBox="0 0 2880 150" preserveAspectRatio="none"><path fill="#A6D8EC" opacity=".5" d=""/></svg>
+      <svg class="wave b" viewBox="0 0 2880 150" preserveAspectRatio="none"><path fill="#3BAAB8" opacity=".8" d=""/></svg>
+      <svg class="wave c" viewBox="0 0 2880 150" preserveAspectRatio="none"><path fill="#1E6E9C" d=""/></svg>
+    </div>
+    <div class="cover-media" aria-hidden="true"><video id="heroVideo" muted loop playsinline preload="auto" data-src="/landing-assets/video/hero.mp4"></video></div>
+    <div class="hero-vig"></div>
+    <div class="cover-top" aria-hidden="true"></div>
+    <div class="hero-copy">
+      <span class="micro sec-tag" style="color:#DCDDD8">Flood intelligence · Pakistan</span>
+      <h1 class="disp" id="heroTitle">Know what the water does <em>before</em> it does it.</h1>
+      <p class="acro" id="heroAcro" style="color:#DCDDD8"><b>SAILAB</b><span>Simulation &amp; Analytics for Inundation, Loss, Assets &amp; Built Environment</span></p>
+      <p class="lede" id="heroLede">Draw a district. Pick a storm. SAILAB returns the flooded area and depth, the buildings and roads in the water, the facilities at risk and an estimated loss in rupees, with the source behind every figure.</p>
+      <div class="cta" id="heroCta">
+        <a class="btn p" id="open" href="/app">SAILAB Physics <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        <a class="btn" id="openInstant" href="/instant">SAILAB Instant</a>
+        <a class="btn" href="#y2022" data-go>Why it exists</a>
+      </div>
+    </div>
+    <div class="ticker" aria-hidden="true"><div class="tr"><span>LISFLOOD-FP 2D shallow-water</span><span>GPU solver</span><span>30 m SRTM terrain</span><span>Google Open Buildings</span><span>ESA WorldCover roughness</span><span>ERA5-Land and IMERG rainfall curves</span><span>Huizinga et al. depth-damage</span><span>Loss in PKR</span><span>LISFLOOD-FP 2D shallow-water</span><span>GPU solver</span><span>30 m SRTM terrain</span><span>Google Open Buildings</span><span>ESA WorldCover roughness</span><span>ERA5-Land and IMERG rainfall curves</span><span>Huizinga et al. depth-damage</span><span>Loss in PKR</span></div></div>
+  </div>
+</section>
+
+<!-- ============================ 2022 ============================ -->
+<section id="y2022" class="paper">
+  <div class="divide up" aria-hidden="true">
+    <svg class="wave a" viewBox="0 0 2880 150" preserveAspectRatio="none"><path fill="#A6D8EC" opacity=".55" d=""/></svg>
+    <svg class="wave b" viewBox="0 0 2880 150" preserveAspectRatio="none"><path fill="#DCEEF6" d=""/></svg>
+    <svg class="wave c" viewBox="0 0 2880 150" preserveAspectRatio="none"><path fill="#F5F9FA" d=""/></svg>
+  </div>
+  <div class="y-stage" id="yStage">
+    <div class="tex-layer" style="--tex-bg:#F5F9FA;--wash:url(/landing-assets/img/wash-cerulean.jpg);--tp:30% 60%" aria-hidden="true"><i></i></div>
+    <div class="y-copy">
+      <span class="micro sec-tag"><b>00</b> Why it exists · Sindh, 2022</span>
+      <h2 class="disp">In 24 days the Indus became <em>a lake</em>.</h2>
+      <div class="y-date"><b id="yDate">04 Aug 2022</b><span id="yDay">DAY 0</span></div>
+      <div class="y-stats">
+        <div><b>33<small style="font-size:.45em"> million</small></b><span class="micro">people affected</span></div>
+        <div><b>1<small style="font-size:.45em"> million+</small></b><span class="micro">houses damaged or destroyed</span></div>
+      </div>
+      <p class="y-src">Figures: Pakistan National Disaster Management Authority, as reported by NASA Earth Observatory. Images: NASA Earth Observatory / Joshua Stevens,
+        Landsat 8 &amp; 9 data from USGS. False colour (bands 6-5-4): floodwater is dark blue, vegetation bright green.</p>
+    </div>
+    <figure class="sat" aria-label="Landsat images of the Indus near Hamal Lake, 4 and 28 August 2022">
+      <img src="/landing-assets/img/indus-2022-08-04.jpg" alt="The Indus river and Hamal Lake on 4 August 2022, river within its banks">
+      <img class="after" id="satAfter" src="/landing-assets/img/indus-2022-08-28.jpg" alt="The same area on 28 August 2022, joined into one lake more than 100 km wide">
+      <div class="front" id="satFront"><span>28 AUG</span></div>
+      <span class="lab">LANDSAT · INDUS, SINDH</span>
+      <div class="key"><span><i style="background:#1830A8"></i>floodwater</span><span><i style="background:#3FD13A"></i>vegetation</span><span><i style="background:#C9B48F"></i>bare land</span></div>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================ DEPTH ============================ -->
+<!-- Scroll-driven flood. Spec: docs/depth-scroll-brief.md. Bands are SAILAB illustrative labels, not a standard classification. -->
+<section id="depth" class="paper" aria-labelledby="dTitle">
+  <div class="d-track" id="dTrack">
+    <div class="d-sticky">
+      <div class="tex-layer" style="--tex-bg:#F6FAFA;--wash:url(/landing-assets/img/wash-manganese.jpg);--tp:80% 20%;--veil:90deg" aria-hidden="true"><i></i></div>
+
+      <aside class="d-rail" aria-label="Flood depth readout">
+        <span class="micro sec-tag"><b>02</b> / Depth that means something</span>
+        <h2 class="disp" id="dTitle">Every centimetre changes <em>the story.</em></h2>
+        <p class="d-sub">Scroll to see floodwater rise through a familiar street — from wet ground to flooded ground floors.</p>
+        <div class="d-meter">
+          <div class="d-num"><b id="dNum">0.00</b><span>m</span></div>
+          <span class="micro">metres above local ground</span>
+          <div class="d-gauge" aria-hidden="true"><i id="dGauge"></i><s style="left:4.0%"></s><s style="left:10.0%"></s><s style="left:20.0%"></s><s style="left:40.0%"></s><s style="left:80.0%"></s></div>
+        </div>
+        <ol class="d-steps" id="dSteps" aria-label="Depth classes">
+          <li><svg class="sym" aria-hidden="true"><use href="#sym-01-wet-ground"/></svg><span class="rg">0–0.10 m</span><b>Wet ground</b></li>
+          <li><svg class="sym" aria-hidden="true"><use href="#sym-02-ankle-shin"/></svg><span class="rg">0.10–0.25 m</span><b>Ankle to shin</b></li>
+          <li><svg class="sym" aria-hidden="true"><use href="#sym-03-knee"/></svg><span class="rg">0.25–0.50 m</span><b>Knee deep</b></li>
+          <li><svg class="sym" aria-hidden="true"><use href="#sym-04-waist"/></svg><span class="rg">0.50–1.00 m</span><b>Waist deep</b></li>
+          <li><svg class="sym" aria-hidden="true"><use href="#sym-05-ground-floor"/></svg><span class="rg">1.00–2.00 m</span><b>Ground-floor inundation</b></li>
+          <li><svg class="sym" aria-hidden="true"><use href="#sym-06-deep-inundation"/></svg><span class="rg">2.00–2.50 m</span><b>Deep inundation</b></li>
+        </ol>
+        <details class="d-more" open>
+          <summary class="micro">What this depth means</summary>
+          <div class="d-ticker" id="dTicker">
+            <svg class="sym" aria-hidden="true"><use id="dTickIcon" href="#sym-01-wet-ground"/></svg>
+            <div><b id="dTickMain">The flood starts at ground level.</b><span id="dTickSub">Water collects in low spots and near entrances.</span></div>
+          </div>
+          <ul class="d-expo" aria-label="Potentially exposed">
+            <li><svg class="sym" aria-hidden="true"><use href="#sym-person"/></svg><span class="micro">People</span><b id="exPeople">Ground wet underfoot</b><i class="lvl" id="lvPeople"></i></li>
+            <li><svg class="sym" aria-hidden="true"><use href="#sym-vehicle"/></svg><span class="micro">Mobility</span><b id="exMobility">Roads passable with care</b><i class="lvl" id="lvMobility"></i></li>
+            <li><svg class="sym" aria-hidden="true"><use href="#sym-building"/></svg><span class="micro">Buildings</span><b id="exBuildings">Water near entrances</b><i class="lvl" id="lvBuildings"></i></li>
+          </ul>
+        </details>
+        <p class="d-note">Illustrative depth effects. Flow velocity and local conditions change risk.</p>
+        <p class="sr" id="dLive" aria-live="polite"></p>
+      </aside>
+
+      <div class="d-stage2" id="dStage2">
+        <svg id="village" viewBox="30 -700 1410 760" preserveAspectRatio="xMidYMax meet" role="img" aria-labelledby="villageT villageD">
+          <title id="villageT">A village street in Pakistan as floodwater rises</title>
+          <desc id="villageD">A kacha mud house, a brick house on a raised plinth, a family, a water buffalo, a Mehran car, a Qingqi rickshaw, a motorbike, a charpai, a hand pump, a shisham tree and an electric pole, all at true scale. Water rises from 0 to 2.5 metres as you scroll.</desc>
+          <defs>
+            <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#7EC3E3"/><stop offset=".45" stop-color="#3E98C8"/><stop offset="1" stop-color="#155C80"/>
+            </linearGradient>
+          </defs>
+          <g class="row back">
+          <image href="/landing-assets/svg/depth/12_electric_pole.svg" x="-70" y="-800" width="290" height="800"/>
+          <image href="/landing-assets/svg/depth/11_shisham_tree.svg" x="600" y="-600" width="310" height="600"/>
+          <image href="/landing-assets/svg/depth/08_kacha_mud_house.svg" x="60" y="-300" width="275" height="300"/>
+          <image href="/landing-assets/svg/depth/13_charpai.svg" x="330" y="-65" width="260" height="65"/>
+          <image href="/landing-assets/svg/depth/05_qingqi_rickshaw.svg" x="680" y="-170" width="285" height="170"/>
+          <image href="/landing-assets/svg/depth/09_pakka_brick_house_raised_plinth.svg" x="1105" y="-330" width="302" height="330"/>
+          <image href="/landing-assets/svg/depth/10_hand_pump.svg" x="1420" y="-115" width="130" height="115"/>
+          </g>
+          <path id="wBack" fill="url(#wGrad)" opacity=".42" d=""/>
+          <g class="row front">
+          <image href="/landing-assets/svg/depth/03_woman_dupatta.svg" x="230" y="-160" width="105" height="160"/>
+          <image href="/landing-assets/svg/depth/01_adult_shalwar_kameez.svg" x="320" y="-170" width="110" height="170"/>
+          <image href="/landing-assets/svg/depth/02_child.svg" x="420" y="-110" width="75" height="110"/>
+          <image href="/landing-assets/svg/depth/07_water_buffalo.svg" x="550" y="-150" width="265" height="150"/>
+          <image href="/landing-assets/svg/depth/04_mehran_hatchback.svg" x="820" y="-140" width="275" height="140"/>
+          <image href="/landing-assets/svg/depth/06_70cc_motorbike.svg" x="1300" y="-110" width="230" height="110"/>
+          </g>
+          <path id="wFront" fill="url(#wGrad)" opacity=".7" d=""/>
+          <path id="wHi" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="7" d=""/>
+          <path id="wLine" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.6" d=""/>
+          <!-- ground: road strip, and a roadside ditch where water collects first -->
+          <path d="M-3000 0H500L512 40H533L545 0H5000V80H-3000Z" fill="#D3E3E7"/>
+          <path d="M180 0H500M545 0H1100" stroke="#7F9EA8" stroke-width="7"/>
+          <path d="M-3000 0H500L512 40H533L545 0H5000" fill="none" stroke="rgba(11,47,67,.55)" stroke-width="1.5"/>
+          <g class="rl" id="vRuler"></g>
+        </svg>
+        <div class="d-callouts" id="dCallouts" aria-hidden="true"></div>
+        <div class="d-overlay" id="dOverlay" aria-hidden="true"><p>1 metre is not just a number.</p><p>It is water at the door.</p></div>
+        <p class="d-close" id="dClose">See the depth. Understand the exposure. Plan the response.</p>
+        <div class="d-mini" aria-hidden="true"><b id="dMini">0.00</b>m</div>
+      </div>
     </div>
   </div>
-</main>
-<footer class="meta"><span>Flood intelligence for Pakistan</span><span>v__APP_VERSION__</span></footer>
+</section>
 
+<!-- ============================ CAPABILITIES ============================ -->
+<section id="caps" class="paper">
+  <div class="tex-layer" style="--tex-bg:#F5FAF9;--wash:url(/landing-assets/img/wash-cobaltteal.jpg);--tp:55% 30%;--veil:180deg" aria-hidden="true"><i></i></div>
+  <div class="wrap">
+    <div class="caps-head">
+      <div>
+        <span class="micro sec-tag"><b>03</b> Capabilities</span>
+        <h2 class="disp">Built for the room where <em>the decision</em> gets made.</h2>
+      </div>
+      <p>An operations room, a district office, a ministry briefing. Each feature is there to get a defensible answer in front of someone who has to act on it.</p>
+    </div>
+
+    <div class="cards" id="cards">
+      <article class="card"><span class="ix">01</span>
+        <div class="cv"><div class="cv-type"><span>Draw it, upload it,</span><br><span>or search a tehsil.</span></div></div>
+        <h3>Any area in Pakistan</h3><p>Draw a polygon, upload a shapefile or GeoJSON, or pick one of 578 tehsil boundaries. There is no size cap; bigger areas just take longer.</p><i class="waterline"></i></article>
+      <article class="card"><span class="ix">02</span>
+        <div class="cv"><div class="cv-bars"><div>INSTANT · HAND<s></s></div><div>2D PHYSICS<s></s></div></div></div>
+        <h3>Seconds first, physics next</h3><p>Instant gives a terrain-based estimate at once. Physics runs the full LISFLOOD-FP shallow-water solver as a background job with live progress.</p><i class="waterline"></i></article>
+      <article class="card"><span class="ix">03</span>
+        <div class="cv"><div class="cv-impact"><div><small>Buildings</small>by damage</div><div><small>Roads</small>by hazard</div><div><small>Facilities</small>at risk</div><div><small>Loss</small>in PKR</div></div></div>
+        <h3>Impact, not only water</h3><p>Buildings coloured by flood damage, roads and critical facilities by hazard, and an estimated loss in rupees from published depth-damage curves.</p><i class="waterline"></i></article>
+      <article class="card"><span class="ix">04</span>
+        <div class="cv"><svg viewBox="0 0 220 96" aria-hidden="true">
+          <path d="M0 80C40 78 60 70 80 52S120 14 150 18 200 50 220 62V96H0Z" fill="#6FBCE0" opacity=".35"/>
+          <path d="M0 80C40 78 60 70 80 52S120 14 150 18 200 50 220 62" fill="none" stroke="#1E6E9C" stroke-width="2"/>
+          <circle cx="150" cy="18" r="5" fill="#0F6E73"/><circle cx="150" cy="18" r="11" fill="none" stroke="#0F6E73" opacity=".5"><animate attributeName="r" values="5;16;5" dur="2.4s" repeatCount="indefinite"/></circle>
+          <text x="160" y="14" style="font-family:var(--mono);font-size:12px;fill:#4E5551">depth</text></svg></div>
+        <h3>Depth at any point</h3><p>Click the 3D map for the water depth, speed and peak at that spot, and how they change through the storm.</p><i class="waterline"></i></article>
+      <article class="card"><span class="ix">05</span>
+        <div class="cv"><div class="cv-src"><span>SRTM terrain 30 m</span><span>ERA5-Land / IMERG IDF</span><span>ESA WorldCover</span></div></div>
+        <h3>Every figure has a source</h3><p>Terrain, rainfall, roughness, soil, buildings and facilities come from named datasets, listed in the technical reference.</p><i class="waterline"></i></article>
+      <article class="card"><span class="ix">06</span>
+        <div class="cv"><div class="cv-run">run file<span class="v"><i>.sailab.json</i></span></div></div>
+        <h3>A run you can repeat</h3><p>Save the run file and load it later with the same area, storm and settings. Results are cached by their inputs, so a repeat is instant.</p><i class="waterline"></i></article>
+      <article class="card"><span class="ix">07</span>
+        <div class="cv"><div class="cv-bars"><div>RUN A<s></s></div><div>RUN B<s></s></div></div></div>
+        <h3>Compare and report</h3><p>Compare two runs cell by cell, sweep return periods, estimate average annual loss, and export a PDF.</p><i class="waterline"></i></article>
+      <article class="card"><span class="ix">08</span>
+        <div class="cv"><div class="cv-words"><span>Moderate</span><span>Extreme</span><span>1-in-25</span><span>1-in-100</span></div></div>
+        <h3>Storms in plain words</h3><p>Instant offers moderate and extreme rain. Physics takes a design storm by return period, a recorded rainfall curve or your own rain-gauge file.</p><i class="waterline"></i></article>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ MODES ============================ -->
+<section id="modes">
+  <div class="m-track" id="mTrack">
+    <div class="panel intro-p">
+      <div class="tex-layer" style="--tex-bg:#0B2F43;--wash:url(/landing-assets/img/wash-prussian.jpg);--tp:10% 40%" aria-hidden="true"><i></i></div>
+      <div>
+        <span class="micro sec-tag"><b>04</b> Two ways in</span>
+        <h2 class="disp">Two ways in.<br><em>One map.</em></h2>
+        <p>Start with Instant when you need an answer now. Switch to Physics when the decision needs a modelled flood, the buildings and roads in it, and a loss figure.</p>
+        <div class="hint micro"><i></i>Keep scrolling</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="p-bg"><video muted loop playsinline preload="none" data-src="/landing-assets/video/mode-2d.mp4"></video></div>
+      <div class="m-copy">
+        <span class="ix"><b>01</b> / 02</span>
+        <h3>SAILAB <em>Physics</em></h3>
+        <span class="eng">lisflood-fp</span>
+        <p>The full 2D shallow-water run on the GPU, with real buildings, roads and facilities, loss in rupees and protection scenarios. This is the reference result.</p>
+        <div class="chips"><span>Design storm</span><span>Rain-gauge file</span><span>River inflow</span><span>Protection</span></div>
+        <div class="m-meta"><div><span class="micro">Solver</span><b>LISFLOOD-FP</b></div><div><span class="micro">Grid</span><b>~30 m</b></div></div>
+        <a class="btn m-open" href="/app">Open SAILAB Physics <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="viz"><div class="vh"><span class="micro">lisflood-fp · example grid</span><span class="flag" id="gFlag">PREVIEW · HAND</span></div>
+        <svg viewBox="0 0 600 400" id="gridViz" aria-hidden="true"><g class="cells"></g><path class="riv" fill="none" stroke="#8E938C" stroke-width="3"/></svg></div>
+    </div>
+
+    <div class="panel">
+      <div class="p-bg"><video muted loop playsinline preload="none" data-src="/landing-assets/video/mode-instant.mp4"></video></div>
+      <div class="m-copy">
+        <span class="ix"><b>02</b> / 02</span>
+        <h3>SAILAB <em>Instant</em></h3>
+        <span class="eng">hand</span>
+        <p>A terrain-based estimate (height above nearest drainage) that answers in seconds, for when the call is happening now and a full run would arrive too late. It is an upper estimate, not a physics result.</p>
+        <div class="chips"><span>Moderate rain</span><span>Extreme rain</span><span>Your own rain</span><span>3D view</span></div>
+        <div class="m-meta"><div><span class="micro">Method</span><b>HAND</b></div><div><span class="micro">Answer in</span><b>seconds</b></div></div>
+        <a class="btn m-open" href="/instant">Open SAILAB Instant <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="viz"><div class="vh"><span class="micro">hand_v3 · valley section</span><span class="flag">ILLUSTRATIVE</span></div>
+        <svg viewBox="0 0 600 400" class="anim" aria-hidden="true">
+          <rect class="i-water c4" x="0" y="330" width="600" height="160" opacity=".92"/>
+          <path class="terr" d="M0 110C120 120 170 250 250 300C280 320 320 320 350 300C430 250 480 140 600 112V400H0Z"/>
+          <g stroke="rgba(236,235,230,.2)" stroke-dasharray="4 6"><path d="M0 290H600M0 250H600M0 210H600"/></g>
+          <text class="vt s" x="10" y="286">HAND 1 m</text><text class="vt s" x="10" y="246">HAND 2 m</text><text class="vt s" x="10" y="206">HAND 3 m</text>
+          <circle cx="300" cy="315" r="5" fill="#8E938C"/><text class="vt s" x="312" y="350">nearest drainage</text>
+          <g class="i-clock"><rect x="470" y="24" width="106" height="30" rx="4" fill="rgba(92,209,202,.18)"/><text x="484" y="44" style="font-family:var(--mono);font-size:12px;fill:#5CD1CA">answer · 0.9 s</text></g>
+        </svg></div>
+    </div>
+  </div>
+  <div class="m-dots" id="mDots" aria-label="Modes"></div>
+  <div class="m-count micro" id="mCount">Modes</div>
+</section>
+
+<footer>
+  <div class="tex-layer" style="--tex-bg:#0B2F43;--wash:url(/landing-assets/img/wash-prussian.jpg);--tp:60% 50%" aria-hidden="true"><i></i></div>
+  <div class="in">
+    <span class="micro">SAILAB v__APP_VERSION__</span>
+    <span class="micro">Satellite imagery: NASA Earth Observatory / USGS Landsat · Footage: Pexels</span>
+    <span class="micro sp">AI Geo Navigators (Pvt) Ltd · Islamabad</span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
 <script>
-(function () {
-  "use strict";
-  var links = document.querySelectorAll("a.open");
-  var flash = document.getElementById("flash");
-  var canvas = document.getElementById("sea");
-  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // keep any query string (for example ?import=<id> from SimCity) when entering the app
-  document.getElementById("open").href = "/app" + location.search;
+(() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const HAS_GSAP = !!(window.gsap && window.ScrollTrigger);
+const BREAKS = [0.10, 0.25, 0.50, 1.00, 2.00];
+const depthClass = d => d <= 0.02 ? 0 : 1 + BREAKS.filter(b => d >= b).length;
 
-  var VERT = "attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}";
-  var FRAG = [
-"precision highp float;",
-"uniform vec2 uRes; uniform float uTime; uniform float uFront; uniform vec2 uMouse;",
-"const vec3 L = vec3(-0.30, 0.46, 0.83);",
-"const mat2 OM = mat2(1.6, 1.2, -1.2, 1.6);",
-"float hash(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }",
-"float noise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);",
-"  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y); }",
-"float fbm3(vec2 p){ float a=.5,s=0.; for(int i=0;i<3;i++){ s+=a*noise(p); p=p*2.03+vec2(7.1,3.7); a*=.5; } return s; }",
-"float fbm5(vec2 p){ float a=.5,s=0.; for(int i=0;i<5;i++){ s+=a*noise(p); p=p*2.03+vec2(7.1,3.7); a*=.5; } return s; }",
-"float seaOct(vec2 uv, float choppy){",
-"  uv += noise(uv)*2. - 1.;",
-"  vec2 wv = 1. - abs(sin(uv));",
-"  vec2 swv = abs(cos(uv));",
-"  wv = mix(wv, swv, wv);",
-"  return pow(1. - pow(wv.x*wv.y, 0.65), choppy);",
-"}",
-"float seaH(vec2 p, int no){",
-"  float freq = 0.55, amp = 0.30, choppy = 4., h = 0.;",
-"  float st = uTime*0.9;",
-"  float dist = length(p);",
-"  vec2 uv = vec2(p.x*0.75, p.y);",
-"  for(int i=0;i<5;i++){",
-"    if(i >= no) break;",
-"    float fade = clamp(1. - dist*freq/80., 0., 1.);",
-"    float d = seaOct((uv + st)*0.55, choppy) + seaOct((uv - st)*0.55, choppy);",
-"    h += d*amp*fade;",
-"    uv = OM*uv; freq *= 2.; amp *= 0.32; choppy = mix(choppy, 1.5, 0.25);",
-"  }",
-"  return h;",
-"}",
-"float frontZ(float x){ return uFront + 2.6*sin(x*0.10+0.7) + 3.0*noise(vec2(x*0.16,3.0)) + 0.9*sin(x*0.31+uTime*0.15); }",
-"float bigWave(vec2 p){",
-"  float d = max(p.y - frontZ(p.x), 0.0);",
-"  float rise = pow(1.0 - exp(-d/3.4), 1.7);",
-"  float tail = exp(-max(d-6.5, 0.0)/11.0)*(1.0 + 0.10*sin(d*0.55 - uTime*0.7));",
-"  float H = 9.2*(0.80 + 0.40*noise(vec2(p.x*0.07, 1.7)));",
-"  float ridge = 1.1*exp(-pow((d-6.8)/1.8, 2.0));",
-"  return H*rise*tail + ridge;",
-"}",
-"float hM(vec2 p){ return bigWave(p) + seaH(p, 3); }",
-"float hF(vec2 p){",
-"  float d = p.y - frontZ(p.x);",
-"  float rise = 1.0 - exp(-max(d,0.)/2.0);",
-"  float streak = (noise(vec2(p.x*0.8, d*0.10 - uTime*0.5)) - 0.5)*0.9*rise;",
-"  return bigWave(p) + seaH(p, 5) + streak;",
-"}",
-"vec3 sky(vec3 d){",
-"  float y = clamp(d.y, 0., 1.);",
-"  vec3 c = vec3(0.0, 0.010, 0.011)*(1. - y);",
-"  float s = max(dot(d, L), 0.);",
-"  c += vec3(0.45,1.0,0.95)*pow(s, 900.)*2.0 + vec3(0.1,0.5,0.47)*pow(s, 120.)*0.2;",
-"  return c;",
-"}",
-"float rain(vec2 uv){",
-"  float r = 0.;",
-"  for(int i=0;i<3;i++){",
-"    float fi = float(i);",
-"    float cols = 55. + fi*45.;",
-"    float ys = 7. + fi*3.;",
-"    float qx = (uv.x + uv.y*0.16)*cols + fi*13.7;",
-"    float id = floor(qx);",
-"    float rnd = hash(vec2(id, fi + 1.7));",
-"    float rate = (1.5 - fi*0.2)*(0.85 + rnd*0.3)*ys;",
-"    float yy = uv.y*ys + uTime*rate + rnd*40.;",
-"    float f = fract(yy);",
-"    float on = step(0.975, hash(vec2(id, floor(yy) + fi*9.)));",
-"    float dx = abs(fract(qx) - (0.25 + 0.5*hash(vec2(id + 3., fi))));",
-"    float w = 1. - smoothstep(0., 0.16, dx);",
-"    float tail = pow(f, 2.5)*(1. - smoothstep(0.97, 1.0, f));",
-"    r += on*w*tail*(0.55 - fi*0.1);",
-"  }",
-"  return r;",
-"}",
-"void bparams(int i, out vec4 b, out float top){",
-"  b = vec4(0.); top = 0.;",
-"  if(i==0){ b = vec4(-8.96,11.90, 0.9, 0.9); top = 3.6; }",
-"  if(i==1){ b = vec4(-5.46,8.40, 0.6, 0.6); top = 2.5; }",
-"  if(i==2){ b = vec4(-12.88,15.40, 1.3, 1.1); top = 4.6; }",
-"  if(i==3){ b = vec4(9.24,11.48, 0.9, 0.9); top = 3.4; }",
-"  if(i==4){ b = vec4(14.00,16.10, 1.2, 1.1); top = 4.3; }",
-"  if(i==5){ b = vec4(5.60,7.84, 0.55, 0.55); top = 2.4; }",
-"  if(i==6){ b = vec4(-16.10,9.80, 0.9, 0.8); top = 3.0; }",
-"  if(i==7){ b = vec4(17.50,10.50, 0.9, 0.8); top = 3.1; }",
-"  if(i==8){ b = vec4(-6.86,12.04, 0.7, 1.0); top = 2.1; }",
-"  if(i==9){ b = vec4(-15.26,15.96, 0.6, 0.8); top = 3.2; }",
-"  if(i==10){ b = vec4(7.28,11.20, 0.6, 0.7); top = 2.3; }",
-"  if(i==11){ b = vec4(12.04,15.82, 0.7, 0.6); top = 2.9; }",
-"  if(i==12){ b = vec4(-8.96,11.90, 0.35, 0.35); top = 4.2; }",
-"  if(i==13){ b = vec4(-12.88,15.40, 0.4, 0.4); top = 5.4; }",
-"  if(i==14){ b = vec4(14.00,16.10, 0.35, 0.5); top = 5.0; }",
-"}",
-"void bhit(vec3 ro, vec3 rd, out float tb, out vec3 bn, out float bid){",
-"  tb = 1e3; bn = vec3(0.); bid = 0.;",
-"  vec3 inv = 1./rd;",
-"  for(int i=0;i<15;i++){",
-"    vec4 b; float top; bparams(i, b, top);",
-"    vec3 bmin = vec3(b.x-b.z, -6., b.y-b.w), bmax = vec3(b.x+b.z, top, b.y+b.w);",
-"    vec3 t1 = (bmin-ro)*inv, t2 = (bmax-ro)*inv;",
-"    vec3 tmn = min(t1, t2), tmx = max(t1, t2);",
-"    float tN = max(max(tmn.x, tmn.y), tmn.z), tF = min(min(tmx.x, tmx.y), tmx.z);",
-"    if(tN > 0. && tF > tN && tN < tb){",
-"      tb = tN; bid = float(i);",
-"      bn = -sign(rd)*step(tmn.yzx, tmn.xyz)*step(tmn.zxy, tmn.xyz);",
-"    }",
-"  }",
-"}",
-"float bdist(vec2 p){",
-"  float dm = 1e3;",
-"  for(int i=0;i<15;i++){",
-"    vec4 b; float top; bparams(i, b, top);",
-"    vec2 q = abs(p - b.xy) - b.zw;",
-"    dm = min(dm, length(max(q, 0.)) + min(max(q.x, q.y), 0.));",
-"  }",
-"  return dm;",
-"}",
-"void main(){",
-"  vec2 uv = (gl_FragCoord.xy - 0.5*uRes) / uRes.y;",
-"  vec3 ro = vec3(uMouse.x*0.8, 1.9 + uMouse.y*0.3, 0.0);",
-"  vec3 rd = normalize(vec3(uv.x + uMouse.x*0.05, uv.y + 0.21 + uMouse.y*0.04, 0.95));",
-"  float t = 0.35, minGap = 1e3; bool hit = false;",
-"  for(int i=0;i<150;i++){",
-"    vec3 p = ro + rd*t; float g = p.y - hM(p.xz);",
-"    minGap = min(minGap, g/t);",
-"    if(g < 0.012*t){ hit = true; break; }",
-"    t += g*0.34 + 0.012*t;",
-"    if(t > 110.) break;",
-"  }",
-"  float tw = hit ? t : 1e3;",
-"  float tb; vec3 bn; float bid;",
-"  bhit(ro, rd, tb, bn, bid);",
-"  vec3 col; float rw = 1.0;",
-"  if(tb < tw){",
-"    vec3 pb = ro + rd*tb;",
-"    vec4 bb; float btop; bparams(int(bid + 0.5), bb, btop);",
-"    float tone = 0.75 + 0.5*hash(vec2(bid, 1.3));",
-"    float dl = clamp(dot(bn, L)*0.5 + 0.5, 0., 1.);",
-"    vec3 conc = vec3(0.030,0.042,0.046)*tone;",
-"    float wetk = 1.0 - smoothstep(0.1, 2.2, pb.y);",
-"    vec3 cb;",
-"    if(abs(bn.y) < 0.5){",
-"      float u = abs(bn.x) > 0.5 ? pb.z : pb.x;",
-"      float ed = abs(bn.x) > 0.5 ? bb.w - abs(pb.z - bb.y) : bb.z - abs(pb.x - bb.x);",
-"      vec2 gc = vec2(u*2.4, pb.y*3.4);",
-"      vec2 cell = floor(gc), lc = fract(gc);",
-"      float win = smoothstep(0.12, 0.2, lc.x)*(1. - smoothstep(0.8, 0.88, lc.x))*smoothstep(0.2, 0.28, lc.y)*(1. - smoothstep(0.72, 0.8, lc.y));",
-"      float lit = step(0.955, hash(cell + vec2(bid*7.3, 2.1)));",
-"      float grain = 0.8 + 0.4*noise(vec2(u*5., pb.y*5.));",
-"      float band = 0.85 + 0.3*smoothstep(0.0, 0.12, lc.y)*(1. - smoothstep(0.12, 0.2, lc.y));",
-"      cb = conc*(0.4 + 0.9*dl*dl)*grain*band;",
-"      vec3 glass = vec3(0.004,0.022,0.026) + vec3(0.15,0.7,0.65)*pow(max(dot(reflect(rd, bn), L), 0.), 24.)*0.18;",
-"      cb = mix(cb, glass, win);",
-"      cb += vec3(0.12,0.9,0.78)*win*lit*0.38;",
-"      cb += vec3(0.04,0.30,0.28)*(1. - smoothstep(0., 0.09, ed))*0.55;",
-"      cb += vec3(0.04,0.26,0.25)*(1. - smoothstep(0., 0.10, btop - pb.y))*0.5;",
-"    } else {",
-"      float ex = min(bb.z - abs(pb.x - bb.x), bb.w - abs(pb.z - bb.y));",
-"      cb = conc*0.75*(0.8 + 0.4*noise(pb.xz*7.));",
-"      cb += vec3(0.05,0.34,0.32)*(1. - smoothstep(0., 0.12, ex))*0.6;",
-"    }",
-"    cb *= 1.0 - 0.55*wetk;",
-"    cb += vec3(0.0,0.06,0.055)*wetk*0.6;",
-"    cb += sky(reflect(rd, bn))*0.1*pow(1. - max(dot(bn, -rd), 0.), 3.);",
-"    cb = mix(cb, vec3(0.0,0.012,0.012), 1.0 - exp(-tb*0.0075));",
-"    col = cb; rw = 0.5;",
-"  } else if(hit){",
-"    float a = t-0.9, b = t;",
-"    for(int j=0;j<5;j++){ float m=0.5*(a+b); vec3 q=ro+rd*m; if(q.y > hM(q.xz)) a=m; else b=m; }",
-"    t = 0.5*(a+b);",
-"    vec3 p = ro + rd*t;",
-"    float e = clamp(0.03*t, 0.02, 0.4);",
-"    float h0 = hF(p.xz);",
-"    vec3 n = normalize(vec3(h0 - hF(p.xz+vec2(e,0.)), e, h0 - hF(p.xz+vec2(0.,e))));",
-"    vec3 V = -rd;",
-"    float hf = clamp(p.y/9., 0., 1.);",
-"    vec2 tc = mix(p.xz, vec2(p.x, p.y*1.7 + p.z*0.15), clamp(1.0 - n.y*1.15, 0., 1.));",
-"    vec3 deep = vec3(0.0,0.003,0.004), shal = vec3(0.002,0.10,0.10);",
-"    vec3 base = mix(deep, shal, smoothstep(0.1, 1.0, hf)*smoothstep(0.3, 0.9, 1.0 - n.y + hf*0.4));",
-"    float diff = clamp(dot(n, L)*0.5 + 0.5, 0., 1.);",
-"    vec3 c = base*(0.25 + 0.9*diff*diff);",
-"    float thin = smoothstep(0.35, 1.0, hf);",
-"    float sss = pow(clamp(dot(rd, L), 0., 1.), 2.2)*thin;",
-"    c += vec3(0.01,0.55,0.50)*sss*1.1;",
-"    float F = 0.02 + 0.98*pow(1.0 - max(dot(n, V), 0.), 5.);",
-"    vec3 r = reflect(rd, n); r.y = abs(r.y);",
-"    c += sky(r)*vec3(0.6,1.0,1.0)*F*0.7;",
-"    c += vec3(0.45,1.0,0.92)*(pow(max(dot(r, L), 0.), 260.)*2.6 + pow(max(dot(r, L), 0.), 50.)*0.3);",
-"    float crest = smoothstep(0.80, 1.0, hf + 0.25*(fbm5(tc*vec2(1.1,0.9) + vec2(0., uTime*0.8)) - 0.5));",
-"    float gran = fbm5(tc*vec2(4.0,5.0) + vec2(uTime*0.3, uTime*1.2));",
-"    float trail = fbm5(vec2(p.x*1.4, p.z*0.25 - uTime*0.5));",
-"    float stream = smoothstep(0.35, 0.75, trail*0.7 + gran*0.4)*smoothstep(0.55, 0.95, hf);",
-"    float hs = seaH(p.xz, 3)/0.8;",
-"    float caps = smoothstep(0.85, 1.2, hs)*smoothstep(0.35, 0.8, gran);",
-"    float foam = clamp((crest*0.95 + stream*0.3)*(0.45 + 0.9*gran) + caps*0.45*(1.0 - hf*0.6), 0., 1.);",
-"    foam *= smoothstep(0.1, 0.5, foam);",
-"    foam = clamp(foam + smoothstep(0.8, 0.0, bdist(p.xz))*(0.35 + 0.7*gran), 0., 1.);",
-"    vec3 fc = vec3(0.08,0.40,0.38)*(0.3 + 0.65*diff + 0.3*sss)*(0.5 + 0.6*gran);",
-"    fc += vec3(0.3,1.0,0.9)*pow(max(dot(n, normalize(L + V)), 0.), 30.)*0.25;",
-"    c = mix(c, fc, foam*0.9);",
-"    vec3 fog = vec3(0.0,0.012,0.012);",
-"    c = mix(c, fog, 1.0 - exp(-t*0.0075));",
-"    col = c; rw = 0.5;",
-"  } else {",
-"    col = vec3(0.);",
-"  }",
-"  col += vec3(0.30,0.85,0.80)*rain(uv)*0.22*rw;",
-"  col = 1.0 - exp(-col*1.25);",
-"  col = pow(col, vec3(0.4545));",
-"  col += (hash(gl_FragCoord.xy + uTime) - 0.5)/255.;",
-"  gl_FragColor = vec4(col, 1.0);",
-"}"
-  ].join("\n");
+/* page ready (fonts + first frame); no loading screen */
+const loaded = new Promise(res => {
+  if (document.readyState === "complete") res(); else addEventListener("load", res, { once: true });
+  setTimeout(res, 1500);
+});
 
-  var gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance" }) ||
-           canvas.getContext("experimental-webgl");
-  var prog, uni = {};
-  function sh(type, src) {
-    var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(s)); return null; }
-    return s;
-  }
-  function fallback() { document.body.classList.add("no-gl"); canvas.style.display = "none"; }
-  if (!gl) { fallback(); }
-  else {
-    var vs = sh(gl.VERTEX_SHADER, VERT), fs = sh(gl.FRAGMENT_SHADER, FRAG);
-    prog = vs && fs ? gl.createProgram() : null;
-    if (!prog) { fallback(); }
-    else {
-      gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
-      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.warn(gl.getProgramInfoLog(prog)); fallback(); prog = null; }
-    }
-  }
-  if (prog) {
-    gl.useProgram(prog);
-    var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-    var loc = gl.getAttribLocation(prog, "a"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    ["uRes", "uTime", "uFront", "uMouse"].forEach(function (n) { uni[n] = gl.getUniformLocation(prog, n); });
-
-    var scale = Math.min(window.devicePixelRatio || 1, 1.5) * 0.95;   // render below native size: the sea is soft, the text stays sharp
-    var minScale = 0.5;
-    function resize() {
-      var w = Math.max(2, Math.floor(innerWidth * scale)), h = Math.max(2, Math.floor(innerHeight * scale));
-      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
-    }
-    addEventListener("resize", resize); resize();
-
-    var mx = 0, my = 0, tx = 0, ty = 0;
-    addEventListener("pointermove", function (e) { tx = e.clientX / innerWidth - 0.5; ty = 0.5 - e.clientY / innerHeight; }, { passive: true });
-
-    var surge = 0, surging = false, surgeStart = 0;
-    var t0 = performance.now(), last = t0, acc = 0, frames = 0, tuned = false;
-    var timeScale = reduce ? 0.2 : 1;
-    function ease(x) { return x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2; }
-
-    function frame(now) {
-      var dt = now - last; last = now;
-      if (!tuned && dt < 500) {                       // adapt resolution to the device in the first ~40 frames
-        acc += dt; frames++;
-        if (frames === 40) {
-          tuned = true; var avg = acc / frames;
-          if (!/[?&]notune/.test(location.search) && avg > 42 && scale > minScale) { scale = Math.max(minScale, scale * Math.sqrt(30 / avg)); resize(); }
-        }
-      }
-      mx += (tx - mx) * 0.04; my += (ty - my) * 0.04;
-      var time = (now - t0) / 1000 * timeScale;
-      var front = 13.0 + Math.sin(time * 0.22) * 1.1;
-      if (surging) {
-        surge = Math.min(1, (now - surgeStart) / 1500);
-        front -= 19 * ease(surge);
-        flash.style.opacity = String(Math.max(0, (surge - 0.62) / 0.38));
-      }
-      gl.uniform2f(uni.uRes, canvas.width, canvas.height);
-      gl.uniform1f(uni.uTime, time);
-      gl.uniform1f(uni.uFront, front);
-      gl.uniform2f(uni.uMouse, mx, my);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(function (n) { last = n; frame(n); });
-
-    Array.prototype.forEach.call(links, function (link) {
-      link.addEventListener("click", function (e) {
-        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        if (reduce || surging) return;                  // plain navigation
-        e.preventDefault(); surging = true; surgeStart = performance.now();
-        setTimeout(function () { location.href = link.href; }, 1500);
+/* split text into words */
+function splitWords(el) {
+  const walk = node => [...node.childNodes].forEach(n => {
+    if (n.nodeType === 3) {
+      const frag = document.createDocumentFragment();
+      n.textContent.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(" ")); return; }
+        const w = document.createElement("span"); w.className = "w";
+        const i = document.createElement("span"); i.className = "wi"; i.textContent = part;
+        w.appendChild(i); frag.appendChild(w);
       });
+      n.replaceWith(frag);
+    } else if (n.nodeType === 1) walk(n);
+  });
+  walk(el);
+  return $$(".wi", el);
+}
+
+/* wave edges: several irregular crests per screen instead of one long swell.
+   Harmonics 4, 7 and 13 all repeat every 1440 units, so the -50% drift loops seamlessly. */
+$$(".wave path").forEach((path, i) => {
+  const ph = i * 1.37 + .4; let d = "M0 150";
+  for (let x = 0; x <= 2880; x += 12) {
+    const t = x / 1440 * Math.PI * 2;
+    d += "L" + x + " " + (78 + 24 * Math.sin(4 * t + ph) + 11 * Math.sin(7 * t + ph * 1.9) + 5 * Math.sin(13 * t + ph * 2.7)).toFixed(1);
+  }
+  path.setAttribute("d", d + "L2880 150Z");
+});
+
+/* videos: load near the viewport, pause when away */
+function wireVideo(v, onReady, eager) {
+  const src = v.dataset.src; if (!src) return;
+  let io = null;
+  const start = () => {
+    v.addEventListener("loadeddata", () => { v.classList.add("ready"); onReady && onReady(); v.play().catch(() => {}); }, { once: true });
+    v.addEventListener("error", () => { io && io.disconnect(); v.remove(); }, { once: true });
+    v.src = src; v.load();
+  };
+  if (eager) start();   /* load now even if it starts off-screen (the headline video) */
+  io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) {
+      if (!v.src) start();
+      else if (v.classList.contains("ready")) v.play().catch(() => {});
+    } else if (v.src && !v.paused) v.pause();
+  }), { rootMargin: "300px" });
+  io.observe(v);
+}
+
+/* hero storm canvas: rain over footage, or a drawn storm if footage is missing */
+const storm = (() => {
+  const cv = $("#storm"), ctx = cv.getContext("2d");
+  let w = 0, h = 0, drops = [], ripples = [], flash = 0, nextFlash = 3, running = true, rainOnly = false, rise = 0;
+  const RAMP = ["#124657", "#1E6E9C", "#3E98C8", "#6FBCE0"];
+  function resize() {
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drops = Array.from({ length: Math.min(600, Math.round(w * h / 2600)) }, () => mk(true));
+  }
+  function mk(any) { const z = Math.random() * .8 + .2; return { x: Math.random() * (w + 200) - 100, y: any ? Math.random() * h : -20 - Math.random() * 100, z, len: 10 + z * 22, sp: 9 + z * 15 }; }
+  const level = () => h * (0.8 - rise * 0.25);
+  function frame(t) {
+    requestAnimationFrame(frame);
+    if (!running) return;
+    const s = t / 1000, L = level();
+    ctx.clearRect(0, 0, w, h);
+    if (!rainOnly) {
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, "#0B2F43"); g.addColorStop(.55, "#124657"); g.addColorStop(1, "#1D6273");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    }
+    if (flash > 0) { ctx.fillStyle = `rgba(236,240,238,${flash * .16})`; ctx.fillRect(0, 0, w, h); flash *= .9; if (flash < .01) flash = 0; }
+    if (s > nextFlash) { flash = 1; nextFlash = s + 6 + Math.random() * 8; }
+    ctx.lineCap = "round";
+    for (const d of drops) {
+      d.y += d.sp; d.x += d.sp * .16;
+      const hitY = rainOnly ? h : L + Math.sin(d.x * .01 + s) * 6;
+      if (d.y > hitY) { if (!rainOnly && d.z > .55 && ripples.length < 90) ripples.push({ x: d.x, y: hitY + Math.random() * (h - hitY) * .5, r: 1, a: .45 * d.z }); Object.assign(d, mk(false)); }
+      ctx.strokeStyle = `rgba(230,234,232,${.08 + d.z * .28})`; ctx.lineWidth = d.z * 1.2;
+      ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - d.len * .16, d.y - d.len); ctx.stroke();
+    }
+    if (!rainOnly) {
+      for (let k = 0; k < 4; k++) {
+        const base = L + k * (h - L) * .22, amp = 6 + k * 4, f = .006 + k * .002, sp = .7 + k * .35;
+        ctx.beginPath(); ctx.moveTo(0, h);
+        for (let x = 0; x <= w + 20; x += 20) ctx.lineTo(x, base + Math.sin(x * f + s * sp + k) * amp + Math.sin(x * f * 2.7 - s * sp * 1.3) * amp * .35);
+        ctx.lineTo(w, h); ctx.closePath(); ctx.globalAlpha = .7 + k * .1; ctx.fillStyle = RAMP[k]; ctx.fill(); ctx.globalAlpha = 1;
+      }
+      ctx.lineWidth = 1;
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i]; r.r += .9; r.a *= .955;
+        ctx.strokeStyle = `rgba(226,232,230,${r.a})`; ctx.beginPath(); ctx.ellipse(r.x, r.y, r.r * 2.2, r.r * .55, 0, 0, Math.PI * 2); ctx.stroke();
+        if (r.a < .02) ripples.splice(i, 1);
+      }
+    }
+  }
+  addEventListener("resize", resize); resize();
+  if (REDUCE) { running = true; frame(0); running = false; } else requestAnimationFrame(frame);
+  new IntersectionObserver(([e]) => { running = e.isIntersecting && !REDUCE; }).observe($("#hero"));
+  return { setRainOnly(v) { rainOnly = v; }, setRise(v) { rise = v; } };
+})();
+wireVideo($("#coverVideo"), () => storm.setRainOnly(true));
+wireVideo($("#heroVideo"), null, true);
+$$(".p-bg video").forEach(v => wireVideo(v));
+
+/* liquid inside SAILAB: two calm surfaces (front + lighter back), level 0..1 of the letter height */
+const liquid = (() => {
+  const back = $("#liqBack"), clip = $("#liqPath"), line = $("#liqLine"), pat = $("#reliefPat");
+  const TOP = 46, BOT = 264;
+  let level = 0, live = true;
+  const surf = (y, t, ph, amp) => {
+    let p = "";
+    for (let x = -10; x <= 1010; x += 20) p += (x < 0 ? "M" : "L") + x + " " + (y + amp * Math.sin(x * .011 + t * 1.3 + ph) + amp * .45 * Math.sin(x * .027 - t * 1.9 + ph)).toFixed(1);
+    return p;
+  };
+  function draw(ms) {
+    const t = ms / 1000, y = BOT - level * (BOT - TOP + 14), front = surf(y, t, 0, 5);
+    clip.setAttribute("d", front + "L1010 310L-10 310Z");
+    line.setAttribute("d", level > .005 ? front : "");
+    back.setAttribute("d", level > .005 ? surf(y - 5, t * .8, 2.1, 5.5) + "L1010 310L-10 310Z" : "");
+    pat.setAttribute("patternTransform", "translate(" + (-150 + 70 * Math.sin(t * .05)).toFixed(1) + " -120)");
+  }
+  function loop(ms) { draw(ms); if (live) requestAnimationFrame(loop); }
+  new IntersectionObserver(([e]) => { const was = live; live = e.isIntersecting && !REDUCE; if (live && !was) requestAnimationFrame(loop); }).observe($("#hero"));
+  requestAnimationFrame(loop);
+  return { set(v) { level = Math.max(0, Math.min(1, v)); if (!live) draw(0); } };
+})();
+
+/* ===== Depth section: scroll-driven flood. One source of truth: depthM. =====
+   FloodScrollController -> DepthModel -> VillageScene/WaterLayer -> ImpactHUD -> ThresholdCallouts */
+const DepthStory = (() => {
+  const track = $("#dTrack"), svg = $("#village"), stage = $("#dStage2");
+  if (!track || !svg) return null;
+
+  /* DepthModel: six SAILAB illustrative bands (not a standard classification) */
+  const BANDS = [
+    { lo: 0.00, hi: 0.10, cls: "Wet ground", icon: "01-wet-ground", main: "The flood starts at ground level.", sub: "Water collects in low spots and near entrances." },
+    { lo: 0.10, hi: 0.25, cls: "Ankle to shin", icon: "02-ankle-shin", main: "A shallow flood can still disrupt movement.", sub: "Kerbs, drains and road edges may be obscured." },
+    { lo: 0.25, hi: 0.50, cls: "Knee deep", icon: "03-knee", main: "Walking becomes difficult as depth rises.", sub: "Flowing water can destabilise pedestrians even at lower depths." },
+    { lo: 0.50, hi: 1.00, cls: "Waist deep", icon: "04-waist", main: "Vehicles and access routes become unsafe.", sub: "Water approaches vehicle interiors and many building thresholds." },
+    { lo: 1.00, hi: 2.00, cls: "Ground-floor inundation", icon: "05-ground-floor", main: "This is no longer a wet road. It is a flooded home.", sub: "Openings, furnishings and ground-floor services can be affected." },
+    { lo: 2.00, hi: 2.50, cls: "Deep inundation", icon: "06-deep-inundation", main: "Floodwater reaches well into occupied structures.", sub: "Evacuation and rescue conditions depend on flow and local hazards." }];
+  const N = BANDS.length;
+  const depthForProgress = p => { const s = Math.min(N - 1e-6, Math.max(0, p) * N), i = Math.floor(s), b = BANDS[i]; return b.lo + (b.hi - b.lo) * (s - i); };
+  const bandOf = d => { for (let i = N - 1; i >= 0; i--) if (d >= BANDS[i].lo) return i; return 0; };
+
+  /* ThresholdCallouts: geometric crossings. Elevations are measured from each sprite's own geometry
+     (metres above that object's local ground); x is the world position of the part. */
+  const EVENTS = [
+    { x: 197,  e: 0.00, from: 0.02, to: 0.45, t: "Water crosses the doorway." },          // kacha door sill at ground
+    { x: 882,  e: 0.24, from: 0.24, to: 0.62, t: "Water reaches the wheels." },           // Mehran wheel hub
+    { x: 1330, e: 0.31, from: 0.12, to: 0.31, t: "The raised floor delays entry." },      // pakka plinth top (approaching)
+    { x: 1191, e: 0.31, from: 0.31, to: 0.80, t: "Water crosses the doorway." },          // pakka door sill on the plinth
+    { x: 957,  e: 0.37, from: 0.37, to: 0.85, t: "Vehicle access is compromised." },      // Mehran door sill
+    { x: 355,  e: 0.50, from: 0.50, to: 0.95, t: "Water reaches knee height." },          // adult knee
+    { x: 117,  e: 1.04, from: 1.04, to: 1.60, t: "Water reaches the window sill." },      // kacha window sill
+    { x: 1304, e: 1.22, from: 1.22, to: 1.85, t: "Water reaches the window sill." },      // pakka window sill
+    { x: null, e: 2.00, from: 2.00, to: 2.51, t: "Door-height water level." }];           // ruler reference
+
+  /* VillageScene: fit the world to the stage. Vertical scale is uniform for everything. */
+  const WORLD = { x0: 40, x1: 1440, cx: 720, ground: 0, below: 60, sceneH: 460 };
+  let vb = { x: 30, y: -700, w: 1410, h: 760 }, scale = 1;
+  const wBack = $("#wBack"), wFront = $("#wFront"), wLine = $("#wLine"), wHi = $("#wHi"), ruler = $("#vRuler");
+  function fit() {
+    const w = svg.clientWidth, h = svg.clientHeight; if (!w || !h) return;
+    /* always show the WHOLE street (plus room for the ruler) — never crop a house or vehicle.
+       If the stage is very wide, add side space instead of enlarging past the stage. */
+    const a = w / h, full = (WORLD.x1 - WORLD.x0) + 120;
+    const W = Math.max(full, a * WORLD.sceneH), H = W / a;
+    vb = { x: WORLD.cx - W / 2, y: WORLD.below - H, w: W, h: H };
+    svg.setAttribute("viewBox", `${vb.x.toFixed(1)} ${vb.y.toFixed(1)} ${W.toFixed(1)} ${H.toFixed(1)}`);
+    scale = w / W;
+    drawRuler();
+  }
+  /* metric ruler anchored at the scene edge: 0-3 m, 0.1 m ticks */
+  function drawRuler() {
+    const x = vb.x + 16 / scale, fs = 11 / scale, sw = 1 / scale; let r = `<line x1="${x}" y1="0" x2="${x}" y2="-300" stroke-width="${sw}"/>`;
+    for (let i = 0; i <= 30; i++) {
+      const y = -i * 10, major = i % 5 === 0, len = (major ? 12 : 6) / scale;
+      r += `<line x1="${x}" y1="${y}" x2="${x + len}" y2="${y}" stroke-width="${(i % 10 === 0 ? 2 : 1) / scale}"/>`;
+      if (major) r += `<text x="${x + 15 / scale}" y="${y + 4 / scale}" font-size="${fs}">${(i / 10).toFixed(1)} m</text>`;
+    }
+    ruler.innerHTML = r;
+    EVENTS[EVENTS.length - 1].x = x + 6 / scale;
+  }
+
+  /* WaterLayer: waterY = ground - depthM * 100 in the same frame as every sprite */
+  const surf = (y, t, amp, ph) => {
+    const x0 = vb.x - 40, x1 = vb.x + vb.w + 40, step = Math.max(6, vb.w / 110); let p = "";
+    for (let x = x0; x <= x1 + step; x += step) p += (p ? "L" : "M") + x.toFixed(1) + " " + (y + amp * Math.sin(x * .018 + t * 1.3 + ph) + amp * .5 * Math.sin(x * .043 - t * 1.8 + ph)).toFixed(2);
+    return p;
+  };
+  function drawWater(ms) {
+    const t = REDUCE ? 0 : ms / 1000, wy = WORLD.ground - depthM * 100;
+    const amp = REDUCE ? 0 : 2.4 * Math.min(1, depthM / .12);
+    const close = `L${(vb.x + vb.w + 60).toFixed(1)} 90L${(vb.x - 60).toFixed(1)} 90Z`;
+    const f = surf(wy, t, amp, 0);
+    wFront.setAttribute("d", f + close); wLine.setAttribute("d", f); wHi.setAttribute("d", f);
+    wBack.setAttribute("d", surf(wy - 1.2, t * .8, amp * .9, 1.7) + close);
+  }
+
+  /* ImpactHUD */
+  const el = id => document.getElementById(id);
+  const dNum = el("dNum"), dGauge = el("dGauge"), dMini = el("dMini"), steps = $$("#dSteps li"), ticker = el("dTicker"),
+        tIcon = el("dTickIcon"), tMain = el("dTickMain"), tSub = el("dTickSub"), live = el("dLive"),
+        overlay = el("dOverlay"), closing = el("dClose"), co = el("dCallouts");
+  const EXPO = {
+    People:    d => d < .10 ? ["Ground wet underfoot", 0] : d < .25 ? ["Footing and kerbs obscured", 1] : d < .50 ? ["Pedestrian movement difficult", 2] : d < 1.0 ? ["Wading unsafe", 3] : ["Above an adult's waist", 3],
+    Mobility:  d => d < .10 ? ["Roads passable with care", 0] : d < .24 ? ["Road edges obscured", 1] : d < .37 ? ["Water at wheel hubs", 2] : d < 1.0 ? ["Vehicle use unsafe", 3] : ["Vehicles largely submerged", 3],
+    Buildings: d => d < .02 ? ["Water near entrances", 0] : d < .31 ? ["Water at doorways", 1] : d < 1.04 ? ["Ground floors flooded", 2] : d < 2.0 ? ["Water at window sills", 3] : ["Door-height water", 3] };
+  const expoEls = Object.keys(EXPO).map(k => ({ f: EXPO[k], b: el("ex" + k), l: el("lv" + k), last: "" }));
+  let band = -1;
+  function hud() {
+    const d = depthM, s = d.toFixed(2);
+    dNum.textContent = s; dMini.textContent = s; dGauge.style.width = (d / 2.5 * 100).toFixed(2) + "%";
+    const b = bandOf(d);
+    if (b !== band) {                                   /* crossfade only when the band changes */
+      band = b; const B = BANDS[b];
+      steps.forEach((li, i) => { li.classList.toggle("on", i === b); li.classList.toggle("past", i < b); });
+      tIcon.setAttribute("href", "#sym-" + B.icon); tMain.textContent = B.main; tSub.textContent = B.sub;
+      ticker.classList.remove("swap"); void ticker.offsetWidth; ticker.classList.add("swap");
+      live.textContent = B.cls + ", " + B.lo.toFixed(2) + " to " + B.hi.toFixed(2) + " metres. " + B.main + " " + B.sub;
+    }
+    expoEls.forEach(x => { const [txt, lv] = x.f(d); if (txt !== x.last) { x.last = txt; x.b.textContent = txt; x.l.dataset.l = lv; } });
+    /* large statement at the move into band 5, and the closing line at the top of the range */
+    const ov = Math.min(1, Math.max(0, (d - 1.0) / .05)) * Math.min(1, Math.max(0, (1.28 - d) / .1));
+    overlay.style.opacity = ov.toFixed(3);
+    closing.style.opacity = Math.min(1, Math.max(0, (d - 2.36) / .1)).toFixed(3);
+  }
+  /* at most one major and two minor callouts, newest crossing = major */
+  const pool = [0, 1, 2].map(() => { const c = document.createElement("div"); c.className = "co"; c.innerHTML = '<span class="lbl"></span><i class="lead"></i><i class="dot"></i>'; c.style.display = "none"; co.appendChild(c); return c; });
+  function callouts() {
+    const d = depthM, act = EVENTS.filter(ev => d >= ev.from && d < ev.to && ev.x != null).sort((a, b) => b.from - a.from).slice(0, 3);
+    const m = svg.getScreenCTM(), sr = stage.getBoundingClientRect(); if (!m) return;
+    const pt = svg.createSVGPoint();
+    pool.forEach((c, i) => {
+      const ev = act[i]; if (!ev) { c.style.display = "none"; return; }
+      pt.x = ev.x; pt.y = -ev.e * 100; const p = pt.matrixTransform(m), x = p.x - sr.left, y = p.y - sr.top;
+      if (x < 10 || x > sr.width - 10) { c.style.display = "none"; return; }
+      c.style.display = ""; c.classList.toggle("major", i === 0);
+      const lbl = c.firstChild; if (lbl.textContent !== ev.t) lbl.textContent = ev.t;
+      c.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-100%)`;
+      /* keep the label inside the stage; the leader line still points at the target */
+      const half = lbl.offsetWidth / 2 + 10, dx = Math.min(Math.max(x, half), sr.width - half) - x;
+      lbl.style.transform = dx ? `translateX(${dx.toFixed(1)}px)` : "";
     });
   }
+
+  /* FloodScrollController: p = clamp((scrollY - trackTop) / (trackHeight - innerHeight)) */
+  const progress = () => { const r = track.getBoundingClientRect(), total = track.offsetHeight - innerHeight; return total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0; };
+  let running = false;
+  function frame(ms) {
+    depthM = depthForProgress(progress());
+    hud(); drawWater(ms || 0); callouts();
+    if (running) requestAnimationFrame(frame);
+  }
+  let depthM = 0;
+  new IntersectionObserver(([e]) => {
+    const was = running; running = e.isIntersecting;
+    $("#tide") && $("#tide").classList.toggle("hide-d", e.isIntersecting);
+    if (running && !was) requestAnimationFrame(frame);
+  }).observe(track);
+  addEventListener("scroll", () => { if (!running) frame(performance.now()); }, { passive: true });
+  addEventListener("resize", () => { fit(); frame(performance.now()); });
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { fit(); frame(0); });
+  fit(); frame(0);
+  return { get depth() { return depthM; } };
+})();
+
+/* 2D grid flood visual */
+(() => {
+  const svg = $("#gridViz"), g = $(".cells", svg), flag = $("#gFlag"), NS = "http://www.w3.org/2000/svg";
+  const C = 30, R = 20, S = 20, ry = x => 200 + 55 * Math.sin(x / 95) + 22 * Math.sin(x / 33), cells = [];
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const cx = c * S + S / 2, cy = r * S + S / 2, dist = Math.abs(cy - ry(cx)) + (Math.sin(c * 1.7 + r * .9) + Math.sin(c * .5 - r * 1.3)) * 9;
+    const el = document.createElementNS(NS, "rect");
+    el.setAttribute("x", c * S + .5); el.setAttribute("y", r * S + .5); el.setAttribute("width", S - 1); el.setAttribute("height", S - 1); el.setAttribute("class", "c0");
+    g.appendChild(el); cells.push({ el, dist, k: 0 });
+  }
+  const grid = document.createElementNS(NS, "path"); let gp = "";
+  for (let c = 0; c <= C; c++) gp += `M${c * S} 0V400`; for (let r = 0; r <= R; r++) gp += `M0 ${r * S}H600`;
+  grid.setAttribute("d", gp); grid.setAttribute("stroke", "rgba(236,235,230,.07)"); g.appendChild(grid);
+  let rp = ""; for (let x = 0; x <= 600; x += 10) rp += (x ? "L" : "M") + x + " " + ry(x).toFixed(1);
+  $(".riv", svg).setAttribute("d", rp);
+  let t = 0, on = false;
+  function step() {
+    t = (t + .09) % 9;
+    const front = t < 5 ? t / 5 * 150 : t < 7.2 ? 150 : 150 * (1 - (t - 7.2) / 1.8);
+    for (const c of cells) { const k = depthClass((front - c.dist) / 40); if (k !== c.k) { c.k = k; c.el.setAttribute("class", "c" + k); } }
+    flag.textContent = t < 2.2 ? "PREVIEW · HAND" : "2D PHYSICS";
+  }
+  setInterval(() => { if (on) step(); }, 90);
+  new IntersectionObserver(([e]) => { on = e.isIntersecting && !REDUCE; }).observe(svg);
+  if (REDUCE) { t = 5; step(); }
+})();
+$$(".anim").forEach(a => new IntersectionObserver(([e]) => a.classList.toggle("run", e.isIntersecting)).observe(a));
+
+/* nav + mode dots */
+const nav = $("#nav");
+const panels = $$(".panel:not(.intro-p)");
+const dots = $("#mDots");
+panels.forEach((p, i) => { const b = document.createElement("button"); b.setAttribute("aria-label", "Mode " + (i + 1) + ": " + $("h3", p).textContent); dots.appendChild(b); });
+const dotBtns = $$("button", dots);
+function setMode(i) { dotBtns.forEach((b, j) => b.classList.toggle("on", j === i)); $("#mCount").textContent = i < 0 ? "Modes" : $("h3", panels[i]).textContent; }
+setMode(-1);
+
+function count(el, dur = 1600) {
+  const to = parseFloat(el.dataset.count), dec = +(el.dataset.dec || 0), t0 = performance.now();
+  const tick = t => { const k = Math.min(1, (t - t0) / dur); el.textContent = (to * (1 - Math.pow(1 - k, 3))).toFixed(dec); if (k < 1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+
+/* no GSAP or reduced motion: complete and still */
+if (!HAS_GSAP || REDUCE) {
+  liquid.set(.78);
+  addEventListener("scroll", () => nav.classList.toggle("solid", scrollY > 40), { passive: true });
+  $$("[data-count]").forEach(el => { el.textContent = (+el.dataset.count).toFixed(+(el.dataset.dec || 0)); });
+  $("#satAfter").style.clipPath = "none"; $("#satFront").style.display = "none";
+  $("#yDate").textContent = "28 Aug 2022"; $("#yDay").textContent = "DAY 24";
+  $("#tide").classList.add("hide");
+  return;
+}
+
+/* ===================== motion ===================== */
+gsap.registerPlugin(ScrollTrigger);
+let lenis = null;
+if (window.Lenis) {
+  lenis = new Lenis({ lerp: .09 });
+  lenis.on("scroll", ScrollTrigger.update);
+  gsap.ticker.add(t => lenis.raf(t * 1000)); gsap.ticker.lagSmoothing(0);
+}
+$$("[data-go]").forEach(a => a.addEventListener("click", e => {
+  const el = $(a.getAttribute("href")); if (!el) return; e.preventDefault();
+  lenis ? lenis.scrollTo(el, { duration: 1.6 }) : el.scrollIntoView({ behavior: "smooth" });
+}));
+
+/* screen 1: SAILAB appears and the liquid fills to ~60% on load */
+const hero = $("#hero");
+const lv = { load: 0, scroll: 0 }, applyLv = () => liquid.set(Math.max(lv.load, lv.scroll));
+loaded.then(() => {
+  gsap.from("#say", { autoAlpha: 0, y: 30, duration: 1.2, ease: "power3.out" });
+  gsap.from("#cue", { autoAlpha: 0, duration: 1, delay: 1.4 });
+  gsap.to(lv, { load: .62, duration: 2.8, ease: "power2.out", delay: .2, onUpdate: applyLv });
+});
+
+/* scrolling: the letters fill to the brim, then the headline screen rises in on calm water */
+const heroWords = splitWords($("#heroTitle"));
+gsap.set(heroWords, { yPercent: 110 });
+gsap.set(["#heroAcro", "#heroLede", "#heroCta", ".hero-copy .sec-tag"], { autoAlpha: 0, y: 24 });
+gsap.timeline({ scrollTrigger: { trigger: hero, start: "top top", end: "+=170%", scrub: 1, pin: true, anticipatePin: 1, onUpdate: s => storm.setRise(s.progress) } })
+  .to(lv, { scroll: 1, ease: "none", duration: .4, onUpdate: applyLv }, 0)
+  .to("#cue", { autoAlpha: 0, duration: .1 }, 0)
+  .fromTo("#cover", { y: () => hero.offsetHeight + 80 }, { y: 0, ease: "power1.inOut", duration: .55 }, .25)
+  .to("#say", { scale: .95, autoAlpha: .35, ease: "none", duration: .55 }, .25)
+  .to(heroWords, { yPercent: 0, stagger: .02, duration: .2, ease: "power3.out" }, .62)
+  .to(".hero-copy .sec-tag", { autoAlpha: 1, y: 0, duration: .15 }, .62)
+  .to("#heroAcro", { autoAlpha: 1, y: 0, duration: .15 }, .72)
+  .to("#heroLede", { autoAlpha: 1, y: 0, duration: .15 }, .76)
+  .to("#heroCta", { autoAlpha: 1, y: 0, duration: .15 }, .8)
+  .to({}, { duration: .1 }, .95);
+
+/* 2022: the flood fills the satellite frame */
+const DAYS = 24;
+const yDate = $("#yDate"), yDay = $("#yDay");
+gsap.timeline({ scrollTrigger: { trigger: "#y2022", start: "top top", end: "+=200%", scrub: .6, pin: "#yStage", anticipatePin: 1,
+  onUpdate: s => {
+    const day = Math.round(s.progress * DAYS), dt = new Date(Date.UTC(2022, 7, 4 + day));
+    yDate.textContent = String(dt.getUTCDate()).padStart(2, "0") + " Aug 2022"; yDay.textContent = "DAY " + day;
+  } } })
+  .fromTo("#satAfter", { clipPath: "inset(0% 0% 100% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", ease: "none" }, 0)
+  .fromTo("#satFront", { top: "0%" }, { top: "100%", ease: "none" }, 0)
+  .to("#satFront", { autoAlpha: 0, duration: .05 }, .95);
+gsap.from(".y-copy > *", { y: 40, autoAlpha: 0, stagger: .08, duration: .9, ease: "power3.out", scrollTrigger: { trigger: "#y2022", start: "top 70%" } });
+gsap.from(".sat", { scale: .9, autoAlpha: 0, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: "#y2022", start: "top 70%" } });
+
+/* nav + gauge */
+ScrollTrigger.create({ start: 40, end: "max", onToggle: s => nav.classList.toggle("solid", s.isActive) });
+$$(".paper").forEach(sec => ScrollTrigger.create({ trigger: sec, start: "top 60px", end: "bottom 60px", onToggle: s => nav.classList.toggle("light", s.isActive) }));
+ScrollTrigger.create({ start: 0, end: "max", onUpdate: s => { gsap.set("#tideFill", { scaleY: s.progress }); $("#tideRead").textContent = "+" + (s.progress * 2.6).toFixed(2) + " m"; } });
+
+/* capabilities: cards fill like tanks */
+gsap.from(".caps-head > *", { y: 50, autoAlpha: 0, duration: 1, stagger: .12, ease: "power3.out", scrollTrigger: { trigger: ".caps-head", start: "top 80%" } });
+gsap.set(".card", { clipPath: "inset(100% 0% 0% 0% round 10px)" });
+gsap.set(".card .waterline", { scaleX: 0 });
+ScrollTrigger.batch(".card", { start: "top 88%", once: true, onEnter: batch => {
+  gsap.to(batch, { clipPath: "inset(0% 0% 0% 0% round 10px)", duration: 1.1, ease: "power3.inOut", stagger: .1, onComplete() { batch.forEach(c => c.style.clipPath = ""); } });
+  gsap.to(batch.map(c => $(".waterline", c)), { scaleX: 1, duration: 1.2, ease: "power2.inOut", stagger: .1, delay: .5 });
+} });
+
+/* modes */
+const mm = gsap.matchMedia();
+mm.add("(min-width: 901px)", () => {
+  const track = $("#mTrack"), dist = () => track.scrollWidth - innerWidth;
+  const tween = gsap.to(track, { x: () => -dist(), ease: "none",
+    scrollTrigger: { trigger: "#modes", start: "top top", end: () => "+=" + dist(), scrub: .8, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
+      onUpdate: s => setMode(Math.min(panels.length - 1, Math.round(s.progress * panels.length) - 1)) } });
+  panels.forEach(p => {
+    gsap.from($(".m-copy", p).children, { x: 120, autoAlpha: 0, stagger: .06, ease: "power2.out", scrollTrigger: { trigger: p, containerAnimation: tween, start: "left 75%", end: "left 20%", scrub: true } });
+    gsap.from($(".viz", p), { x: 220, rotate: 4, scale: .9, autoAlpha: 0, ease: "power2.out", scrollTrigger: { trigger: p, containerAnimation: tween, start: "left 85%", end: "left 15%", scrub: true } });
+  });
+  dotBtns.forEach((b, i) => b.onclick = () => { const st = tween.scrollTrigger, y = st.start + (st.end - st.start) * ((i + 1) / panels.length); lenis ? lenis.scrollTo(y, { duration: 1.4 }) : scrollTo({ top: y, behavior: "smooth" }); });
+  return () => dotBtns.forEach(b => b.onclick = null);
+});
+mm.add("(max-width: 900px)", () => {
+  $$(".panel").forEach(p => gsap.from(p.children, { y: 50, autoAlpha: 0, stagger: .1, duration: .9, ease: "power3.out", scrollTrigger: { trigger: p, start: "top 75%" } }));
+});
+
+ScrollTrigger.create({ trigger: "footer", start: "top 90%", end: "max", onToggle: s => $("#tide").classList.toggle("hide", s.isActive) });
+
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(() => ScrollTrigger.refresh());
 })();
 </script>
 </body>

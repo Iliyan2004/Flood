@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="275" height="140" viewBox="0 0 275 140" role="img" aria-label="04 mehran hatchback" data-scale="100-svg-units-per-metre" data-ground-y="140" data-palette="css-custom-properties" data-object-height-m="1.4" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>04 Mehran Hatchback</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <path id="car_body" d="M11 79 L24 74 L54 29 Q65 13 93 13 L180 14 Q204 15 224 43 L245 67 L259 78 L262 108 Q259 116 249 116 L19 116 Q7 113 7 104 L7 85 Z" fill="var(--light,#F2E6CD)" class="part part-car_body"/>
+    <path id="roof" d="M55 35 Q68 13 94 13 L179 14 Q200 14 215 39 L226 69 L36 69 Z" fill="var(--teal,#159A9C)" class="part part-roof"/>
+    <path id="left_window" d="M64 37 Q72 23 95 23 L125 23 L125 66 L43 66 Z" fill="var(--light,#F2E6CD)" class="part part-left_window"/>
+    <path id="right_window" d="M133 23 L177 24 Q195 24 204 42 L214 66 L133 66 Z" fill="var(--light,#F2E6CD)" class="part part-right_window"/>
+    <path id="door_seam" d="M130 68 L130 114" fill="none" class="part part-door_seam"/>
+    <rect id="front_door_handle" x="147" y="76" width="14" height="4" rx="2" fill="var(--ink,#123B5D)" class="part part-front_door_handle"/>
+    <rect id="rear_door_handle" x="73" y="76" width="14" height="4" rx="2" fill="var(--ink,#123B5D)" class="part part-rear_door_handle"/>
+    <rect id="headlight" x="249" y="83" width="13" height="13" rx="3" fill="var(--sand,#D8B88A)" class="part part-headlight"/>
+    <rect id="taillight" x="7" y="83" width="8" height="15" rx="2" fill="var(--terracotta,#B66B54)" class="part part-taillight"/>
+    <circle id="rear_wheel" cx="62" cy="116" r="24" fill="var(--slate,#637A7C)" class="part part-rear_wheel"/>
+    <circle id="rear_wheel_hub" cx="62" cy="116" r="10" fill="var(--light,#F2E6CD)" class="part part-rear_wheel_hub"/>
+    <circle id="front_wheel" cx="214" cy="116" r="24" fill="var(--slate,#637A7C)" class="part part-front_wheel"/>
+    <circle id="front_wheel_hub" cx="214" cy="116" r="10" fill="var(--light,#F2E6CD)" class="part part-front_wheel_hub"/>
+    <g id="car-detailing" stroke="var(--ink,#123B5D)" stroke-linejoin="round" stroke-linecap="round">
+      <path id="windscreen-reflection" d="M147 28 L160 28 L187 61" stroke="var(--light,#F2E6CD)" stroke-width="3" fill="none"/>
+      <path id="rear-window-highlight" d="M75 27 L83 27 L56 61" stroke="var(--teal,#159A9C)" stroke-width="2" fill="none"/>
+      <path id="lower-door-line" d="M29 103 L246 103" stroke-width="1.4" fill="none"/>
+      <rect id="front-bumper" x="251" y="104" width="15" height="6" rx="2" fill="var(--slate,#637A7C)"/>
+      <rect id="rear-bumper" x="2" y="104" width="15" height="6" rx="2" fill="var(--slate,#637A7C)"/>
+      <path id="side-mirror" d="M210 69 q13 -9 16 1 l-4 5" fill="var(--slate,#637A7C)" stroke-width="2"/>
+      <circle id="rear_hub_detail" cx="62" cy="116" r="4" fill="var(--slate,#637A7C)"/>
+      <circle id="front_hub_detail" cx="214" cy="116" r="4" fill="var(--slate,#637A7C)"/>
+    </g>
+  <g id="v3-mehran-finish" stroke="var(--ink,#123B5D)" stroke-linecap="round" stroke-linejoin="round">
+ <path id="roof-weather-seal" d="M68 29 Q83 17 99 17 H178 Q198 20 211 43" stroke="var(--teal-dark,#0B707D)" stroke-width="2" fill="none"/>
+ <path id="rear-quarter-glass" d="M44 65 L61 38 L62 65 Z" fill="var(--glass,#9DC7D0)" stroke-width="1.4"/>
+ <path id="windscreen-glass-reflection" d="M148 28 H158 L181 61 H168 Z" fill="var(--glass,#9DC7D0)" stroke="none" opacity=".72"/>
+ <path id="door-top-trim" d="M42 69 H227" stroke-width="1.3" fill="none"/><path id="body-bead" d="M20 97 H250" stroke="var(--sand-dark,#A88963)" stroke-width="1.8" fill="none"/>
+ <path id="rear-door-cut" d="M64 70 L62 99 M126 69 V105" stroke-width="1.25" fill="none"/><path id="front-arch" d="M182 116 q0 -34 31 -34 q32 0 33 34" fill="none" stroke-width="1.7"/><path id="rear-arch" d="M29 116 q0 -34 32 -34 q31 0 32 34" fill="none" stroke-width="1.7"/>
+ <path id="bumper-trims" d="M8 111 H32 M248 111 H264" stroke="var(--metal,#637A7C)" stroke-width="5" fill="none"/><path id="side-mirror-detail" d="M220 66 q10 -5 15 2 l-5 4 h-9 z" fill="var(--metal,#637A7C)" stroke-width="1.5"/>
+ <circle id="rear-hubcap" cx="62" cy="116" r="6.5" fill="var(--cream,#F2E6CD)" stroke-width="1.6"/><circle id="front-hubcap" cx="214" cy="116" r="6.5" fill="var(--cream,#F2E6CD)" stroke-width="1.6"/>
+ <path id="side-indicator" d="M243 77 h9" fill="none" stroke="var(--gold,#D6A451)" stroke-width="3"/><path id="windscreen-wiper" d="M151 63 L186 63" fill="none" stroke-width="1.6"/>
+ </g></g>
+</svg>

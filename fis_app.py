@@ -573,6 +573,16 @@ body.drawer-closed #drawerToggle {{ right:10px; }}
 .right-col .panel-section:hover {{ background:rgba(24,32,40,0.7); }}
 .panel-section h3 {{ font-family:"Public Sans",system-ui,sans-serif; text-transform:none; font-size:15.5px; font-weight:700; letter-spacing:0; }}
 .panel-section h3::before {{ display:none; }}
+
+/* ---- SAILAB Physics: tabbed side panel; only the physics workflow is shown ---- */
+.phys-off {{ display:none !important; }}
+#rightCol .panel-section[data-pane] {{ display:none; }}
+#rightCol[data-pane="scenario"] .panel-section[data-pane="scenario"],
+#rightCol[data-pane="runs"] .panel-section[data-pane="runs"],
+#rightCol[data-pane="impact"] .panel-section[data-pane="impact"],
+#rightCol[data-pane="mitigate"] .panel-section[data-pane="mitigate"] {{ display:block; }}
+.ptabs {{ padding-bottom:10px; }}
+.ptabs .ptab {{ flex:1; }}
 .tier-tabs {{ padding:12px 12px 0; gap:6px; }}
 .tier-tabs button {{ border-radius:999px; font-family:"Public Sans",system-ui,sans-serif; font-weight:600; text-transform:none; letter-spacing:0; font-size:12.5px; padding:10px 6px; }}
 button.action {{ border-radius:14px; font-family:"Public Sans",system-ui,sans-serif; text-transform:none; letter-spacing:0; font-weight:700; font-size:15px; padding:13px; }}
@@ -678,7 +688,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
       <button id="damsToggleBtn" onclick="toggleDamsLayer()" title="Real existing dams/reservoirs (Global Dam Watch) -- permanently conditioned into any flood run whose area overlaps them">Dams &amp; reservoirs</button>
       <button onclick="exportMapPng(map, 'map')">Export PNG</button>
     </div>
-    <div class="hdr-nav"><a href="/instant" title="General, instant flood preview">Instant</a><a href="/" title="Home">Home</a></div>
+    <div class="hdr-nav"><a href="/" title="Home">Home</a></div>
     <div style="position:relative;flex:0 0 auto;"><button id="queueChip" onclick="toggleQueue()" title="Show running and queued jobs, and cancel them">Queue: idle</button><div id="queuePop"></div></div>
     <button id="themeToggle" onclick="toggleTheme()" title="Switch between dark and light mode" aria-label="Switch between dark and light mode">&#9680;</button>
     <div class="note" id="demSource"></div>
@@ -702,9 +712,16 @@ body.view-hidden #viewShowBtn {{ display:block; }}
     <div class="resizer" id="resizerMain"></div>
     <button id="drawerToggle" onclick="toggleDrawer()" title="Show or hide the side panel" aria-label="Show or hide the side panel">&#8250;</button>
     <button id="viewShowBtn" onclick="window.viewUserHidden = false; setViewMode('card')">Flood view</button>
-    <div class="right-col" id="rightCol">
+    <div class="right-col" id="rightCol" data-pane="scenario">
+      <div class="tier-tabs ptabs" role="tablist" aria-label="Physics workflow">
+        <button class="ptab active" data-ptab="scenario" role="tab" onclick="showPane('scenario')">Scenario</button>
+        <button class="ptab" data-ptab="runs" role="tab" onclick="showPane('runs')">Runs</button>
+        <button class="ptab" data-ptab="impact" role="tab" onclick="showPane('impact')">Impact</button>
+        <button class="ptab" data-ptab="mitigate" role="tab" onclick="showPane('mitigate')">Mitigation</button>
+      </div>
 
-      <div class="panel-section">
+
+      <div class="panel-section" data-pane="scenario">
         <h3>Draw or upload an area</h3>
         <p class="note">Use the polygon tool on the map (top-left), or upload a shapefile (.zip) / GeoJSON below. No size limit — larger areas simply take longer to solve.</p>
         <input type="file" id="uploadFile" accept=".zip,.geojson,.json">
@@ -735,7 +752,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         </div>
       </div>
 
-      <div class="panel-section">
+      <div class="panel-section phys-off">
         <h3>National rainfall hotspots (discovery)</h3>
         <p class="note">Don't know where to look yet? Real, per-grid-cell (never averaged) extreme-rainfall records nationwide (ERA5-Land/IMERG, 1980-2026) -- the highest individually-recorded cells for a chosen metric, each with its real tehsil. No AOI needed to browse this.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -768,7 +785,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         <div id="hotspotsBox"></div>
       </div>
 
-      <div class="panel-section">
+      <div class="panel-section phys-off">
         <h3>River basins (HydroSHEDS discovery)</h3>
         <p class="note">Don't know exactly where to draw yet? Real HydroSHEDS Level 08 basin polygons (1,131 nationwide) -- browse by region, ranked by real drainage area, and use any one directly as your AOI. No hand-tracing needed. No real human-readable basin names exist in this dataset (unlike tehsils) -- basins are identified by their real HYBAS_ID and area only.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -788,12 +805,12 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         <div id="basinsBox"></div>
       </div>
 
-      <div class="panel-section">
+      <div class="panel-section phys-off">
         <h3>Rainfall</h3>
         <div id="contextBox"><p class="note">Draw or upload an area above first.</p></div>
       </div>
 
-      <div class="panel-section">
+      <div class="panel-section phys-off">
         <h3>Live Monitoring</h3>
         <p class="note">Watches a saved area's real Open-Meteo forecast on a schedule and automatically runs the real Tier 3 physics model when forecasted rain crosses your threshold -- the same real logic as "Run flood model on the real forecast" above, just checked periodically instead of on a click. Only runs while this server process is alive (no persistent OS-level cron on this shared machine) -- resumes automatically from its own saved state after a restart, doesn't lose watched areas, but has a real gap in coverage during any restart. A webhook alert includes a clickable report link only if the server has a real public URL configured (PUBLIC_BASE_URL in .env, e.g. an ngrok forwarding URL) -- otherwise just the run id, since a localhost link would be broken for anyone else reading the alert.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">
@@ -814,13 +831,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         <div id="watchListBox"><p class="note">No areas currently watched.</p></div>
       </div>
 
-      <div class="tier-tabs">
-        <button class="tier-btn active" data-tier="2" onclick="showTier(2)">&#9889; Tier 2 &middot; Instant Flood</button>
-        <button class="tier-btn" data-tier="3" onclick="showTier(3)">&#127959;&#65039; Tier 3 &middot; Physics Run</button>
-        <button class="tier-btn" data-tier="4" onclick="showTier(4)">&#127754; Coastal / Tidal</button>
-      </div>
-
-      <div class="tier-content" data-tier="2">
+      <div class="tier-content phys-off" data-tier="2">
         <div class="panel-section">
           <h3>Tier 2 &middot; Instant flood preview (HAND)</h3>
           <p class="note">HAND (Height Above Nearest Drainage) + a synthetic rating curve give a near-instant, approximate flood extent for a given discharge -- see global-flood-prediction-research.md's Tier 2. This is a fast approximation, not a replacement for the real physics run in Tier 3.</p>
@@ -835,8 +846,8 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         </div>
       </div>
 
-      <div class="tier-content" data-tier="3" style="display:none;">
-        <div class="panel-section">
+      <div class="tier-content" data-tier="3">
+        <div class="panel-section" data-pane="scenario">
           <h3>Storm</h3>
           <label>Peak rainfall (mm/hr)</label>
           <input type="number" id="rainMmHr" value="40">
@@ -944,7 +955,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                   <button class="secondary" onclick="addManualBoundary('outflow')">+ Add manual outflow</button>
                 </div>
               </div>
-              <details style="margin:2px 0;" id="glofDetails">
+              <details class="phys-off" style="margin:2px 0;" id="glofDetails">
                 <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">GLOF scenario (Gilgit-Baltistan glacial lakes)</summary>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
                   <p class="note">A GLOF (Glacial Lake Outburst Flood) is just a sharply-peaked version of the fluvial inflow above -- this fills in Peak inflow / Duration from a real lake volume via a published breach-discharge formula, and shapes the hydrograph to rise fast and recede slowly like a real GLOF (not the symmetric shape used for an ordinary river flood).</p>
@@ -999,7 +1010,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                   <div id="glofEventsBox"></div>
                 </div>
               </details>
-              <details style="margin:2px 0;">
+              <details class="phys-off" style="margin:2px 0;">
                 <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Dam spillway release (real historical event)</summary>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
                   <p class="note">Real, documented dam spillway opening/release events (Mangla, Tarbela -- real cited news sources: Dawn, Express Tribune, Business Recorder, ProPakistani). Adds the real historical outflow as an inflow sited at that dam's own real location -- a genuine recorded discharge, not a formula estimate.</p>
@@ -1014,7 +1025,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                   <div id="spillwayBox"></div>
                 </div>
               </details>
-              <details style="margin:2px 0;">
+              <details class="phys-off" style="margin:2px 0;">
                 <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Dam failure scenario (what if a real dam breached)</summary>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
                   <p class="note">Pick any real dam from the supplied Global Dam Watch data -- its real stored volume and real height (or, where the dataset has none, a height estimated from reservoir depth and shown as a low/central/high RANGE) feed the Froehlich (1995) breach formula. Adds the failure flood as an inflow at the dam. Dams with no usable capacity data are not offered.</p>
@@ -1024,7 +1035,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                   <div id="damFailureBox"></div>
                 </div>
               </details>
-              <details style="margin:2px 0;">
+              <details class="phys-off" style="margin:2px 0;">
                 <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Snowmelt contribution (SRM, real temperature + elevation)</summary>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
                   <p class="note">Real Snowmelt Runoff Model (SRM)-style degree-day melt: real current temperature (Open-Meteo) at this AOI, lapse-rate-adjusted colder at higher real elevation (from this AOI's own DEM), melting any real elevation band at or above the snow line you set below. A real, stated simplification: no per-cell snow-covered-area product is used -- the snow line is a simple cutoff, not a true seasonal depletion curve.</p>
@@ -1050,7 +1061,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                   <div id="srmHydroBox"></div>
                 </div>
               </details>
-              <details style="margin:2px 0;">
+              <details class="phys-off" style="margin:2px 0;">
                 <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Snow &amp; glacier melt model (distributed, ERA5 reanalysis, whole basin)</summary>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
                   <p class="note">Treats the drawn area as ONE basin (draw or pick a whole basin, outlet at its lowest point). Daily model of snow, glacier ice, soil and lake storage driven by local hourly ERA5; start the period in the previous autumn so the snowpack builds up. Seasonal flow, not an outburst peak. Takes 1-3 minutes, cached after.</p>
@@ -1068,7 +1079,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                   <div id="meltBox"></div>
                 </div>
               </details>
-              <details style="margin:2px 0;">
+              <details class="phys-off" style="margin:2px 0;">
                 <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Geomorphology (bedrock lithology &amp; landslide susceptibility)</summary>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
                   <p class="note">Real bedrock rock-type data (GLiM, Hartmann &amp; Moosdorf 2012) for this AOI -- some rock types break apart/erode far more easily than others, which matters for landslide-dam formation and the "landslide / rock-ice avalanche" GLOF trigger above. Combines this AOI's own real rock-type erodibility with its own real DEM slope into a simple, real susceptibility rating -- a deliberately simplified two-factor estimate, not a full field-surveyed landslide hazard assessment.</p>
@@ -1076,7 +1087,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                   <div id="geomorphBox"></div>
                 </div>
               </details>
-              <details style="margin:2px 0;">
+              <details class="phys-off" style="margin:2px 0;">
                 <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Glacier monitoring (SAR, Pakistan only)</summary>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
                   <p class="note">Real SAR-based glacier boundary + surface-displacement monitoring (GLIMS baseline + Sentinel-1 offset-tracking via Google Earth Engine) -- direct context for whether a glacier above a lake is actively moving/growing, informing whether a GLOF scenario above is worth running. Scoped to Pakistan only. Draw your AOI around the glacier itself (not just the downstream village). Real ascending+descending-combined, stable-ground-bias-corrected offset-tracking (see glacier_monitoring_utils.py) -- roughly double the wall-clock time of a single-orbit run.</p>
@@ -1139,14 +1150,14 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <p class="note" id="statusNote"></p>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" data-pane="runs">
           <h3>Flood model status</h3>
           <div id="runStatusBox">
             <p class="note">Draw/upload an area and run the model above first.</p>
           </div>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" data-pane="runs">
           <h3>Batch return-period runs</h3>
           <p class="note">Runs the real physics model once per selected return period (real CMIP6/Gumbel design storm each time, same as "Fetch real design storm" above), sequentially -- producing a real flood-risk comparison across return periods instead of one at a time. Reuses this panel's other settings (friction, buildings, etc.) for every run.</p>
           <div id="batchPeriodChecks" style="display:flex;flex-wrap:wrap;gap:10px;margin:6px 0;">
@@ -1162,14 +1173,14 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <div id="batchRunBox"></div>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" data-pane="runs">
           <h3>Average Annual Loss (AAL)</h3>
           <p class="note">The standard catastrophe-risk summary metric -- a real trapezoidal integration of estimated building loss (PKR) against annual exceedance probability across the return periods checked above. A SEPARATE, explicit action from the batch panel above: it re-runs the real physics once per checked return period (with buildings enabled, needed for a real loss figure), which takes real time -- nothing here runs automatically.</p>
           <button class="secondary" id="aalRunBtn" disabled onclick="runAALCompute()">Compute Average Annual Loss &rarr;</button>
           <div id="aalRunBox"></div>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" data-pane="runs">
           <h3>Compare two runs</h3>
           <p class="note">Real cell-by-cell comparison of two finished runs (e.g. two different storm/friction/AMC values on the same drawn area, or two return periods from the batch above) -- only valid for two runs sharing the exact same AOI/grid, not two different AOIs.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -1180,18 +1191,18 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <div id="compareRunsBox"></div>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" data-pane="impact">
           <h3>Buildings &amp; infrastructure risk</h3>
           <div id="infraBox"><p class="note">Run the flood model first.</p></div>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" data-pane="impact">
           <h3>Damage &amp; hotspots</h3>
           <p class="note">Real depth-damage curves (Huizinga et al. 2017, JRC, Asia region) by real ESA WorldCover land use, plus real Getis-Ord Gi* statistical hotspot clustering on the resulting damage surface.</p>
           <div id="damageBox"><p class="note">Run the flood model first.</p></div>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" data-pane="impact">
           <h3>Sediment transport risk</h3>
           <p class="note">Real bedload transport-capacity (Meyer-Peter &amp; Muller 1948) computed from the solver's own per-timestep depth+velocity output -- where flow was strong enough to actively move bed material. LISFLOOD-FP itself has no sediment capability, and CAESAR-Lisflood (the real published model that adds one) is a separate CPU-only model built for multi-storm/geomorphic timescales, not this app's single-event runs -- so this is a real erosion/deposition RISK indicator only, not full morphodynamics (terrain doesn't actually change).</p>
           <div>
@@ -1206,7 +1217,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <div id="sedimentBox"><p class="note">Run the flood model first.</p></div>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" data-pane="mitigate">
           <h3>Nature-based solution scenario</h3>
           <p class="note">Tests a real land-cover change across the whole AOI (e.g. "what if this area were reforested?") -- real per-cell Manning's friction change + a real area-weighted mean infiltration change, re-run through the exact same physics as the baseline run above, then compared cell-by-cell. Requires the flood model to have finished running above first.</p>
           <div>
@@ -1231,7 +1242,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <div id="nbsRecommendBox"></div>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" data-pane="mitigate">
           <h3>Protection scenario (grey infrastructure)</h3>
           <p class="note">Draw a dam/embankment, barrage, diversion canal, drainage pipe, or rainwater catchment/retention basin as a line on the map (line-draw tool, top-left) -- each is buffered into a real corridor and burned into the baseline run's own conditioned DEM (raised for a dam/barrage, lowered for a canal/drainage trench or catchment basin), then re-run through the exact same real physics as the baseline. A catchment basin is a real dug depression: the physics genuinely fills it first and only spills over once full, the same way a real detention pond behaves -- this models flood-reduction/storage, not water harvested for later reuse (irrigation, supply), which this app has no way to represent. Requires the flood model to have finished running above first. Protection is not free: displacement (water routed elsewhere) is reported, not hidden.</p>
           <div id="protectStructList"><p class="note">Draw a line on the map (line tool, top-left) to add a structure.</p></div>
@@ -1263,7 +1274,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         </div>
       </div>
 
-      <div class="tier-content" data-tier="4" style="display:none;">
+      <div class="tier-content phys-off" data-tier="4">
         <div class="panel-section">
           <h3>Coastal / tidal flood (static inundation)</h3>
           <p class="note">Real published Karachi tide-gauge return-period total water levels (Khan et al. 2020, Entropy) applied as a static, connectivity-based inundation over this AOI's real terrain -- not a dynamic storm-surge model (see coastal_utils.py). Only meaningful for AOIs on Pakistan's Sindh/Balochistan coast.</p>
@@ -1424,7 +1435,6 @@ body.view-hidden #viewShowBtn {{ display:block; }}
       <button class="action" onclick="closeWelcome(); document.getElementById('geoInput').focus();">Search a place</button>
       <button class="secondary" onclick="closeWelcome(); startDrawArea();">Draw an area on the map</button>
       <button class="secondary" onclick="closeWelcome(); document.getElementById('uploadFile').scrollIntoView({{behavior:'smooth', block:'center'}});">Upload an area file</button>
-      <a class="btn" href="/instant">Open SAILAB Instant (quick estimate)</a>
       <p class="note">Draw or choose an area, set the storm, then run the flood model. Results appear on the main screen.</p>
     </div>
   </div>
@@ -2007,11 +2017,28 @@ function loadTier3D(n) {{
   }}).observe(rc, {{childList:true, subtree:true}});
 }})();
 
+// SAILAB Physics only: the old tier switcher is gone. showTier() is kept so existing callers still work;
+// it always shows the physics view, and showPane() switches the side-panel tabs.
 function showTier(n) {{
-  document.querySelectorAll('.tier-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.tier) === n));
-  document.querySelectorAll('.tier-content').forEach(c => c.style.display = (parseInt(c.dataset.tier) === n ? '' : 'none'));
-  loadTier3D(n);
+  loadTier3D(3);
 }}
+function showPane(name) {{
+  const rc = document.getElementById('rightCol');
+  if (!rc) return;
+  rc.setAttribute('data-pane', name);
+  document.querySelectorAll('.ptab').forEach(b => {{
+    const on = b.dataset.ptab === name;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  }});
+  rc.scrollTop = 0;
+  try {{ sessionStorage.setItem('sailabPane', name); }} catch (e) {{}}
+}}
+document.addEventListener('DOMContentLoaded', () => {{
+  let p = 'scenario';
+  try {{ p = sessionStorage.getItem('sailabPane') || p; }} catch (e) {{}}
+  showPane(['scenario', 'runs', 'impact', 'mitigate'].includes(p) ? p : 'scenario');
+}});
 
 // Generic poller for the async job endpoints (design storm / climate
 // factor / NbS scenario) -- all real work that can take real minutes
@@ -3932,6 +3959,7 @@ function runModel() {{
   }}
   document.getElementById('runBtn').disabled = true;
   document.getElementById('statusNote').textContent = 'Submitting...';
+  showPane('runs');
   fetch('/run', {{
     method:'POST', headers:{{'Content-Type':'application/json'}},
     body: JSON.stringify({{
@@ -4448,6 +4476,13 @@ def index():
     resp = Response(_landing_html(), mimetype="text/html")
     resp.headers["Cache-Control"] = "no-cache"
     return resp
+
+
+@app.route("/landing-assets/<path:rel>")
+def landing_assets(rel):
+    # images, depth illustrations and the two background videos used by the landing page
+    from flask import send_from_directory
+    return send_from_directory(os.path.join(BASE_DIR, "landing_assets"), rel, max_age=3600)
 
 
 @app.route("/app")

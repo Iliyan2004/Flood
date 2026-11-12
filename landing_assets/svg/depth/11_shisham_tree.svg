@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="310" height="600" viewBox="0 0 310 600" role="img" aria-label="11 shisham tree" data-scale="100-svg-units-per-metre" data-ground-y="600" data-palette="css-custom-properties" data-object-height-m="6.0" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>11 Shisham Tree</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <path id="trunk" d="M122 598 L133 406 L118 341 L142 320 L161 402 L158 598 Z" fill="var(--terracotta,#B66B54)" class="part part-trunk"/>
+    <path id="branch_left" d="M135 412 L81 303 L92 286 L151 372 Z" fill="var(--terracotta,#B66B54)" class="part part-branch_left"/>
+    <path id="branch_right" d="M151 401 L211 280 L223 289 L160 436 Z" fill="var(--terracotta,#B66B54)" class="part part-branch_right"/>
+    <path id="canopy" d="M77 83 Q35 77 32 131 Q-4 153 21 213 Q-3 252 47 287 Q40 344 99 353 Q131 391 171 357 Q239 383 254 327 Q305 311 278 255 Q316 203 279 157 Q279 103 225 92 Q190 45 147 75 Q101 31 77 83 Z" fill="var(--teal,#159A9C)" class="part part-canopy"/>
+    <path id="foliage_cluster_left" d="M75 135 Q97 115 117 147 M45 236 Q79 204 109 240 M93 309 Q112 284 143 302" fill="none" class="part part-foliage_cluster_left"/>
+    <path id="foliage_cluster_right" d="M180 142 Q210 112 238 150 M199 235 Q232 218 258 242 M164 303 Q199 276 224 305" fill="none" class="part part-foliage_cluster_right"/>
+    <g id="shisham-details" stroke="var(--ink,#123B5D)" fill="none" stroke-width="2.2" stroke-linecap="round">
+      <path id="bark-lines" d="M157 480 L150 536 M166 515 L163 573 M152 570 L158 590"/>
+      <path id="leaf-clusters" d="M103 179 q12 -17 25 0 M188 192 q13 -18 27 1 M119 250 q12 -15 25 0 M180 278 q13 -13 24 3 M144 98 q11 -11 23 0 M75 310 q14 -11 26 0"/>
+      <path id="branches-detail" d="M156 476 L124 383 M162 459 L199 366"/>
+    </g>
+  <g id="v3-shisham-finish" stroke="var(--ink,#123B5D)" stroke-linecap="round" stroke-linejoin="round">
+ <path id="root-flare" d="M143 575 L130 596 M166 576 L183 598" fill="none" stroke="var(--brick-dark,#944D3E)" stroke-width="5"/>
+ <path id="branch-network" d="M155 490 Q113 429 98 353 M163 482 Q200 403 226 342 M154 430 Q133 376 155 305 M164 404 Q183 356 195 260" stroke="var(--brick-dark,#944D3E)" stroke-width="7" fill="none"/>
+ <path id="bark-strokes" d="M151 510 L148 538 M166 524 L162 558 M156 565 L157 587" stroke="var(--sand-dark,#A88963)" stroke-width="2" fill="none"/>
+ <path id="compound-leaflets" d="M72 230 q12 -14 23 0 M90 305 q12 -16 25 0 M121 186 q15 -13 26 0 M166 142 q11 -15 23 0 M203 206 q14 -14 28 0 M212 297 q14 -13 24 0 M136 328 q14 -14 25 0 M178 350 q12 -11 24 0 M114 254 q11 -12 22 0 M189 266 q12 -12 23 0" stroke="var(--teal-dark,#0B707D)" stroke-width="2.2" fill="none"/>
+ </g></g>
+</svg>

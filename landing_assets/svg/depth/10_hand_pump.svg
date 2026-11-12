@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="115" viewBox="0 0 130 115" role="img" aria-label="10 hand pump" data-scale="100-svg-units-per-metre" data-ground-y="115" data-palette="css-custom-properties" data-object-height-m="1.15" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>10 Hand Pump</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <rect id="concrete_base" x="17" y="104" width="96" height="11" rx="0" fill="var(--sand,#D8B88A)" class="part part-concrete_base"/>
+    <rect id="pump_column" x="55" y="38" width="24" height="66" rx="0" fill="var(--teal,#159A9C)" class="part part-pump_column"/>
+    <rect id="pump_body" x="48" y="28" width="37" height="24" rx="4" fill="var(--slate,#637A7C)" class="part part-pump_body"/>
+    <path id="spout" d="M56 60 L29 60 L29 75 L20 75" fill="none" class="part part-spout"/>
+    <path id="lever" d="M68 29 L106 5 L117 8 L81 39 Z" fill="var(--sand,#D8B88A)" class="part part-lever"/>
+    <circle id="lever_pivot" cx="69" cy="30" r="5" fill="var(--light,#F2E6CD)" class="part part-lever_pivot"/>
+    <rect id="foot_platform" x="45" y="100" width="46" height="6" rx="0" fill="var(--terracotta,#B66B54)" class="part part-foot_platform"/>
+    <g id="pump-details" stroke="var(--ink,#123B5D)" fill="none" stroke-width="1.7">
+      <path id="column-seam" d="M84 57 V104"/>
+      <path id="handle-grip" d="M101 14 L111 9" stroke-width="4"/>
+      <path id="base-joint" d="M34 107 H109"/>
+      <circle id="spout-bolt" cx="58" cy="58" r="2" fill="var(--ink,#123B5D)"/>
+    </g>
+  <g id="v3-pump-finish" stroke="var(--ink,#123B5D)" stroke-linecap="round" stroke-linejoin="round">
+ <path id="handle-grip-texture" d="M95 14 l4 7 M100 12 l4 6 M105 10 l4 6" stroke-width="1.3" fill="none"/><path id="pump-barrel-seam" d="M83 59 V104 M46 101 H102" stroke="var(--teal-dark,#0B707D)" stroke-width="1.8" fill="none"/>
+ <circle id="handle-pivot" cx="80" cy="33" r="5" fill="var(--cream,#F2E6CD)" stroke-width="2"/><path id="spout-mouth" d="M10 87 h8" stroke-width="3" fill="none"/>
+ <path id="cast-iron-bolts" d="M41 109 h6 M89 109 h6" stroke-width="2" fill="none"/><path id="base-hatching" d="M35 112 l-6 5 M51 112 l-6 5 M69 112 l-6 5 M87 112 l-6 5" stroke="var(--sand-dark,#A88963)" stroke-width="1" fill="none"/>
+ </g></g>
+</svg>

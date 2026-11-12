@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="285" height="170" viewBox="0 0 285 170" role="img" aria-label="05 qingqi rickshaw" data-scale="100-svg-units-per-metre" data-ground-y="170" data-palette="css-custom-properties" data-object-height-m="1.7" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>05 Qingqi Rickshaw</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <path id="roof" d="M45 24 L204 24 L216 35 L41 35 Z" fill="var(--teal,#159A9C)" class="part part-roof"/>
+    <rect id="roof_support_left" x="51" y="33" width="6" height="86" rx="0" fill="var(--slate,#637A7C)" class="part part-roof_support_left"/>
+    <rect id="roof_support_right" x="201" y="33" width="6" height="88" rx="0" fill="var(--slate,#637A7C)" class="part part-roof_support_right"/>
+    <path id="passenger_body" d="M31 115 L223 115 L220 141 L25 141 Z" fill="var(--terracotta,#B66B54)" class="part part-passenger_body"/>
+    <rect id="seat_back" x="81" y="76" width="104" height="39" rx="4" fill="var(--sand,#D8B88A)" class="part part-seat_back"/>
+    <rect id="seat_base" x="71" y="113" width="128" height="15" rx="3" fill="var(--slate,#637A7C)" class="part part-seat_base"/>
+    <path id="front_handlebars" d="M219 90 L242 89 L254 111" fill="none" class="part part-front_handlebars"/>
+    <path id="driver_frame" d="M213 117 L247 117 L258 139 L211 139 Z" fill="var(--teal,#159A9C)" class="part part-driver_frame"/>
+    <circle id="rear_wheel" cx="66" cy="145" r="25" fill="var(--slate,#637A7C)" class="part part-rear_wheel"/>
+    <circle id="rear_wheel_hub" cx="66" cy="145" r="10" fill="var(--light,#F2E6CD)" class="part part-rear_wheel_hub"/>
+    <circle id="mid_wheel" cx="178" cy="145" r="25" fill="var(--slate,#637A7C)" class="part part-mid_wheel"/>
+    <circle id="mid_wheel_hub" cx="178" cy="145" r="10" fill="var(--light,#F2E6CD)" class="part part-mid_wheel_hub"/>
+    <circle id="front_wheel" cx="256" cy="145" r="25" fill="var(--slate,#637A7C)" class="part part-front_wheel"/>
+    <circle id="front_wheel_hub" cx="256" cy="145" r="10" fill="var(--light,#F2E6CD)" class="part part-front_wheel_hub"/>
+    <g id="rickshaw-detailing" stroke="var(--ink,#123B5D)" stroke-width="2" stroke-linejoin="round">
+      <path id="canopy-seam" d="M21 23 H189" fill="none"/>
+      <path id="passenger-backrest" d="M65 91 V61 H153 V92" fill="none"/>
+      <path id="passenger-rail" d="M30 108 H183" fill="none"/>
+      <path id="front-mudguard" d="M218 126 Q239 103 262 128" fill="none"/>
+      <path id="driver-seat" d="M193 101 l25 0 l7 10 h-38 z" fill="var(--slate,#637A7C)"/>
+      <rect id="rear-lamp" x="7" y="123" width="10" height="8" rx="2" fill="var(--terracotta,#B66B54)"/>
+    </g>
+  <g id="v3-qingqi-finish" stroke="var(--ink,#123B5D)" stroke-linejoin="round" stroke-linecap="round">
+ <path id="canopy-rib-1" d="M22 20 H176 M26 18 L25 79 M177 18 L177 75" fill="none" stroke-width="2"/>
+ <path id="canopy-valance" d="M23 28 h154 v8 h-154 z" fill="var(--teal-dark,#0B707D)" stroke-width="1.5"/>
+ <path id="passenger-bench" d="M70 85 H149 V96 H70 Z" fill="var(--brick-dark,#944D3E)" stroke-width="2"/><path id="bench-back" d="M65 58 H152 V85 H65 Z" fill="var(--cream,#F2E6CD)" stroke-width="1.5"/>
+ <path id="rickshaw-side-rail" d="M31 108 H178" fill="none" stroke-width="2.2"/><path id="entry-step" d="M72 131 H159" stroke-width="3" fill="none"/>
+ <path id="handlebars" d="M224 67 L234 58 L246 56" fill="none" stroke-width="2.5"/><circle id="headlamp" cx="246" cy="73" r="9" fill="var(--cream,#F2E6CD)" stroke-width="2"/>
+ <path id="motor-cover" d="M198 90 q14 -17 25 -3 l10 13 -3 12 h-29 z" fill="var(--teal-dark,#0B707D)" stroke-width="2"/><path id="front-fork" d="M243 83 L255 138" fill="none" stroke-width="3"/>
+ <path id="wheel-arches" d="M21 143 q0 -25 27 -25 q26 0 29 25 M112 143 q0 -25 27 -25 q26 0 28 25 M228 143 q0 -25 27 -25 q26 0 29 25" stroke-width="1.5" fill="none"/>
+ <circle id="front-wheel-hub" cx="257" cy="144" r="6" fill="var(--cream,#F2E6CD)" stroke-width="1.7"/><circle id="rear-wheel-hub" cx="48" cy="144" r="6" fill="var(--cream,#F2E6CD)" stroke-width="1.7"/>
+ </g></g>
+</svg>

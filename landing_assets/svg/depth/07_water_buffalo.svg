@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="265" height="150" viewBox="0 0 265 150" role="img" aria-label="07 water buffalo" data-scale="100-svg-units-per-metre" data-ground-y="150" data-palette="css-custom-properties" data-object-height-m="1.5" preserveAspectRatio="xMidYMax meet" data-version="3" data-sailab-materials="true">
+  <title>07 Water Buffalo</title>
+  <desc>Editable, recolorable SAILAB village asset. Intrinsic scale: 100 units = 1 metre. Keep rendered SVG dimensions proportional to viewBox for flood-depth accuracy.</desc>
+  <style>svg{--ink:#123B5D;--teal:#159A9C;--teal-dark:#0B707D;--cream:#F2E6CD;--sand:#D8B88A;--sand-dark:#A88963;--terracotta:#B66B54;--brick-dark:#944D3E;--metal:#637A7C;--metal-dark:#435E69;--glass:#9DC7D0;--gold:#D6A451}</style><g stroke="var(--ink,#123B5D)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <path id="body" d="M64 49 Q68 19 111 18 L190 25 Q228 26 231 61 L220 90 L80 91 Q51 85 64 49 Z" fill="var(--slate,#637A7C)" class="part part-body"/>
+    <path id="neck" d="M70 45 L44 40 L33 69 L64 85 L93 69 Z" fill="var(--slate,#637A7C)" class="part part-neck"/>
+    <path id="head" d="M27 50 Q6 45 5 67 Q4 89 33 88 L52 72 Z" fill="var(--slate,#637A7C)" class="part part-head"/>
+    <path id="horn_left" d="M21 52 Q5 43 7 28 Q17 44 33 43 Z" fill="var(--light,#F2E6CD)" class="part part-horn_left"/>
+    <path id="horn_right" d="M39 50 Q57 30 47 20 Q48 40 29 43 Z" fill="var(--light,#F2E6CD)" class="part part-horn_right"/>
+    <circle id="eye" cx="22" cy="64" r="3" fill="var(--light,#F2E6CD)" class="part part-eye"/>
+    <path id="front_leg" d="M91 85 L110 85 L108 146 L93 146 Z" fill="var(--slate,#637A7C)" class="part part-front_leg"/>
+    <path id="second_leg" d="M128 85 L146 85 L141 146 L127 146 Z" fill="var(--slate,#637A7C)" class="part part-second_leg"/>
+    <path id="hind_leg" d="M191 86 L209 84 L216 145 L201 146 Z" fill="var(--slate,#637A7C)" class="part part-hind_leg"/>
+    <path id="far_hind_leg" d="M169 86 L183 86 L177 146 L163 146 Z" fill="var(--slate,#637A7C)" class="part part-far_hind_leg"/>
+    <path id="tail" d="M226 43 Q251 77 242 111" fill="none" class="part part-tail"/>
+    <path id="tail_tuft" d="M240 107 L249 108 L246 123 L237 115 Z" fill="var(--slate,#637A7C)" class="part part-tail_tuft"/>
+    <rect id="left_hoof" x="90" y="144" width="20" height="6" rx="2" fill="var(--ink,#123B5D)" class="part part-left_hoof"/>
+    <rect id="middle_hoof" x="124" y="144" width="20" height="6" rx="2" fill="var(--ink,#123B5D)" class="part part-middle_hoof"/>
+    <rect id="back_hoof" x="199" y="144" width="20" height="6" rx="2" fill="var(--ink,#123B5D)" class="part part-back_hoof"/>
+    <g id="buffalo-detailing" stroke="var(--ink,#123B5D)" stroke-linejoin="round">
+      <path id="ear" d="M48 57 q-17 -15 -25 -11 q0 17 20 22" fill="var(--slate,#637A7C)" stroke-width="2"/>
+      <ellipse id="muzzle" cx="29" cy="75" rx="12" ry="9" fill="var(--light,#F2E6CD)" stroke-width="1.8"/>
+      <circle id="nostril" cx="25" cy="76" r="2" fill="var(--ink,#123B5D)" stroke="none"/>
+      <path id="body-fold" d="M113 67 Q127 88 122 108" fill="none" stroke-width="1.7"/>
+      <path id="back-highlight" d="M111 38 Q174 28 215 49" fill="none" stroke="var(--light,#F2E6CD)" stroke-width="2"/>
+    </g>
+  <g id="v3-buffalo-finish" stroke="var(--ink,#123B5D)" stroke-linecap="round" stroke-linejoin="round">
+ <path id="neck-muscle" d="M83 70 Q99 84 114 90 M92 61 Q111 49 135 54" stroke="var(--metal-dark,#435E69)" stroke-width="2.2" fill="none"/>
+ <path id="forehead-hair" d="M42 55 q8 -10 17 -5" stroke-width="2" fill="none"/><path id="mouth-line" d="M21 86 q12 9 23 2" stroke-width="1.5" fill="none"/><circle id="visible-eye" cx="54" cy="65" r="2.8" fill="var(--cream,#F2E6CD)" stroke-width="1"/><circle cx="54" cy="65" r="1.3" fill="var(--ink)" stroke="none"/>
+ <path id="left-ear-fold" d="M32 58 Q24 48 17 52" stroke-width="1.3" fill="none"/><path id="back-highlight" d="M117 41 Q178 31 224 55" stroke="var(--cream,#F2E6CD)" stroke-width="2" fill="none"/><path id="shoulder-fold" d="M129 68 Q139 88 133 109" stroke="var(--metal-dark,#435E69)" stroke-width="2" fill="none"/>
+ <path id="hoof-lines" d="M125 139 H143 M159 140 H178 M199 139 H220 M232 138 H248" stroke-width="3" fill="none"/>
+ </g></g>
+</svg>
