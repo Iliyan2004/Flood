@@ -14,6 +14,7 @@ Then open http://127.0.0.1:5060
 """
 import glob
 import hashlib
+import math
 import json
 import os
 import shutil
@@ -6920,6 +6921,59 @@ def _snap_inflow_to_valid_edge(header, dem, inflow_edge, lon, lat, src_crs, noda
         return (nrows - best_row - 0.5) * cs
 
 
+def _extend_inflow_corridors(header, dem, inflows, src_crs, log_path, nodata=-9999):
+    """Makes sure every inflow has valid terrain to enter through.
+
+    A drawn area rarely fills its rectangular grid: the cells along the edge an inflow is sited on are often all
+    NODATA, with the real terrain starting some cells further in. The old behaviour dropped such an inflow without
+    saying so, so a run with 0 rain and a large discharge showed no flood at all. Here, when there is no valid cell
+    near the inflow's entry point, a short flat feeder channel (the width of the inflow, one elevation: the nearest
+    valid cell's) is cut from the grid edge to the nearest valid terrain, and the inflow enters through it. Valid
+    cells are never changed. Returns the (possibly modified) DEM."""
+    from scipy import ndimage
+    ncols, nrows, cs = int(header["ncols"]), int(header["nrows"]), header["cellsize"]
+    xll, yll = header["xllcorner"], header["yllcorner"]
+    to_src = Transformer.from_crs("EPSG:4326", src_crs, always_xy=True).transform
+    for item in inflows:
+        edge = item.get("edge")
+        if edge not in ("N", "E", "S", "W"):
+            continue
+        if item.get("lon") is not None and item.get("lat") is not None:
+            x_c, y_c = to_src(item["lon"], item["lat"])
+            col_f, row_f = (x_c - xll) / cs, nrows - 1 - (y_c - yll) / cs
+        else:
+            frac = (float(item["pos_pct"]) if item.get("pos_pct") is not None else 50.0) / 100.0
+            col_f, row_f = frac * ncols, frac * nrows
+        if edge in ("N", "S"):
+            r0, c0 = (0 if edge == "N" else nrows - 1), int(min(max(col_f, 0), ncols - 1))
+        else:
+            c0, r0 = (0 if edge == "W" else ncols - 1), int(min(max(row_f, 0), nrows - 1))
+        w = int(min(15, max(2, math.ceil(float(item.get("width_m") or 30.0) / cs))))
+        h = w // 2
+        valid = dem != nodata
+        if not valid.any():
+            continue
+        if edge in ("N", "S"):
+            near = valid[r0, max(0, c0 - h - 2):c0 + h + 3]
+        else:
+            near = valid[max(0, r0 - h - 2):r0 + h + 3, c0]
+        if near.any():
+            continue                                  # terrain already reaches the entry point
+        _, (ri, ci) = ndimage.distance_transform_edt(~valid, return_indices=True)
+        nr, nc = int(ri[r0, c0]), int(ci[r0, c0])
+        level = float(dem[nr, nc])
+        n = max(abs(nr - r0), abs(nc - c0)) + 1
+        rr = np.round(np.linspace(r0, nr, n)).astype(int)
+        cc = np.round(np.linspace(c0, nc, n)).astype(int)
+        for r, c in zip(rr, cc):
+            blk = dem[max(0, r - h):r + h + 1, max(0, c - h):c + h + 1]
+            blk[blk == nodata] = level
+        with open(log_path, "a") as logf:
+            logf.write(f"[boundary] '{item.get('name', edge)}': no terrain at the {edge} edge here; cut a {n * cs:.0f} m "
+                       f"feeder channel to the nearest terrain so the inflow can enter\n")
+    return dem
+
+
 def _resolve_boundary_item(header, dem, src_crs, item, log_path):
     """Resolves one real inflow/outflow request item (edge + either a real
     lon/lat crossing point, a manual position percentage, or neither) into
@@ -7044,6 +7098,8 @@ def execute_fis_run(run_id, run_dir, dem_ascii_path, rain_mm_hr, duration_hr,
         except Exception:
             pass
 
+        if inflows:
+            dem0 = _extend_inflow_corridors(header0, dem0, inflows, src_crs, log_path)
         _write_ascii(dem_ascii_path, header0, dem0)
         # Pre-conditioning (of BUILDINGS specifically -- real dams/
         # reservoirs above are already baked in) copy, kept for 3D
@@ -7327,6 +7383,13 @@ def execute_fis_run(run_id, run_dir, dem_ascii_path, rain_mm_hr, duration_hr,
             if resolved is None:
                 continue
             boundary_outflows.append(resolved)
+        no_rain = (not rainfall_series) and float(rain_mm_hr or 0) <= 0
+        if inflows and not boundary_inflows and no_rain:
+            with RUN_STATE_LOCK:
+                RUN_STATE[run_id].update(status="failed", log_tail="None of the inflows could be placed inside this area, and the "
+                                         "rain is 0, so there is nothing to simulate. Move the inflow to an edge the area touches, "
+                                         "or add rain.")
+            return
         if boundary_inflows or boundary_outflows:
             boundary_path = os.path.join(run_dir, "boundary.json")
             with open(boundary_path, "w") as bf:
