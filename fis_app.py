@@ -577,11 +577,9 @@ body.drawer-closed #drawerToggle {{ right:10px; }}
 /* ---- SAILAB Physics: tabbed side panel; only the physics workflow is shown ---- */
 .phys-off {{ display:none !important; }}
 #rightCol .panel-section[data-pane] {{ display:none; }}
-#rightCol[data-pane="scenario"] .panel-section[data-pane="scenario"],
-#rightCol[data-pane="runs"] .panel-section[data-pane="runs"],
-#rightCol[data-pane="impact"] .panel-section[data-pane="impact"],
-#rightCol[data-pane="mitigate"] .panel-section[data-pane="mitigate"] {{ display:block; }}
 .ptabs {{ padding-bottom:10px; }}
+header .hdr-nav a.on {{ color:var(--accent); border-color:var(--accent); }}
+#rightCol select {{ max-width:100%; text-overflow:ellipsis; }}
 .ptabs .ptab {{ flex:1; }}
 
 /* ---- no overlaps: map controls clear of the toolbar, flood card clear of the map logo ---- */
@@ -694,6 +692,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
       <button id="layerStreets" onclick="setMapLayer('streets')">Streets</button>
       <button id="damsToggleBtn" class="phys-off" onclick="toggleDamsLayer()">Dams</button>
     </div>
+    <!--MODENAV-->
     <div style="position:relative;flex:0 0 auto;"><button id="queueChip" onclick="toggleQueue()" title="Show running and queued jobs, and cancel them">Queue: idle</button><div id="queuePop"></div></div>
     <button id="themeToggle" onclick="toggleTheme()" title="Switch between dark and light mode" aria-label="Switch between dark and light mode">&#9680;</button>
     <div class="note phys-off" id="demSource"></div>
@@ -718,15 +717,10 @@ body.view-hidden #viewShowBtn {{ display:block; }}
     <button id="drawerToggle" onclick="toggleDrawer()" title="Show or hide the side panel" aria-label="Show or hide the side panel">&#8250;</button>
     <button id="viewShowBtn" onclick="window.viewUserHidden = false; setViewMode('card')">Flood view</button>
     <div class="right-col" id="rightCol" data-pane="scenario">
-      <div class="tier-tabs ptabs" role="tablist" aria-label="Physics workflow">
-        <button class="ptab active" data-ptab="scenario" role="tab" onclick="showPane('scenario')">Scenario</button>
-        <button class="ptab" data-ptab="runs" role="tab" onclick="showPane('runs')">Runs</button>
-        <button class="ptab" data-ptab="impact" role="tab" onclick="showPane('impact')">Impact</button>
-        <button class="ptab" data-ptab="mitigate" role="tab" onclick="showPane('mitigate')">Mitigation</button>
-      </div>
+      <div class="tier-tabs ptabs" id="ptabs" role="tablist" aria-label="Sections"></div>
 
 
-      <div class="panel-section" data-pane="scenario">
+      <div class="panel-section" data-pane="scenario" data-modes="physics glof coastal">
         <h3>Area</h3>
         <p class="note">Draw a polygon on the map, or upload a shapefile (.zip) or GeoJSON.</p>
         <input type="file" id="uploadFile" accept=".zip,.geojson,.json">
@@ -847,7 +841,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
       </div>
 
       <div class="tier-content" data-tier="3">
-        <div class="panel-section" data-pane="scenario">
+        <div class="panel-section" data-pane="scenario" data-modes="physics">
           <h3>Storm</h3>
           <label>Peak rainfall (mm/hr)</label>
           <input type="number" id="rainMmHr" value="40">
@@ -905,30 +899,10 @@ body.view-hidden #viewShowBtn {{ display:block; }}
               <div id="rainfallCsvBox"></div>
             </div>
           </details>
-          <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="includeBuildings" checked style="width:auto;"> Include real buildings (affects flow)</label>
-      <div class="bc-block" style="margin:12px 0 4px;">
-        <h3 style="margin:0 0 6px;font-size:14px;">Boundary conditions</h3>
-        <button class="secondary" id="detectBoundariesBtn" disabled onclick="detectAllBoundaries()">Detect rivers automatically</button>
-        <p class="note" id="boundaryDetectNote"></p>
-        <div id="boundaryList"></div>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <button class="secondary" onclick="addManualBoundary('inflow')">+ Add manual inflow</button>
-          <button class="secondary" onclick="addManualBoundary('outflow')">+ Add manual outflow</button>
         </div>
-      </div>
-          <details style="margin:2px 0;">
-            <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Advanced settings</summary>
-            <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
-              <div>
-                <label>Fallback friction (Manning's n)</label>
-                <input type="number" id="friction" value="0.05" step="0.005" min="0.01" title="Floodplain friction is now determined per-cell automatically from real ESA WorldCover land cover (forest, cropland, built-up, water, etc. each get their own real published roughness value) as the model runs. This value is only used as a fallback for any cell the land-cover data doesn't cover, or if the land-cover fetch fails. LISFLOOD-FP's ACC solver can become numerically unstable at very low Manning's friction -- the backend also enforces a floor and adds numerical diffusion (theta) if you get close to it.">
-              </div>
-              <div>
-                <label>CFL number (inertial solver stability, 0-1)</label>
-                <input type="number" id="cfl" value="0.7" step="0.05" min="0.05" max="1">
-              </div>
-              <details class="phys-off" style="margin:2px 0;" id="glofDetails">
-                <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">GLOF scenario (Gilgit-Baltistan glacial lakes)</summary>
+
+        <div class="panel-section" data-pane="scenario" data-modes="glof">
+          <h3>GLOF scenario</h3>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
                   <div>
                     <label>Source</label>
@@ -976,7 +950,32 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                   <button class="secondary" id="glofEventsBtn" disabled onclick="showGlofHistoricalEvents()">Show documented events &rarr;</button>
                   <div id="glofEventsBox"></div>
                 </div>
-              </details>
+                      </div>
+
+        <div class="panel-section" data-pane="scenario" data-modes="physics glof">
+          <h3>Boundary conditions</h3>
+        <button class="secondary" id="detectBoundariesBtn" disabled onclick="detectAllBoundaries()">Detect rivers automatically</button>
+        <p class="note" id="boundaryDetectNote"></p>
+        <div id="boundaryList"></div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="secondary" onclick="addManualBoundary('inflow')">+ Add manual inflow</button>
+          <button class="secondary" onclick="addManualBoundary('outflow')">+ Add manual outflow</button>
+        </div>
+        </div>
+
+        <div class="panel-section" data-pane="scenario" data-modes="physics glof">
+          <details style="margin:2px 0;">
+            <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Advanced settings</summary>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+              <div>
+                <label>Fallback friction (Manning's n)</label>
+                <input type="number" id="friction" value="0.05" step="0.005" min="0.01" title="Floodplain friction is now determined per-cell automatically from real ESA WorldCover land cover (forest, cropland, built-up, water, etc. each get their own real published roughness value) as the model runs. This value is only used as a fallback for any cell the land-cover data doesn't cover, or if the land-cover fetch fails. LISFLOOD-FP's ACC solver can become numerically unstable at very low Manning's friction -- the backend also enforces a floor and adds numerical diffusion (theta) if you get close to it.">
+              </div>
+              <div>
+                <label>CFL number (inertial solver stability, 0-1)</label>
+                <input type="number" id="cfl" value="0.7" step="0.05" min="0.05" max="1">
+              </div>
+
               <details class="phys-off" style="margin:2px 0;">
                 <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Dam spillway release (real historical event)</summary>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
@@ -1041,36 +1040,8 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                   <div id="meltBox"></div>
                 </div>
               </details>
-              <details class="phys-off" style="margin:2px 0;">
-                <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Geomorphology (bedrock lithology &amp; landslide susceptibility)</summary>
-                <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-                  <button class="secondary" id="geomorphBtn" disabled onclick="computeGeomorphology()">Check real geomorphology &amp; susceptibility &rarr;</button>
-                  <div id="geomorphBox"></div>
-                </div>
-              </details>
-              <details class="phys-off" style="margin:2px 0;">
-                <summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Glacier monitoring (SAR, Pakistan only)</summary>
-                <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-                  <button class="secondary" id="glacierBaselineBtn" disabled onclick="runGlacierBaseline()">Get real glacier inventory (GLIMS) &rarr;</button>
-                  <div id="glacierBaselineBox"></div>
-                  <div>
-                    <label>Mark a known real GLOF lake on the result (optional)</label>
-                    <select id="glacierLakeKey">
-                      <option value="">None</option>
-                      <option value="shishper_2022">Shishper Glacier Lake (Hassanabad, Hunza)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label>Real confidence threshold (lower = more coverage, more noise)</label>
-                    <input type="number" id="glacierConfidence" value="0.5" step="0.05" min="0.1" max="0.95">
-                  </div>
-                  <button class="secondary" id="glacierDispBtn" disabled onclick="runGlacierDisplacement()">Run SAR displacement analysis (Jan-Aug 2026, real, ~2-12 min) &rarr;</button>
-                  <div id="glacierDispBox"></div>
-                  <hr style="margin:10px 0;border-color:#2a3a3e;">
-                  <button class="secondary" id="itsliveBtn" disabled onclick="runItsliveVelocity()">Check recent glacier speed (ITS_LIVE) &rarr;</button>
-                  <div id="itsliveBox"></div>
-                </div>
-              </details>
+
+
               <div class="panel-section" style="border:1px solid var(--line);border-radius:8px;padding:10px;margin:4px 0;">
                 <h3 style="margin-top:0;">Storm centering &amp; Areal Reduction Factor</h3>
                 <label style="display:flex;align-items:center;gap:6px;font-weight:normal;">
@@ -1104,7 +1075,39 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           </details>
         </div>
 
-        <div class="panel-section" data-pane="scenario">
+        <div class="panel-section" data-pane="glacier" data-modes="glof">
+          <h3>Glacier monitoring</h3>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+                  <button class="secondary" id="glacierBaselineBtn" disabled onclick="runGlacierBaseline()">Get real glacier inventory (GLIMS) &rarr;</button>
+                  <div id="glacierBaselineBox"></div>
+                  <div>
+                    <label>Mark a known real GLOF lake on the result (optional)</label>
+                    <select id="glacierLakeKey">
+                      <option value="">None</option>
+                      <option value="shishper_2022">Shishper Glacier Lake (Hassanabad, Hunza)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label>Real confidence threshold (lower = more coverage, more noise)</label>
+                    <input type="number" id="glacierConfidence" value="0.5" step="0.05" min="0.1" max="0.95">
+                  </div>
+                  <button class="secondary" id="glacierDispBtn" disabled onclick="runGlacierDisplacement()">Run SAR displacement analysis (Jan-Aug 2026, real, ~2-12 min) &rarr;</button>
+                  <div id="glacierDispBox"></div>
+                  <hr style="margin:10px 0;border-color:#2a3a3e;">
+                  <button class="secondary" id="itsliveBtn" disabled onclick="runItsliveVelocity()">Check recent glacier speed (ITS_LIVE) &rarr;</button>
+                  <div id="itsliveBox"></div>
+                </div>
+                      </div>
+
+        <div class="panel-section" data-pane="glacier" data-modes="glof">
+          <h3>Geomorphology</h3>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+                  <button class="secondary" id="geomorphBtn" disabled onclick="computeGeomorphology()">Check real geomorphology &amp; susceptibility &rarr;</button>
+                  <div id="geomorphBox"></div>
+                </div>
+                      </div>
+
+        <div class="panel-section" data-pane="scenario" data-modes="physics">
           <h3>Soil &amp; infiltration</h3>
           <div style="display:flex;flex-direction:column;gap:10px;">
       <div>
@@ -1131,19 +1134,20 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           </div>
         </div>
 
-        <div class="panel-section" data-pane="scenario">
+        <div class="panel-section" data-pane="scenario" data-modes="physics glof">
+          <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="includeBuildings" checked style="width:auto;"> Include real buildings (affects flow)</label>
           <button class="action" id="runBtn" disabled onclick="runModel()">Run flood model</button>
           <p class="note" id="statusNote"></p>
         </div>
 
-        <div class="panel-section" data-pane="runs">
+        <div class="panel-section" data-pane="runs" data-modes="physics glof">
           <h3>Run status</h3>
           <div id="runStatusBox">
             <p class="note">Draw/upload an area and run the model above first.</p>
           </div>
         </div>
 
-        <div class="panel-section" data-pane="runs">
+        <div class="panel-section" data-pane="runs" data-modes="physics">
           <h3>Return-period runs</h3>
           <div id="batchPeriodChecks" style="display:flex;flex-wrap:wrap;gap:10px;margin:6px 0;">
             <label style="font-weight:normal;"><input type="checkbox" value="2" style="width:auto;"> 2yr</label>
@@ -1158,13 +1162,13 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <div id="batchRunBox"></div>
         </div>
 
-        <div class="panel-section" data-pane="runs">
+        <div class="panel-section" data-pane="runs" data-modes="physics">
           <h3>Average annual loss</h3>
           <button class="secondary" id="aalRunBtn" disabled onclick="runAALCompute()">Compute Average Annual Loss &rarr;</button>
           <div id="aalRunBox"></div>
         </div>
 
-        <div class="panel-section" data-pane="runs">
+        <div class="panel-section" data-pane="runs" data-modes="physics">
           <h3>Compare two runs</h3>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <div style="flex:1;min-width:140px;"><label>Run A id</label><input type="text" id="compareRunA" placeholder="run id"></div>
@@ -1174,17 +1178,17 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <div id="compareRunsBox"></div>
         </div>
 
-        <div class="panel-section" data-pane="impact">
+        <div class="panel-section" data-pane="impact" data-modes="physics glof">
           <h3>Buildings &amp; infrastructure</h3>
           <div id="infraBox"><p class="note">Run the flood model first.</p></div>
         </div>
 
-        <div class="panel-section" data-pane="impact">
+        <div class="panel-section" data-pane="impact" data-modes="physics glof">
           <h3>Damage</h3>
           <div id="damageBox"><p class="note">Run the flood model first.</p></div>
         </div>
 
-        <div class="panel-section" data-pane="impact">
+        <div class="panel-section" data-pane="impact" data-modes="physics">
           <h3>Sediment</h3>
           <div>
             <label style="display:flex;align-items:center;gap:6px;font-weight:normal;">
@@ -1198,7 +1202,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <div id="sedimentBox"><p class="note">Run the flood model first.</p></div>
         </div>
 
-        <div class="panel-section" data-pane="mitigate">
+        <div class="panel-section" data-pane="mitigate" data-modes="physics">
           <h3>Nature-based solutions</h3>
           <div>
             <label>Intervention</label>
@@ -1221,7 +1225,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <div id="nbsRecommendBox"></div>
         </div>
 
-        <div class="panel-section" data-pane="mitigate">
+        <div class="panel-section" data-pane="mitigate" data-modes="physics">
           <h3>Protection structures</h3>
           <div id="protectStructList"><p class="note">Draw a line on the map (line tool, top-left) to add a structure.</p></div>
           <button class="secondary" id="protectRunBtn" disabled onclick="runProtectionScenario()">Run protection scenario &rarr;</button>
@@ -1252,8 +1256,8 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         </div>
       </div>
 
-      <div class="tier-content phys-off" data-tier="4">
-        <div class="panel-section">
+      <div class="tier-content" data-tier="4">
+        <div class="panel-section" data-pane="scenario" data-modes="coastal">
           <h3>Coastal / tidal flood (static inundation)</h3>
           <div>
             <label>Water-level source</label>
@@ -1308,7 +1312,8 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <button class="secondary" id="coastalSuscBtn" disabled onclick="runCoastalSusceptibility()">Compute susceptibility &rarr;</button>
           <div id="coastalSuscBox"></div>
 
-          <hr style="margin:16px 0;border-color:#2a3a3e;">
+        </div>
+        <div class="panel-section" data-pane="surge" data-modes="coastal">
           <h3>Fast animated preview (approximate)</h3>
           <div>
             <label>Anchor magnitude to</label>
@@ -1980,25 +1985,42 @@ function loadTier3D(n) {{
 
 // SAILAB Physics only: the old tier switcher is gone. showTier() is kept so existing callers still work;
 // it always shows the physics view, and showPane() switches the side-panel tabs.
+const APP_MODE = document.body.dataset.mode || 'physics';
+const MODE_TABS = {{
+  physics: [['scenario', 'Scenario'], ['runs', 'Runs'], ['impact', 'Impact'], ['mitigate', 'Mitigation']],
+  glof: [['scenario', 'Scenario'], ['runs', 'Runs'], ['impact', 'Impact'], ['glacier', 'Glacier']],
+  coastal: [['scenario', 'Static'], ['surge', 'Surge']]
+}};
+// showTier() is kept so existing callers still work: it shows this page's own 3D view.
 function showTier(n) {{
-  loadTier3D(3);
+  loadTier3D(APP_MODE === 'coastal' ? 4 : 3);
 }}
 function showPane(name) {{
   const rc = document.getElementById('rightCol');
   if (!rc) return;
+  const tabs = MODE_TABS[APP_MODE] || MODE_TABS.physics;
+  if (!tabs.some(t => t[0] === name)) name = tabs[0][0];
   rc.setAttribute('data-pane', name);
   document.querySelectorAll('.ptab').forEach(b => {{
     const on = b.dataset.ptab === name;
     b.classList.toggle('active', on);
     b.setAttribute('aria-selected', on ? 'true' : 'false');
   }});
+  rc.querySelectorAll('[data-pane]').forEach(el => {{
+    const modes = (el.dataset.modes || 'physics').split(' ');
+    el.style.display = (modes.includes(APP_MODE) && el.dataset.pane.split(' ').includes(name)) ? 'block' : 'none';
+  }});
   rc.scrollTop = 0;
-  try {{ sessionStorage.setItem('sailabPane', name); }} catch (e) {{}}
+  try {{ sessionStorage.setItem('sailabPane_' + APP_MODE, name); }} catch (e) {{}}
 }}
 document.addEventListener('DOMContentLoaded', () => {{
-  let p = 'scenario';
-  try {{ p = sessionStorage.getItem('sailabPane') || p; }} catch (e) {{}}
-  showPane(['scenario', 'runs', 'impact', 'mitigate'].includes(p) ? p : 'scenario');
+  const bar = document.getElementById('ptabs');
+  bar.innerHTML = (MODE_TABS[APP_MODE] || MODE_TABS.physics).map(t =>
+    '<button class="ptab" data-ptab="' + t[0] + '" role="tab" onclick="showPane(\\'' + t[0] + '\\')">' + t[1] + '</button>').join('');
+  if (APP_MODE === 'glof') {{ document.getElementById('rainMmHr').value = '0'; document.getElementById('durationHr').value = '1'; }}
+  let p = '';
+  try {{ p = sessionStorage.getItem('sailabPane_' + APP_MODE) || ''; }} catch (e) {{}}
+  showPane(p);
 }});
 
 // Generic poller for the async job endpoints (design storm / climate
@@ -4475,9 +4497,49 @@ def landing_assets(rel):
     return send_from_directory(os.path.join(BASE_DIR, "landing_assets"), rel, max_age=3600)
 
 
+APP_MODES = {
+    "physics": {"title": "SAILAB Physics", "welcome": (
+        "<li><b>Physical flood model</b>The full GPU solver: depth and speed through the storm.</li>"
+        "<li><b>Impact and loss</b>Buildings, roads and facilities at risk, with loss in PKR.</li>"
+        "<li><b>Mitigation</b>Test nature-based solutions and protection structures.</li>")},
+    "glof": {"title": "SAILAB GLOF", "welcome": (
+        "<li><b>Glacial lake outburst</b>Pick a lake and get a peak discharge from published methods.</li>"
+        "<li><b>Real events</b>Documented outbursts and glacier speed near your area.</li>"
+        "<li><b>Impact</b>Buildings, roads and facilities in the flood path.</li>")},
+    "coastal": {"title": "SAILAB Coastal", "welcome": (
+        "<li><b>Storm surge and tide</b>Return-period water levels from tide-gauge and model data.</li>"
+        "<li><b>Sea-level rise</b>Add rise to any level and see the flooded coast.</li>"
+        "<li><b>Animated surge</b>A fast preview, or a full physics run of a real surge.</li>")},
+}
+
+
+def _app_page(mode):
+    """The same app shell for the three modelling pages; the body's data-mode decides which panels and tabs show."""
+    cfg = APP_MODES[mode]
+    html = PAGE.replace('<body class="view-hidden">', '<body class="view-hidden" data-mode="%s">' % mode, 1)
+    links = [("instant", "/instant", "Instant"), ("physics", "/app", "Physics"), ("glof", "/glof", "GLOF"), ("coastal", "/coastal", "Coastal")]
+    nav = '<div class="hdr-nav">' + "".join('<a href="%s"%s>%s</a>' % (u, ' class="on"' if k == mode else "", n) for k, u, n in links) + "</div>"
+    html = html.replace("<!--MODENAV-->", nav, 1)
+    html = html.replace("<title>%s</title>" % MODEL_NAME, "<title>%s</title>" % cfg["title"], 1)
+    if cfg["welcome"]:
+        html = re.sub(r'(<div class="wl">\s*<h2>[^<]*</h2>\s*)<ul>.*?</ul>', lambda m: m.group(1) + "<ul>" + cfg["welcome"] + "</ul>", html, count=1, flags=re.S)
+        html = html.replace("<h2>%s</h2>" % MODEL_NAME, "<h2>%s</h2>" % cfg["title"], 1)
+    return html
+
+
 @app.route("/app")
 def main_app():
-    return PAGE
+    return _app_page("physics")
+
+
+@app.route("/glof")
+def glof_page():
+    return _app_page("glof")
+
+
+@app.route("/coastal")
+def coastal_page():
+    return _app_page("coastal")
 
 
 @app.route("/instant")

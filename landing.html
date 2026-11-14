@@ -500,8 +500,8 @@ footer .sp{margin-left:auto}
     <a href="#y2022" data-go>2022</a>
     <a href="#depth" data-go>Depth</a>
     <a href="#caps" data-go>Capabilities</a>
-    <a href="#modes" data-go>Two ways to solve</a>
-    <a class="btn p" href="/app">SAILAB Physics</a>
+    <a href="#modes" data-go>Modes</a>
+    <a class="btn p" href="/instant">SAILAB Instant</a>
   </nav>
 </header>
 
@@ -741,9 +741,9 @@ footer .sp{margin-left:auto}
     <div class="panel intro-p">
       <div class="tex-layer" style="--tex-bg:#0B2F43;--wash:url(/landing-assets/img/wash-prussian.jpg);--tp:10% 40%" aria-hidden="true"><i></i></div>
       <div>
-        <span class="micro sec-tag"><b>04</b> Two ways to solve</span>
-        <h2 class="disp">Two ways to solve.<br><em>One map.</em></h2>
-        <p>Solve it fast with a terrain-based estimate, or solve it properly with the full 2D physics model. Either way you draw one area and see the result on one map.</p>
+        <span class="micro sec-tag"><b>04</b> Modes</span>
+        <h2 class="disp">Four modes.<br><em>One map.</em></h2>
+        <p>Instant and Physics are two ways to solve a flood: a fast terrain-based estimate, or the full 2D model. GLOF and Coastal add the inputs for glacial lake outbursts and storm surge. Draw one area and see the result on one map.</p>
         <div class="hint micro"><i></i>Keep scrolling</div>
       </div>
     </div>
@@ -751,7 +751,7 @@ footer .sp{margin-left:auto}
     <div class="panel">
       <div class="p-bg"><video muted loop playsinline preload="none" data-src="/landing-assets/video/mode-2d.mp4"></video></div>
       <div class="m-copy">
-        <span class="ix"><b>01</b> / 02</span>
+        <span class="ix"><b>01</b> / 04</span>
         <h3>SAILAB <em>Physics</em></h3>
         <span class="eng">lisflood-fp</span>
         <p>The full 2D shallow-water run on the GPU, with real buildings, roads and facilities, loss in rupees and protection scenarios. This is the reference result.</p>
@@ -766,7 +766,7 @@ footer .sp{margin-left:auto}
     <div class="panel">
       <div class="p-bg"><video muted loop playsinline preload="none" data-src="/landing-assets/video/mode-instant.mp4"></video></div>
       <div class="m-copy">
-        <span class="ix"><b>02</b> / 02</span>
+        <span class="ix"><b>02</b> / 04</span>
         <h3>SAILAB <em>Instant</em></h3>
         <span class="eng">hand</span>
         <p>A terrain-based estimate (height above nearest drainage) that answers in seconds, for when the call is happening now and a full run would arrive too late. It is an upper estimate, not a physics result.</p>
@@ -782,6 +782,57 @@ footer .sp{margin-left:auto}
           <text class="vt s" x="10" y="286">HAND 1 m</text><text class="vt s" x="10" y="246">HAND 2 m</text><text class="vt s" x="10" y="206">HAND 3 m</text>
           <circle cx="300" cy="315" r="5" fill="#8E938C"/><text class="vt s" x="312" y="350">nearest drainage</text>
           <g class="i-clock"><rect x="470" y="24" width="106" height="30" rx="4" fill="rgba(92,209,202,.18)"/><text x="484" y="44" style="font-family:var(--mono);font-size:12px;fill:#5CD1CA">answer · 0.9 s</text></g>
+        </svg></div>
+    </div>
+
+    <div class="panel">
+      <div class="p-bg"><video muted loop playsinline preload="none" data-src="/landing-assets/video/mode-glof.mp4"></video></div>
+      <div class="m-copy">
+        <span class="ix"><b>03</b> / 04</span>
+        <h3>SAILAB <em>GLOF</em></h3>
+        <span class="eng">lisflood-fp</span>
+        <p>Pick a glacial lake in the north, get a peak discharge from published methods, and route the flood down the valley to the buildings and roads in its path.</p>
+        <div class="chips"><span>Shishper 2022</span><span>HydroLAKES</span><span>PMD lake inventory</span><span>Past events</span></div>
+        <div class="m-meta"><div><span class="micro">Discharge</span><b>Popov 1991</b></div><div><span class="micro">Routing</span><b>2D physics</b></div></div>
+        <a class="btn m-open" href="/glof">Open SAILAB GLOF <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="viz"><div class="vh"><span class="micro">lisflood-fp · valley</span><span class="flag">ILLUSTRATIVE</span></div>
+        <svg viewBox="0 0 600 400" class="anim" aria-hidden="true">
+          <path d="M0 260L70 120L130 160L200 40L290 150L360 90L450 170L540 70L600 120V400H0Z" fill="#4A524F"/>
+          <path d="M200 40L170 98L188 92L204 110L222 92L242 104Z M540 70L515 112L532 106L548 120L566 102Z" fill="#ECEBE6" opacity=".92"/>
+          <path d="M0 330L90 230L170 250L260 210L360 270L460 250L600 300V400H0Z" fill="#2E3532"/>
+          <ellipse class="gl-lake" cx="150" cy="150" rx="48" ry="14" fill="#7E9A8E"/>
+          <path class="gl-flow" d="M190 152C250 170 240 220 310 240S430 280 470 320S560 372 610 384" fill="none" stroke="#76918A" stroke-width="10" stroke-linecap="round"/>
+          <path class="gl-flow" d="M190 152C250 170 240 220 310 240S430 280 470 320S560 372 610 384" fill="none" stroke="#DCE5E0" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+          <circle cx="318" cy="244" r="4" fill="#fff"/><circle cx="476" cy="324" r="4" fill="#fff"/>
+          <circle class="ring gl-r1" cx="318" cy="244" r="18" stroke="#D94436"/>
+          <circle class="ring gl-r2" cx="476" cy="324" r="18" stroke="#E9B425"/>
+          <text class="vt s" x="108" y="128">glacial lake</text><text class="vt s" x="330" y="236">first village</text>
+        </svg></div>
+    </div>
+
+    <div class="panel">
+      <div class="p-bg"><video muted loop playsinline preload="none" data-src="/landing-assets/video/mode-coastal.mp4"></video></div>
+      <div class="m-copy">
+        <span class="ix"><b>04</b> / 04</span>
+        <h3>SAILAB <em>Coastal</em></h3>
+        <span class="eng">surge</span>
+        <p>Storm surge, tide and sea-level rise along the coast: return-period water levels, an animated surge, and a susceptibility map of the low coast.</p>
+        <div class="chips"><span>Return period</span><span>Tide and surge</span><span>Sea-level rise</span><span>Susceptibility</span></div>
+        <div class="m-meta"><div><span class="micro">Static</span><b>bathtub</b></div><div><span class="micro">Dynamic</span><b>LISFLOOD-FP</b></div></div>
+        <a class="btn m-open" href="/coastal">Open SAILAB Coastal <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="viz"><div class="vh"><span class="micro">surge · shoreline</span><span class="flag">ILLUSTRATIVE</span></div>
+        <svg viewBox="0 0 600 400" class="anim" aria-hidden="true">
+          <path class="terr" d="M180 400V312Q260 300 330 268T600 196V400Z"/>
+          <g fill="none" stroke="rgba(236,235,230,.85)" stroke-width="1.6"><path d="M360 262V244L374 232L388 244V258"/><path d="M450 236V218L464 206L478 218V232"/><path d="M530 214V196L544 184L558 196V210"/></g>
+          <g class="co-sea">
+            <rect x="0" y="300" width="600" height="180" fill="#6F7A6E" opacity=".85"/>
+            <svg x="0" y="288" width="600" height="16" viewBox="0 0 600 16" preserveAspectRatio="none" overflow="hidden">
+              <path class="co-wave" fill="#A5ADA2" d="M0 8C50 0 100 16 150 8S250 0 300 8 400 16 450 8 550 0 600 8 700 16 750 8 850 0 900 8 1000 16 1050 8 1150 0 1200 8V16H0Z"/></svg>
+          </g>
+          <g stroke="rgba(236,235,230,.5)" stroke-dasharray="5 6"><path d="M0 300H600M0 274H600M0 248H600"/></g>
+          <text class="vt s" x="10" y="296">today</text><text class="vt s" x="10" y="270">2050</text><text class="vt s" x="10" y="244">2080</text><text class="vt s" x="10" y="218">+ surge</text>
         </svg></div>
     </div>
   </div>

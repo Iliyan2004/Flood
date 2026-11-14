@@ -27,8 +27,8 @@ sub('for six flood hazards across Pakistan.', 'with a fast estimate in seconds a
 sub('SAILAB v2.2 · interface study', 'SAILAB v__APP_VERSION__')
 
 # --- nav ----------------------------------------------------------------------------------------
-sub('<a class="btn p" href="modes.html">Open the console</a>\n  </nav>', '<a class="btn p" href="/app">SAILAB Physics</a>\n  </nav>')
-sub('<a href="#modes" data-go>Modes</a>', '<a href="#modes" data-go>Two ways to solve</a>')
+sub('<a class="btn p" href="modes.html">Open the console</a>\n  </nav>', '<a class="btn p" href="/instant">SAILAB Instant</a>\n  </nav>')
+sub('<a href="#modes" data-go>Modes</a>', '<a href="#modes" data-go>Modes</a>')
 
 # --- hero ---------------------------------------------------------------------------------------
 sub('<p class="acro-full">[SAILAB full form goes here]</p>', '<p class="acro-full">' + FULL + '</p>')
@@ -83,21 +83,34 @@ m = re.search(r'<section id="modes">.*?</section>', h, re.S).group(0)
 panels = re.findall(r'    <div class="panel">.*?\n    </div>\n(?=\n    <div class="panel">|  </div>\n  <div class="m-dots")', m, re.S)
 assert len(panels) == 6, len(panels)
 p2d, pins = panels[0], panels[1]
-p2d = p2d.replace('<b>01</b> / 06', '<b>01</b> / 02').replace('<h3>2D Flood <em>modelling</em></h3>', '<h3>SAILAB <em>Physics</em></h3>')
+p2d = p2d.replace('<b>01</b> / 06', '<b>01</b> / 04').replace('<h3>2D Flood <em>modelling</em></h3>', '<h3>SAILAB <em>Physics</em></h3>')
 p2d = re.sub(r'<span class="eng">.*?</span>', '<span class="eng">lisflood-fp</span>', p2d, 1)
 p2d = re.sub(r'<p>Full shallow-water.*?</p>', '<p>The full 2D shallow-water run on the GPU, with real buildings, roads and facilities, loss in rupees and protection scenarios. This is the reference result.</p>', p2d, 1, re.S)
 p2d = re.sub(r'<div class="chips">.*?</div>', '<div class="chips"><span>Design storm</span><span>Rain-gauge file</span><span>River inflow</span><span>Protection</span></div>', p2d, 1, re.S)
 p2d = re.sub(r'<div class="m-meta">.*?</div></div>', '<div class="m-meta"><div><span class="micro">Solver</span><b>LISFLOOD-FP</b></div><div><span class="micro">Grid</span><b>~30 m</b></div></div>', p2d, 1, re.S)
 p2d = p2d.replace('href="modes.html#2d">Open 2D Flood', 'href="/app">Open SAILAB Physics').replace('swe2d · Charsadda', 'lisflood-fp · example grid')
-pins = pins.replace('<b>02</b> / 06', '<b>02</b> / 02').replace('<h3>Instant</h3>', '<h3>SAILAB <em>Instant</em></h3>')
+pins = pins.replace('<b>02</b> / 06', '<b>02</b> / 04').replace('<h3>Instant</h3>', '<h3>SAILAB <em>Instant</em></h3>')
 pins = re.sub(r'<span class="eng">.*?</span>', '<span class="eng">hand</span>', pins, 1)
 pins = re.sub(r'<p>A height-above-drainage.*?</p>', '<p>A terrain-based estimate (height above nearest drainage) that answers in seconds, for when the call is happening now and a full run would arrive too late. It is an upper estimate, not a physics result.</p>', pins, 1, re.S)
 pins = re.sub(r'<div class="chips">.*?</div>', '<div class="chips"><span>Moderate rain</span><span>Extreme rain</span><span>Your own rain</span><span>3D view</span></div>', pins, 1, re.S)
 pins = pins.replace('href="modes.html#instant">Open Instant', 'href="/instant">Open SAILAB Instant')
 intro = re.search(r'    <div class="panel intro-p">.*?\n    </div>\n', m, re.S).group(0)
-intro = intro.replace('<b>04</b> Modes', '<b>04</b> Two ways to solve').replace('Six hazards.<br><em>One console.</em>', 'Two ways to solve.<br><em>One map.</em>')
-intro = re.sub(r'<p>Each mode has.*?</p>', '<p>Solve it fast with a terrain-based estimate, or solve it properly with the full 2D physics model. Either way you draw one area and see the result on one map.</p>', intro, 1, re.S)
-new_modes = ('<section id="modes">\n  <div class="m-track" id="mTrack">\n' + intro + '\n' + p2d + '\n' + pins + '  </div>\n'
+intro = intro.replace('<b>04</b> Modes', '<b>04</b> Modes').replace('Six hazards.<br><em>One console.</em>', 'Four modes.<br><em>One map.</em>')
+intro = re.sub(r'<p>Each mode has.*?</p>', '<p>Instant and Physics are two ways to solve a flood: a fast terrain-based estimate, or the full 2D model. GLOF and Coastal add the inputs for glacial lake outbursts and storm surge. Draw one area and see the result on one map.</p>', intro, 1, re.S)
+# GLOF and Coastal panels (reference panels 3 and 4), reworded to what the app does
+pgl = panels[3].replace('<b>04</b> / 06', '<b>03</b> / 04').replace('<h3>GLOF</h3>', '<h3>SAILAB <em>GLOF</em></h3>')
+pgl = re.sub(r'<span class="eng">.*?</span>', '<span class="eng">lisflood-fp</span>', pgl, 1)
+pgl = re.sub(r'<p>Glacial lake outburst floods.*?</p>', '<p>Pick a glacial lake in the north, get a peak discharge from published methods, and route the flood down the valley to the buildings and roads in its path.</p>', pgl, 1, re.S)
+pgl = re.sub(r'<div class="chips">.*?</div>', '<div class="chips"><span>Shishper 2022</span><span>HydroLAKES</span><span>PMD lake inventory</span><span>Past events</span></div>', pgl, 1, re.S)
+pgl = re.sub(r'<div class="m-meta">.*?</div></div>', '<div class="m-meta"><div><span class="micro">Discharge</span><b>Popov 1991</b></div><div><span class="micro">Routing</span><b>2D physics</b></div></div>', pgl, 1, re.S)
+pgl = pgl.replace('href="modes.html#glof">Open GLOF', 'href="/glof">Open SAILAB GLOF').replace('swe2d_breach · valley', 'lisflood-fp · valley')
+pco = panels[4].replace('<b>05</b> / 06', '<b>04</b> / 04').replace('<h3>Coastal</h3>', '<h3>SAILAB <em>Coastal</em></h3>')
+pco = re.sub(r'<span class="eng">.*?</span>', '<span class="eng">surge</span>', pco, 1)
+pco = re.sub(r'<p>Storm surge and sea-level rise.*?</p>', '<p>Storm surge, tide and sea-level rise along the coast: return-period water levels, an animated surge, and a susceptibility map of the low coast.</p>', pco, 1, re.S)
+pco = re.sub(r'<div class="chips">.*?</div>', '<div class="chips"><span>Return period</span><span>Tide and surge</span><span>Sea-level rise</span><span>Susceptibility</span></div>', pco, 1, re.S)
+pco = re.sub(r'<div class="m-meta">.*?</div></div>', '<div class="m-meta"><div><span class="micro">Static</span><b>bathtub</b></div><div><span class="micro">Dynamic</span><b>LISFLOOD-FP</b></div></div>', pco, 1, re.S)
+pco = pco.replace('href="modes.html#coastal">Open Coastal', 'href="/coastal">Open SAILAB Coastal').replace('surge_static · shoreline', 'surge · shoreline')
+new_modes = ('<section id="modes">\n  <div class="m-track" id="mTrack">\n' + intro + '\n' + p2d + '\n' + pins + '\n' + pgl + '\n' + pco + '  </div>\n'
              '  <div class="m-dots" id="mDots" aria-label="Modes"></div>\n  <div class="m-count micro" id="mCount">Modes</div>\n</section>')
 h = h.replace(m, new_modes)
 

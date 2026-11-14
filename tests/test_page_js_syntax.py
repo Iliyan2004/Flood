@@ -9,9 +9,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
-def test_served_page_inline_javascript_parses():
+@pytest.mark.parametrize("path", ["/app", "/glof", "/coastal"])
+def test_served_page_inline_javascript_parses(path):
     import fis_app
-    html = fis_app.app.test_client().get("/app").get_data(as_text=True)
+    html = fis_app.app.test_client().get(path).get_data(as_text=True)
     scripts = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S)
     assert scripts, "page has no inline script at all"
     for i, js in enumerate(scripts):
