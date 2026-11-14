@@ -686,7 +686,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
   <header>
     <div class="brand"><a href="/" title="{MODEL_TAGLINE}" style="color:inherit;text-decoration:none;">{MODEL_NAME}</a> <small style="font-size:10px;opacity:.6;font-weight:500;letter-spacing:.04em;" title="SAILAB version">v{APP_VERSION}</small></div>
     <div id="geocoderSlot">
-      <input id="geoInput" type="text" placeholder="Search for a place or a real Pakistan tehsil..." autocomplete="off">
+      <input id="geoInput" type="text" placeholder="Search a place, address, tehsil or coordinates" autocomplete="off">
       <div id="geoResults"></div>
     </div>
     <div class="layer-switch">
@@ -1728,9 +1728,47 @@ const geoInput = document.getElementById('geoInput');
 const geoResults = document.getElementById('geoResults');
 let geoDebounce = null, geoFeatures = [], geoSelIdx = -1;
 
+const PK = {{ latMin: 23.5, latMax: 37.2, lonMin: 60.8, lonMax: 77.9 }};
+function parseLatLon(q) {{
+  const t = q.replace(/[,;]/g, ' ').replace(/\\s+/g, ' ').trim();
+  const dms = /(\\d+(?:\\.\\d+)?)\\s*(?:°|d|º)\\s*(?:(\\d+(?:\\.\\d+)?)\\s*(?:'|′|m)\\s*(?:(\\d+(?:\\.\\d+)?)\\s*(?:"|″|s|'')\\s*)?)?([NSEWnsew])?/g;
+  const found = []; let m;
+  while ((m = dms.exec(t)) !== null) {{
+    let v = parseFloat(m[1]) + (m[2] ? parseFloat(m[2]) / 60 : 0) + (m[3] ? parseFloat(m[3]) / 3600 : 0);
+    const h = m[4] ? m[4].toUpperCase() : null;
+    if (h === 'S' || h === 'W') v = -v;
+    found.push({{ v, h }});
+  }}
+  if (found.length !== 2) {{
+    const dec = /^(-?\\d+(?:\\.\\d+)?)\\s*([NSEWnsew])?\\s+(-?\\d+(?:\\.\\d+)?)\\s*([NSEWnsew])?$/.exec(t);
+    if (!dec) return null;
+    const mk = (v, h) => {{ h = h ? h.toUpperCase() : null; v = parseFloat(v); return {{ v: (h === 'S' || h === 'W') ? -Math.abs(v) : v, h }}; }};
+    found.length = 0; found.push(mk(dec[1], dec[2]), mk(dec[3], dec[4]));
+  }}
+  let [a, b] = found, lat, lon;
+  if (a.h && b.h) {{ if ('NS'.includes(a.h) && 'EW'.includes(b.h)) {{ lat = a.v; lon = b.v; }} else if ('EW'.includes(a.h) && 'NS'.includes(b.h)) {{ lon = a.v; lat = b.v; }} else return null; }}
+  else if (a.v >= PK.latMin && a.v <= PK.latMax && b.v >= PK.lonMin && b.v <= PK.lonMax) {{ lat = a.v; lon = b.v; }}
+  else if (b.v >= PK.latMin && b.v <= PK.latMax && a.v >= PK.lonMin && a.v <= PK.lonMax) {{ lat = b.v; lon = a.v; }}
+  else {{ lat = a.v; lon = b.v; }}
+  if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180)) return null;
+  return {{ lat, lon, inPakistan: lat >= PK.latMin && lat <= PK.latMax && lon >= PK.lonMin && lon <= PK.lonMax }};
+}}
+const fmtCoord = (lat, lon) => Math.abs(lat).toFixed(4) + '°' + (lat >= 0 ? 'N' : 'S') + ', ' + Math.abs(lon).toFixed(4) + '°' + (lon >= 0 ? 'E' : 'W');
+// size of the box to analyse for a search hit: streets, addresses and shops are small, neighbourhoods follow their own outline
+function boxKmFor(f) {{
+  const types = f.place_type || [];
+  if (types.includes('address') || types.includes('poi')) return 0.6;
+  if (f.bbox && (types.includes('neighborhood') || types.includes('locality') || types.includes('postcode'))) {{
+    const km = Math.max((f.bbox[2] - f.bbox[0]) * 111.32 * Math.cos(f.center[1] * Math.PI / 180), (f.bbox[3] - f.bbox[1]) * 111.32);
+    return Math.min(8, Math.max(1, km));
+  }}
+  return 6;
+}}
+
+
 function geoRender() {{
   geoResults.innerHTML = geoFeatures.map((f, i) =>
-    `<div class="geo-item${{i === geoSelIdx ? ' sel' : ''}}" data-i="${{i}}">${{f.kind === 'tehsil' ? '<b>Tehsil:</b> ' : ''}}${{f.place_name}}</div>`
+    `<div class="geo-item${{i === geoSelIdx ? ' sel' : ''}}" data-i="${{i}}">${{f.kind === 'tehsil' ? '<b>Tehsil:</b> ' : (f.kind === 'coord' ? '<b>Coordinates:</b> ' : '')}}${{f.place_name}}</div>`
   ).join('');
   geoResults.classList.toggle('open', geoFeatures.length > 0);
 }}
@@ -1739,6 +1777,16 @@ function geoRender() {{
 // the AOI (same real setArea/MapboxDraw wiring uploadShape() already
 // uses for an uploaded shapefile/.geojson) -- a real administrative area
 // a user already knows the name of shouldn't need to be hand-traced.
+function geoSetBox(lon, lat, km) {{
+  const dl = km / 2 / 111.32, dn = dl / Math.cos(lat * Math.PI / 180);
+  const geometry = {{type: 'Polygon', coordinates: [[[lon - dn, lat - dl], [lon + dn, lat - dl], [lon + dn, lat + dl], [lon - dn, lat + dl], [lon - dn, lat - dl]]]}};
+  draw.getAll().features.forEach(other => {{ if (other.geometry.type === 'Polygon') draw.delete(other.id); }});
+  draw.add({{type: 'Feature', properties: {{}}, geometry}});
+  fetch('/area/polygon', {{method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{geometry}})}})
+    .then(r => r.json()).then(a => setArea(geometry, a.area_km2));
+  map.fitBounds([[lon - dn, lat - dl], [lon + dn, lat + dl]], {{padding: 80, duration: 1500}});
+}}
+
 function geoGoToTehsil(tehsilId, displayName) {{
   fetch('/tehsils/' + tehsilId).then(r => r.json()).then(d => {{
     if (d.error) {{ alert(d.error); return; }}
@@ -1811,7 +1859,11 @@ function geoGoTo(feature) {{
   geoRender();
   geoInput.blur();
   if (feature.kind === 'tehsil') {{ geoGoToTehsil(feature.id, feature.place_name); return; }}
-  if (feature.bbox) {{
+  if (feature.kind === 'coord') {{ if (feature.lat != null) geoSetBox(feature.lon, feature.lat, 1); return; }}
+  const types = feature.place_type || [];
+  if (types.includes('address') || types.includes('poi')) {{
+    map.flyTo({{ center: feature.center, zoom: 16.5, duration: 1500 }});
+  }} else if (feature.bbox) {{
     map.fitBounds([[feature.bbox[0], feature.bbox[1]], [feature.bbox[2], feature.bbox[3]]], {{ padding: 60, duration: 1500 }});
   }} else {{
     map.flyTo({{ center: feature.center, zoom: 11, duration: 1500 }});
@@ -1824,7 +1876,7 @@ geoInput.addEventListener('input', () => {{
   if (q.length < 2) {{ geoFeatures = []; geoRender(); return; }}
   geoDebounce = setTimeout(() => {{
     const placesUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${{encodeURIComponent(q)}}.json` +
-      `?access_token=${{encodeURIComponent(MAPBOX_TOKEN)}}&limit=5&bbox=60.87,23.63,77.84,37.13`;
+      `?access_token=${{encodeURIComponent(MAPBOX_TOKEN)}}&limit=8&bbox=60.87,23.63,77.84,37.13&proximity=${{map.getCenter().lng.toFixed(4)}},${{map.getCenter().lat.toFixed(4)}}`;
     const tehsilUrl = `/tehsils/search?q=${{encodeURIComponent(q)}}`;
     Promise.all([
       fetch(placesUrl).then(r => r.json()).catch(() => ({{features: []}})),
@@ -1839,7 +1891,11 @@ geoInput.addEventListener('input', () => {{
           (t.province ? ' (' + t.province + ')' : ''),
       }}));
       const placeFeatures = (placeData.features || []).map(f => Object.assign({{kind: 'place'}}, f));
-      geoFeatures = tehsilFeatures.concat(placeFeatures);
+      const ll = parseLatLon(q);
+      const coordFeatures = !ll ? [] : (ll.inPakistan
+        ? [{{kind: 'coord', lat: ll.lat, lon: ll.lon, place_name: fmtCoord(ll.lat, ll.lon) + ' (1 km area)'}}]
+        : [{{kind: 'coord', lat: null, lon: null, place_name: fmtCoord(ll.lat, ll.lon) + ' is outside Pakistan'}}]);
+      geoFeatures = coordFeatures.concat(tehsilFeatures, placeFeatures);
       geoSelIdx = -1;
       geoRender();
     }});
@@ -1848,7 +1904,7 @@ geoInput.addEventListener('input', () => {{
 geoInput.addEventListener('keydown', (e) => {{
   if (e.key === 'ArrowDown') {{ geoSelIdx = Math.min(geoSelIdx + 1, geoFeatures.length - 1); geoRender(); e.preventDefault(); }}
   else if (e.key === 'ArrowUp') {{ geoSelIdx = Math.max(geoSelIdx - 1, 0); geoRender(); e.preventDefault(); }}
-  else if (e.key === 'Enter') {{ if (geoSelIdx >= 0) geoGoTo(geoFeatures[geoSelIdx]); }}
+  else if (e.key === 'Enter') {{ if (geoSelIdx >= 0) geoGoTo(geoFeatures[geoSelIdx]); else {{ const ll = parseLatLon(geoInput.value.trim()); if (ll && ll.inPakistan) geoGoTo({{kind: 'coord', lat: ll.lat, lon: ll.lon, place_name: fmtCoord(ll.lat, ll.lon)}}); }} }}
   else if (e.key === 'Escape') {{ geoFeatures = []; geoRender(); }}
 }});
 geoResults.addEventListener('mousedown', (e) => {{
@@ -3987,7 +4043,11 @@ function runModel() {{
       return;
     }}
     currentRunId = d.run_id;
+    document.getElementById('statusNote').textContent = '';
     pollStatus();
+  }}).catch(e => {{
+    document.getElementById('statusNote').textContent = 'Could not start the run: ' + e;
+    document.getElementById('runBtn').disabled = false;
   }});
 }}
 
@@ -4171,6 +4231,8 @@ function pollStatus() {{
   fetch('/runs/' + currentRunId + '/progress.json').then(r => r.json()).then(d => {{
     const box = document.getElementById('runStatusBox');
     if (d.status === 'done') {{
+      document.getElementById('runBtn').disabled = false;
+      document.getElementById('statusNote').textContent = '';
       box.innerHTML = '<h3>Complete</h3>' +
         '<div class="stat-row"><span>Flooded area</span><span>' + d.summary.flooded_area_km2.toFixed(3) + ' km²</span></div>' +
         '<div class="stat-row"><span>Max depth</span><span>' + d.summary.max_depth_m.toFixed(2) + ' m</span></div>' +
@@ -4922,7 +4984,6 @@ INSTANT_DEPTH_BINS = [  # lower edge (m), RGB -- same steps as the legend on the
     (0.05, (176, 224, 245)), (0.10, (140, 200, 240)), (0.25, (86, 166, 226)), (0.50, (34, 126, 204)),
     (1.00, (16, 90, 170)), (2.00, (10, 56, 120)), (5.00, (6, 30, 78)),
 ]
-INSTANT_DEPTH_FRACTIONS = [0.0, 0.05, 0.10, 0.20, 0.35, 0.55, 0.80]   # class lower edges as a share of the deepest water
 
 
 @app.route("/area/instant-flood-overlay", methods=["POST"])
@@ -4979,10 +5040,7 @@ def area_instant_flood_overlay():
     if (nrows, ncols) != (int(header["nrows"]), int(header["ncols"])):
         return jsonify({"error": "terrain grid and cached header disagree; clear this area's cache and retry"}), 400
     rgba = np.zeros((nrows, ncols, 4), dtype="uint8")
-    # relative legend: the class edges are fractions of THIS result's deepest water, so the colours always span
-    # the result (a 0.3 m flood and a 5 m flood both use the whole ramp); 0.05 m stays the wet threshold
-    dmax = float(depth.max())
-    edges = [max(0.05, dmax * f) for f in INSTANT_DEPTH_FRACTIONS]
+    edges = [lo for lo, _ in INSTANT_DEPTH_BINS]   # fixed depth classes: a colour always means the same depth
     for lo, (_, rgb) in zip(edges, INSTANT_DEPTH_BINS):
         m = depth >= lo
         rgba[m, 0], rgba[m, 1], rgba[m, 2], rgba[m, 3] = rgb[0], rgb[1], rgb[2], 215

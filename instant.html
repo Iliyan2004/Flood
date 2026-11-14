@@ -124,7 +124,7 @@
 <div id="bar" class="glass">
   <a class="brand" href="/">SAILAB</a><span class="pill">Instant</span>
   <div class="searchbox">
-    <input type="text" id="barSearch" placeholder="Search a place or tehsil in Pakistan" autocomplete="off" aria-label="Search a place or tehsil">
+    <input type="text" id="barSearch" placeholder="Search a place, address, tehsil or coordinates" autocomplete="off" aria-label="Search a place or tehsil">
     <div class="hits" id="barHits"></div>
   </div>
   <div class="spacer">
@@ -166,13 +166,13 @@
     <div class="stat"><span>Deepest water</span><strong id="sDepth">&ndash;</strong></div>
   </div>
   <div id="depthGuide"></div>
-  <label id="learnedRow" style="display:flex;gap:8px;align-items:center;font-size:12px;margin:6px 0;cursor:pointer"><input type="checkbox" id="learned"> Learned model (beta)</label>
   <p id="sNote"></p>
 </div>
 
 <div id="legend" class="glass">
   <h4>Flood depth (m)</h4>
-  <span id="legendRows"></span>
+  <div><i style="background:#b0e0f5"></i>0.05</div><div><i style="background:#8cc8f0"></i>0.1</div><div><i style="background:#56a6e2"></i>0.25</div>
+  <div><i style="background:#227ecc"></i>0.5</div><div><i style="background:#105aaa"></i>1</div><div><i style="background:#0a3878"></i>2</div><div><i style="background:#061e4e"></i>5</div>
 </div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
@@ -211,6 +211,44 @@ const boxAround = (lon, lat, km) => { const dl = km / 2 / 111.32, dn = dl / Math
   return { type: 'Polygon', coordinates: [[[lon - dn, lat - dl], [lon + dn, lat - dl], [lon + dn, lat + dl], [lon - dn, lat + dl], [lon - dn, lat - dl]]] }; };
 const boundsOf = g => { const b = new mapboxgl.LngLatBounds(); (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).forEach(p => p[0].forEach(c => b.extend(c))); return b; };
 
+// ---------- coordinates: 33.67, 73.07 | 33.67N 73.07E | 33°40'12"N 73°04'12"E | 73.07, 33.67 ----------
+const PK = { latMin: 23.5, latMax: 37.2, lonMin: 60.8, lonMax: 77.9 };
+function parseLatLon(q) {
+  const t = q.replace(/[,;]/g, ' ').replace(/\s+/g, ' ').trim();
+  const dms = /(\d+(?:\.\d+)?)\s*(?:°|d|º)\s*(?:(\d+(?:\.\d+)?)\s*(?:'|′|m)\s*(?:(\d+(?:\.\d+)?)\s*(?:"|″|s|'')\s*)?)?([NSEWnsew])?/g;
+  const found = []; let m;
+  while ((m = dms.exec(t)) !== null) {
+    let v = parseFloat(m[1]) + (m[2] ? parseFloat(m[2]) / 60 : 0) + (m[3] ? parseFloat(m[3]) / 3600 : 0);
+    const h = m[4] ? m[4].toUpperCase() : null;
+    if (h === 'S' || h === 'W') v = -v;
+    found.push({ v, h });
+  }
+  if (found.length !== 2) {
+    const dec = /^(-?\d+(?:\.\d+)?)\s*([NSEWnsew])?\s+(-?\d+(?:\.\d+)?)\s*([NSEWnsew])?$/.exec(t);
+    if (!dec) return null;
+    const mk = (v, h) => { h = h ? h.toUpperCase() : null; v = parseFloat(v); return { v: (h === 'S' || h === 'W') ? -Math.abs(v) : v, h }; };
+    found.length = 0; found.push(mk(dec[1], dec[2]), mk(dec[3], dec[4]));
+  }
+  let [a, b] = found, lat, lon;
+  if (a.h && b.h) { if ('NS'.includes(a.h) && 'EW'.includes(b.h)) { lat = a.v; lon = b.v; } else if ('EW'.includes(a.h) && 'NS'.includes(b.h)) { lon = a.v; lat = b.v; } else return null; }
+  else if (a.v >= PK.latMin && a.v <= PK.latMax && b.v >= PK.lonMin && b.v <= PK.lonMax) { lat = a.v; lon = b.v; }
+  else if (b.v >= PK.latMin && b.v <= PK.latMax && a.v >= PK.lonMin && a.v <= PK.lonMax) { lat = b.v; lon = a.v; }
+  else { lat = a.v; lon = b.v; }
+  if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180)) return null;
+  return { lat, lon, inPakistan: lat >= PK.latMin && lat <= PK.latMax && lon >= PK.lonMin && lon <= PK.lonMax };
+}
+const fmtCoord = (lat, lon) => Math.abs(lat).toFixed(4) + '°' + (lat >= 0 ? 'N' : 'S') + ', ' + Math.abs(lon).toFixed(4) + '°' + (lon >= 0 ? 'E' : 'W');
+// size of the box to analyse for a search hit: streets, addresses and shops are small, neighbourhoods follow their own outline
+function boxKmFor(f) {
+  const types = f.place_type || [];
+  if (types.includes('address') || types.includes('poi')) return 0.6;
+  if (f.bbox && (types.includes('neighborhood') || types.includes('locality') || types.includes('postcode'))) {
+    const km = Math.max((f.bbox[2] - f.bbox[0]) * 111.32 * Math.cos(f.center[1] * Math.PI / 180), (f.bbox[3] - f.bbox[1]) * 111.32);
+    return Math.min(8, Math.max(1, km));
+  }
+  return 6;
+}
+
 // ---------- search (places + tehsils) ----------
 function wireSearch(input, hitsEl, onPick) {
   let t = null;
@@ -218,16 +256,20 @@ function wireSearch(input, hitsEl, onPick) {
     clearTimeout(t); const q = input.value.trim();
     if (q.length < 2) { hitsEl.style.display = 'none'; return; }
     t = setTimeout(async () => {
+      const ll = parseLatLon(q);
       const [teh, geo] = await Promise.all([
         fetch('/tehsils/search?q=' + encodeURIComponent(q)).then(r => r.json()).catch(() => ({})),
         fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q + ', Pakistan') + '.json?access_token=' + encodeURIComponent(MAPBOX_TOKEN) +
-              '&limit=5&country=pk&bbox=60.87,23.63,77.84,37.13').then(r => r.json()).catch(() => ({})),
+              '&limit=8&country=pk&bbox=60.87,23.63,77.84,37.13' + (typeof map !== 'undefined' ? '&proximity=' + map.getCenter().lng.toFixed(4) + ',' + map.getCenter().lat.toFixed(4) : '')).then(r => r.json()).catch(() => ({})),
       ]);
       hitsEl.innerHTML = '';
       const add = (txt, sub, fn) => { const b = document.createElement('button'); b.innerHTML = txt + (sub ? '<small>' + sub + '</small>' : ''); b.onclick = () => { hitsEl.style.display = 'none'; fn(); }; hitsEl.appendChild(b); };
+      if (ll) { const g = document.createElement('div'); g.className = 'grp'; g.textContent = 'Coordinates'; hitsEl.appendChild(g);
+        if (ll.inPakistan) add(fmtCoord(ll.lat, ll.lon), 'Analyse a 1 km area here', () => onPick({ kind: 'place', name: fmtCoord(ll.lat, ll.lon), lon: ll.lon, lat: ll.lat, km: 1 }));
+        else add(fmtCoord(ll.lat, ll.lon), 'Outside Pakistan, where there is no terrain data', () => {}); }
       const places = (geo.features || []);
       if (places.length) { const g = document.createElement('div'); g.className = 'grp'; g.textContent = 'Places'; hitsEl.appendChild(g);
-        places.forEach(f => add(f.text, f.place_name, () => onPick({ kind: 'place', name: f.place_name, lon: f.center[0], lat: f.center[1] }))); }
+        places.forEach(f => add(f.text, f.place_name, () => onPick({ kind: 'place', name: f.place_name, lon: f.center[0], lat: f.center[1], km: boxKmFor(f) }))); }
       const th = (teh.results || []).slice(0, 4);
       if (th.length) { const g = document.createElement('div'); g.className = 'grp'; g.textContent = 'Tehsils (whole area)'; hitsEl.appendChild(g);
         th.forEach(x => add(x.name, [x.district, x.province].filter(Boolean).join(', '), () => onPick({ kind: 'tehsil', id: x.id, name: x.name + ', ' + (x.district || '') }))); }
@@ -247,7 +289,7 @@ async function usePick(p) {
     const d = await fetch('/tehsils/' + p.id).then(r => r.json()).catch(() => null);
     busy(); if (!d || !d.geometry) return;
     setArea(d.geometry, p.name);
-  } else setArea(boxAround(p.lon, p.lat, 6), p.name);
+  } else setArea(boxAround(p.lon, p.lat, p.km || 6), p.name);
 }
 
 // ---------- welcome ----------
@@ -256,7 +298,8 @@ $('wChips').addEventListener('click', e => { const b = e.target.closest('.chip')
   document.querySelectorAll('#wChips .chip').forEach(x => x.classList.toggle('on', x === b)); });
 $('wclose').onclick = () => { $('welcome').style.display = 'none'; };
 $('wGo').onclick = () => { if (!pendingPick) { $('wSearch').focus(); $('wSearch').placeholder = 'Pick a place from the list first'; return; } $('welcome').style.display = 'none'; usePick(pendingPick); };
-$('wSearch').addEventListener('keydown', e => { if (e.key === 'Enter') $('wGo').click(); });
+$('wSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { const ll = parseLatLon($('wSearch').value); if (ll && ll.inPakistan) pendingPick = { kind: 'place', name: fmtCoord(ll.lat, ll.lon), lon: ll.lon, lat: ll.lat, km: 1 }; $('wGo').click(); } });
+$('barSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { const ll = parseLatLon($('barSearch').value); if (ll && ll.inPakistan) { $('barHits').style.display = 'none'; usePick({ kind: 'place', name: fmtCoord(ll.lat, ll.lon), lon: ll.lon, lat: ll.lat, km: 1 }); } } });
 
 // ---------- area ----------
 async function setArea(g, name) {
@@ -296,7 +339,7 @@ async function refreshOverlay(my) {
   busy('Calculating the flood...');
   try {
     const ov = await fetch('/area/instant-flood-overlay', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ geometry: geom, rain_mm_hr: parseFloat($('rain').value), duration_hr: parseFloat($('dur').value), method: $('learned').checked ? 'learned' : 'terrain' }) }).then(r => r.json());
+      body: JSON.stringify({ geometry: geom, rain_mm_hr: parseFloat($('rain').value), duration_hr: parseFloat($('dur').value)}) }).then(r => r.json());
     if (tok !== ovToken || my !== areaToken) return;
     busy();
     if (ov.error) { $('pSub').textContent = ''; $('sNote').className = 'err'; $('sNote').textContent = ov.error; return; }
@@ -305,7 +348,6 @@ async function refreshOverlay(my) {
     $('sArea').textContent = fmtArea(ov.flooded_area_km2) + ' km²'; $('sDepth').textContent = ov.max_depth_m.toFixed(2) + ' m';
     $('sNote').className = '';
     renderDepthGuide('depthGuide', ov.max_depth_m);
-    $('legendRows').innerHTML = (ov.legend || []).map(function (l) { var v = l.depth_m < 1 ? l.depth_m.toFixed(2) : l.depth_m.toFixed(1); return '<div><i style="background:rgb(' + l.rgb.join(',') + ')"></i>' + v + (l === ov.legend[ov.legend.length - 1] ? '+' : '') + '</div>'; }).join('');
     $('sNote').textContent = '';
   } catch (e) { busy(); $('sNote').className = 'err'; $('sNote').textContent = 'Failed: ' + e; }
 }
@@ -319,7 +361,6 @@ $('threeD').onclick = () => {
   is3D = !is3D; $('threeD').classList.toggle('on', is3D);
   if (is3D) { enableTerrain(); map.easeTo({ pitch: 62, duration: 900 }); } else { map.setTerrain(null); map.easeTo({ pitch: 0, bearing: 0, duration: 700 }); }
 };
-$('learned').onchange = () => { if (geom) scheduleOverlay(0); };
 $('drawBtn').onclick = () => { $('welcome').style.display = 'none'; draw.changeMode('draw_polygon'); busy('Click the map to outline your area; double-click to finish.'); };
 const onDraw = () => {
   busy();
