@@ -580,6 +580,7 @@ body.drawer-closed #drawerToggle {{ right:10px; }}
 .ptabs {{ padding-bottom:10px; }}
 header .hdr-nav a.on {{ color:var(--accent); border-color:var(--accent); }}
 #rightCol select {{ max-width:100%; text-overflow:ellipsis; }}
+body:not([data-mode="physics"]) .phys-only {{ display:none !important; }}
 .ptabs .ptab {{ flex:1; }}
 
 /* ---- no overlaps: map controls clear of the toolbar, flood card clear of the map logo ---- */
@@ -907,11 +908,11 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                   <div>
                     <label>Source</label>
                     <select id="glofSource" onchange="updateGlofInputs()">
-                      <option value="shishper_2022">Shishper Glacier Lake (Hassanabad, Hunza) -- real 2022 event</option>
-                      <option value="hydrolakes">Real HydroLAKES lake near this AOI (any Pakistan lake, auto-detected)</option>
-                      <option value="pmd">PMD 2024 glacial-lake inventory lake near this AOI (dam type + nearest village)</option>
-                      <option value="volume">Custom: I know the lake's real volume (m&sup3;)</option>
-                      <option value="area">Custom: I only know the lake's real area (km&sup2;, less reliable)</option>
+                      <option value="shishper_2022">Shishper Glacier Lake, Hunza (2022 event)</option>
+                      <option value="hydrolakes">HydroLAKES lake near the area</option>
+                      <option value="pmd">PMD glacial lake near the area</option>
+                      <option value="volume">Known lake volume</option>
+                      <option value="area">Known lake area</option>
                     </select>
                   </div>
                   <div id="glofVolumeRow" style="display:none;">
@@ -923,31 +924,30 @@ body.view-hidden #viewShowBtn {{ display:block; }}
                     <input type="number" id="glofAreaKm2" step="0.01" min="0">
                   </div>
                   <div id="glofTriggerRow" style="display:none;">
-                    <label>Trigger / breach mechanism</label>
+                    <label>Trigger</label>
                     <select id="glofTrigger" onchange="document.getElementById('glofBreachHeightRow').style.display=(this.value==='landslide_breach'?'block':'none');">
-                      <option value="moraine_breach">Gradual moraine failure (Popov 1991)</option>
-                      <option value="landslide_breach">Landslide / rock-ice avalanche impact (Froehlich 1995 breach discharge)</option>
+                      <option value="moraine_breach">Moraine failure</option>
+                      <option value="landslide_breach">Landslide or ice avalanche</option>
                     </select>
                   </div>
                   <div id="glofBreachHeightRow" style="display:none;">
-                    <label>Real breach / dam height (m)</label>
+                    <label>Breach height (m)</label>
                     <input type="number" id="glofBreachHeightM" step="1" min="1" value="20">
                   </div>
                   <div id="glofHydrolakesRow" style="display:none;">
-                    <button class="secondary" id="glofFindLakesBtn" onclick="findNearbyHydrolakes()">Find nearby real lakes &rarr;</button>
+                    <button class="secondary" id="glofFindLakesBtn" onclick="findNearbyHydrolakes()">Find nearby lakes</button>
                     <div id="glofHydrolakesResult"></div>
                     <select id="glofHydrolakesPicker" style="display:none;margin-top:6px;"></select>
                   </div>
                   <div id="glofPmdRow" style="display:none;">
-                    <button class="secondary" id="glofFindPmdBtn" onclick="findNearbyPmdLakes()">Find nearby inventory lakes &rarr;</button>
+                    <button class="secondary" id="glofFindPmdBtn" onclick="findNearbyPmdLakes()">Find nearby lakes</button>
                     <div id="glofPmdResult"></div>
                     <select id="glofPmdPicker" style="display:none;margin-top:6px;"></select>
                   </div>
-                  <button class="secondary" id="glofBtn" disabled onclick="applyGlofScenario()">Apply GLOF discharge &rarr;</button>
+                  <button class="secondary" id="glofBtn" disabled onclick="applyGlofScenario()">Apply discharge</button>
                   <div id="glofBox"></div>
                   <hr style="margin:10px 0;border-color:#2a3a3e;">
-                  <label>Documented outbursts near this area</label>
-                  <button class="secondary" id="glofEventsBtn" disabled onclick="showGlofHistoricalEvents()">Show documented events &rarr;</button>
+                                    <button class="secondary" id="glofEventsBtn" disabled onclick="showGlofHistoricalEvents()">Past outbursts nearby</button>
                   <div id="glofEventsBox"></div>
                 </div>
                       </div>
@@ -1042,7 +1042,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
               </details>
 
 
-              <div class="panel-section" style="border:1px solid var(--line);border-radius:8px;padding:10px;margin:4px 0;">
+              <div class="panel-section phys-only" style="border:1px solid var(--line);border-radius:8px;padding:10px;margin:4px 0;">
                 <h3 style="margin-top:0;">Storm centering &amp; Areal Reduction Factor</h3>
                 <label style="display:flex;align-items:center;gap:6px;font-weight:normal;">
                   <input type="checkbox" id="enableArf" style="width:auto;">
@@ -1078,23 +1078,23 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         <div class="panel-section" data-pane="glacier" data-modes="glof">
           <h3>Glacier monitoring</h3>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-                  <button class="secondary" id="glacierBaselineBtn" disabled onclick="runGlacierBaseline()">Get real glacier inventory (GLIMS) &rarr;</button>
+                  <button class="secondary" id="glacierBaselineBtn" disabled onclick="runGlacierBaseline()">Glacier outlines</button>
                   <div id="glacierBaselineBox"></div>
                   <div>
-                    <label>Mark a known real GLOF lake on the result (optional)</label>
+                    <label>Mark a lake (optional)</label>
                     <select id="glacierLakeKey">
                       <option value="">None</option>
                       <option value="shishper_2022">Shishper Glacier Lake (Hassanabad, Hunza)</option>
                     </select>
                   </div>
                   <div>
-                    <label>Real confidence threshold (lower = more coverage, more noise)</label>
+                    <label>Confidence threshold</label>
                     <input type="number" id="glacierConfidence" value="0.5" step="0.05" min="0.1" max="0.95">
                   </div>
-                  <button class="secondary" id="glacierDispBtn" disabled onclick="runGlacierDisplacement()">Run SAR displacement analysis (Jan-Aug 2026, real, ~2-12 min) &rarr;</button>
+                  <button class="secondary" id="glacierDispBtn" disabled onclick="runGlacierDisplacement()">Run glacier movement analysis</button>
                   <div id="glacierDispBox"></div>
                   <hr style="margin:10px 0;border-color:#2a3a3e;">
-                  <button class="secondary" id="itsliveBtn" disabled onclick="runItsliveVelocity()">Check recent glacier speed (ITS_LIVE) &rarr;</button>
+                  <button class="secondary" id="itsliveBtn" disabled onclick="runItsliveVelocity()">Check recent glacier speed</button>
                   <div id="itsliveBox"></div>
                 </div>
                       </div>
@@ -1102,7 +1102,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         <div class="panel-section" data-pane="glacier" data-modes="glof">
           <h3>Geomorphology</h3>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-                  <button class="secondary" id="geomorphBtn" disabled onclick="computeGeomorphology()">Check real geomorphology &amp; susceptibility &rarr;</button>
+                  <button class="secondary" id="geomorphBtn" disabled onclick="computeGeomorphology()">Check landslide susceptibility</button>
                   <div id="geomorphBox"></div>
                 </div>
                       </div>
@@ -1135,7 +1135,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         </div>
 
         <div class="panel-section" data-pane="scenario" data-modes="physics glof">
-          <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="includeBuildings" checked style="width:auto;"> Include real buildings (affects flow)</label>
+          <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="includeBuildings" checked style="width:auto;"> Include buildings</label>
           <button class="action" id="runBtn" disabled onclick="runModel()">Run flood model</button>
           <p class="note" id="statusNote"></p>
         </div>
@@ -1143,7 +1143,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         <div class="panel-section" data-pane="runs" data-modes="physics glof">
           <h3>Run status</h3>
           <div id="runStatusBox">
-            <p class="note">Draw/upload an area and run the model above first.</p>
+            <p class="note">No run yet.</p>
           </div>
         </div>
 
@@ -1258,12 +1258,12 @@ body.view-hidden #viewShowBtn {{ display:block; }}
 
       <div class="tier-content" data-tier="4">
         <div class="panel-section" data-pane="scenario" data-modes="coastal">
-          <h3>Coastal / tidal flood (static inundation)</h3>
+          <h3>Static flood level</h3>
           <div>
             <label>Water-level source</label>
             <select id="coastalSource" onchange="updateCoastalSourceUI()">
-              <option value="khan" selected>Karachi tide gauge (Khan et al. 2020) &mdash; 50/100/1000 yr</option>
-              <option value="gtsm">GTSM-ERA5-E, nearest of 42 coastal stations &mdash; 2 to 100 yr</option>
+              <option value="khan" selected>Karachi tide gauge (50 to 1000 yr)</option>
+              <option value="gtsm">GTSM model, nearest station (2 to 100 yr)</option>
             </select>
             <p class="note" id="coastalSourceNote"></p>
           </div>
@@ -1275,107 +1275,107 @@ body.view-hidden #viewShowBtn {{ display:block; }}
             </select>
           </div>
           <div>
-            <label>Or use a documented historical event instead</label>
+            <label>Or a past event</label>
             <select id="coastalSurgePreset">
-              <option value="">(use return period above)</option>
-              <option value="2.0">Cyclone Biparjoy 2023 (observed, ~2.0 m)</option>
-              <option value="3.25">PMD "high surge risk" threshold (~3.25 m)</option>
-              <option value="4.0">Cyclone 2A 1999 (modeled, unvalidated, ~4.0 m)</option>
+              <option value="">(none)</option>
+              <option value="2.0">Cyclone Biparjoy 2023 (2.0 m)</option>
+              <option value="3.25">PMD high-surge threshold (3.25 m)</option>
+              <option value="4.0">Cyclone 2A 1999 (4.0 m)</option>
             </select>
           </div>
           <div>
-            <label>Project to future year (adds real Karachi SLR trend, 3.6mm/yr -- optional)</label>
+            <label>Future year (optional)</label>
             <input type="number" id="coastalTargetYear" placeholder="e.g. 2050" min="2024" max="2100">
           </div>
           <div>
-            <label>Add sea-level rise (m) &mdash; scenario value, not a forecast</label>
+            <label>Sea-level rise (m)</label>
             <select id="coastalSlrPreset" onchange="document.getElementById('coastalSlr').value=this.value">
-              <option value="0">None (present day)</option><option value="0.25">+0.25 m</option><option value="0.5">+0.5 m</option>
+              <option value="0">None</option><option value="0.25">+0.25 m</option><option value="0.5">+0.5 m</option>
               <option value="0.75">+0.75 m</option><option value="1.0">+1.0 m</option>
             </select>
             <input type="number" id="coastalSlr" value="0" min="0" max="3" step="0.05" style="margin-top:4px;">
           </div>
           <div>
-            <label><input type="checkbox" id="includeWaveRunup" style="width:auto;margin-right:6px;">Add real wave run-up (Open-Meteo Marine API + Stockdon et al. 2006)</label>
+            <label><input type="checkbox" id="includeWaveRunup" style="width:auto;margin-right:6px;">Include wave run-up</label>
           </div>
-          <button class="secondary" id="coastalBtn" disabled onclick="runCoastalFlood()">Run coastal flood analysis &rarr;</button>
+          <button class="secondary" id="coastalBtn" disabled onclick="runCoastalFlood()">Run coastal flood</button>
           <div id="coastalBox"></div>
 
           <hr style="margin:16px 0;border-color:#2a3a3e;">
-          <h3>Water-level explorer (instant)</h3>
+          <h3>Water level explorer</h3>
           <input type="range" id="coastalLevelSlider" min="0" max="8" step="0.05" value="2" disabled oninput="syncCoastalLevel()">
-          <div id="coastalLevelBox"><p class="note">Set an area on the coast to load this.</p></div>
-          <button class="secondary" id="coastalLevelMapBtn" disabled onclick="showCoastalLevelOnMap()">Show this level on map &rarr;</button>
+          <div id="coastalLevelBox"><p class="note">Choose a coastal area.</p></div>
+          <button class="secondary" id="coastalLevelMapBtn" disabled onclick="showCoastalLevelOnMap()">Show on map</button>
 
           <hr style="margin:16px 0;border-color:#2a3a3e;">
-          <h3>Coastal susceptibility map</h3>
-          <button class="secondary" id="coastalSuscBtn" disabled onclick="runCoastalSusceptibility()">Compute susceptibility &rarr;</button>
+          <h3>Susceptibility map</h3>
+          <button class="secondary" id="coastalSuscBtn" disabled onclick="runCoastalSusceptibility()">Compute</button>
           <div id="coastalSuscBox"></div>
 
         </div>
         <div class="panel-section" data-pane="surge" data-modes="coastal">
-          <h3>Fast animated preview (approximate)</h3>
+          <h3>Animated preview</h3>
           <div>
-            <label>Anchor magnitude to</label>
+            <label>Water level based on</label>
             <select id="coastalPreviewAnchor">
-              <option value="static" selected>Static method's total water level (above)</option>
-              <option value="gtsr">Real GTSR station's own recorded historical peak surge</option>
+              <option value="static" selected>Static water level</option>
+              <option value="gtsr">Recorded peak surge</option>
             </select>
           </div>
           <div>
-            <label for="coastalPreviewTide">Astronomical tide (Moon and Sun)</label>
+            <label for="coastalPreviewTide">Tide</label>
             <select id="coastalPreviewTide">
               <option value="" selected>Off</option>
-              <option value="spring_high">Spring high water at the surge peak (worst case)</option>
-              <option value="typical_high">Ordinary high water at the surge peak</option>
-              <option value="low">Low water at the surge peak (best case)</option>
+              <option value="spring_high">Spring high tide at the peak</option>
+              <option value="typical_high">Ordinary high tide at the peak</option>
+              <option value="low">Low tide at the peak</option>
             </select>
           </div>
-          <button class="secondary" id="coastalPreviewBtn" disabled onclick="runCoastalFloodPreview()">Preview animated coastal flood &rarr;</button>
+          <button class="secondary" id="coastalPreviewBtn" disabled onclick="runCoastalFloodPreview()">Preview</button>
           <div id="coastalPreviewBox"></div>
 
           <hr style="margin:16px 0;border-color:#2a3a3e;">
-          <h3>Real dynamic surge (GTSR, experimental)</h3>
+          <h3>Full surge simulation</h3>
           <div>
-            <label>Anchor magnitude to</label>
+            <label>Water level based on</label>
             <select id="coastalDynAnchor" onchange="updateCombineTideVisibility()">
-              <option value="static" selected>Static method's total water level (above)</option>
-              <option value="gtsr">Real GTSR station's own recorded historical peak surge</option>
+              <option value="static" selected>Static water level</option>
+              <option value="gtsr">Recorded peak surge</option>
             </select>
           </div>
           <div>
-            <label for="coastalDynTide">Astronomical tide (Moon and Sun)</label>
+            <label for="coastalDynTide">Tide</label>
             <select id="coastalDynTide">
               <option value="" selected>Off</option>
-              <option value="spring_high">Spring high water at the surge peak (worst case)</option>
-              <option value="typical_high">Ordinary high water at the surge peak</option>
-              <option value="low">Low water at the surge peak (best case)</option>
+              <option value="spring_high">Spring high tide at the peak</option>
+              <option value="typical_high">Ordinary high tide at the peak</option>
+              <option value="low">Low tide at the peak</option>
             </select>
           </div>
           <div id="combineTideRow" style="display:none;">
-            <label><input type="checkbox" id="combineTide" style="width:auto;margin-right:6px;">Add real mean tidal range (Karachi Port, 2.3 m, Khan et al. 2020) on top of the surge peak</label>
+            <label><input type="checkbox" id="combineTide" style="width:auto;margin-right:6px;">Add mean tidal range</label>
           </div>
           <div>
-            <label><input type="checkbox" id="includeWaveRunupDyn" style="width:auto;margin-right:6px;">Add real wave run-up (Open-Meteo Marine API + Stockdon et al. 2006)</label>
+            <label><input type="checkbox" id="includeWaveRunupDyn" style="width:auto;margin-right:6px;">Include wave run-up</label>
           </div>
           <div>
-            <label>Real GTSR episode window (longer = more of the real recede tail, but real hours slower)</label>
+            <label>Surge window</label>
             <select id="coastalDynWindow">
-              <option value="2">2 days (fastest, rise+peak only)</option>
-              <option value="3" selected>3 days (rise/peak/partial recede)</option>
-              <option value="5">5 days (fullest real recede tail, slowest)</option>
+              <option value="2">2 days (fastest)</option>
+              <option value="3" selected>3 days</option>
+              <option value="5">5 days (slowest)</option>
             </select>
           </div>
           <div>
-            <label><input type="checkbox" id="coastalCompound" style="width:auto;margin-right:6px;" onchange="document.getElementById('coastalCompoundRow').style.display=this.checked?'block':'none';">Add real rainfall at the same time (compound flooding / ocean backwater)</label>
+            <label><input type="checkbox" id="coastalCompound" style="width:auto;margin-right:6px;" onchange="document.getElementById('coastalCompoundRow').style.display=this.checked?'block':'none';">Add rainfall (compound flood)</label>
           </div>
           <div id="coastalCompoundRow" style="display:none;">
-            <label>Rainfall during this event (mm/hr)</label>
+            <label>Rain (mm/hr)</label>
             <input type="number" id="coastalCompoundRain" value="20" min="0" step="1">
             <label>Duration (hr)</label>
             <input type="number" id="coastalCompoundDuration" value="3" min="0.5" step="0.5">
           </div>
-          <button class="secondary" id="coastalDynBtn" disabled onclick="runCoastalFloodDynamic()">Run dynamic surge (real physics) &rarr;</button>
+          <button class="secondary" id="coastalDynBtn" disabled onclick="runCoastalFloodDynamic()">Run surge simulation</button>
           <div id="coastalDynBox"></div>
         </div>
       </div>
@@ -2556,7 +2556,7 @@ function runCoastalFlood() {{
     water_level_source: document.getElementById('coastalSource').value, extra_slr_m: parseFloat(document.getElementById('coastalSlr').value) || 0,
     include_wave_runup: document.getElementById('includeWaveRunup').checked,
   }};
-  box.innerHTML = '<p class="note">Computing static coastal inundation...</p>';
+  box.innerHTML = '<p class="note">Computing...</p>';
   fetch('/area/coastal-flood', {{
     method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify(req)
   }}).then(r => r.json()).then(d => {{
@@ -2572,8 +2572,6 @@ function runCoastalFlood() {{
         '<div class="stat-row"><span>Total level with run-up</span><span>' + d.total_level_with_runup_m + ' m</span></div>' : '') +
       '<div class="stat-row"><span>Flooded area</span><span>' + d.flooded_area_km2 + ' km&sup2;</span></div>' +
       '<div class="stat-row"><span>Max depth</span><span>' + d.max_depth_m + ' m</span></div>' +
-      '<p class="note">' + d.water_level.basis + (d.water_level.sea_level_rise_added_m ? ' + ' + d.water_level.sea_level_rise_added_m + 'm real SLR trend' : '') + '</p>' +
-      (d.wave_runup ? '<p class="note">' + d.wave_runup.wave_basis + ' &middot; foreshore slope ' + d.wave_runup.foreshore_slope_used + ' (' + d.wave_runup.foreshore_slope_basis + ') &middot; ' + d.wave_runup.method + '</p>' : '') +
       '<button class="secondary" onclick="downloadResultPdf(\\'/report/coastal.pdf\\', {{result: lastCoastalResult, request: lastCoastalRequest}})">Export PDF summary</button>';
     loadTier3D(4);
   }});
@@ -2588,14 +2586,12 @@ function updateCoastalSourceUI() {{
     o.disabled = (src === 'khan' && v < 50) || (src === 'gtsm' && v > 100 && false);
   }}
   if (src === 'khan' && parseInt(sel.value) < 50) sel.value = '100';
-  document.getElementById('coastalSourceNote').textContent = src === 'khan'
-    ? 'Tide-gauge based, Karachi Port, applied to the whole coast, measured from mean sea level (the published levels are from the gauge zero, so the 1.85 m between that zero and mean sea level is subtracted). About 1.9 m for 100 years.'
-    : 'Modelled (GTSM-ERA5-E) at the nearest station, so it varies along the coast. Coarse near the coast, and its vertical datum is not formally tied to the SRTM DEM. At Karachi it gives about 1.79 m for 100 years, which agrees with the tide-gauge value measured from mean sea level (about 1.9 m).';
+  document.getElementById('coastalSourceNote').textContent = '';
 }}
 function fetchCoastalLibrary() {{
   coastalLibrary = null;
   const box = document.getElementById('coastalLevelBox');
-  box.innerHTML = '<p class="note">Computing the level library for this area...</p>';
+  box.innerHTML = '<p class="note">Loading...</p>';
   document.getElementById('coastalLevelSlider').disabled = true; document.getElementById('coastalLevelMapBtn').disabled = true;
   const tok = currentGeoJSON;
   fetch('/area/coastal-level-library', {{method:'POST', headers:{{'Content-Type':'application/json'}},
@@ -2626,7 +2622,7 @@ function syncCoastalLevel() {{
     '<div class="stat-row"><span>Flooded area</span><span>' + lerp('area_km2').toFixed(2) + ' km&sup2;</span></div>' +
     '<div class="stat-row"><span>Max depth</span><span>' + lerp('max_depth_m').toFixed(2) + ' m</span></div>' +
     '<div class="stat-row"><span>Water volume</span><span>' + Math.round(lerp('volume_m3')).toLocaleString() + ' m&sup3;</span></div>' +
-    '<p class="note">' + refs + '</p>';
+    '';
 }}
 function showCoastalLevelOnMap() {{
   const L = parseFloat(document.getElementById('coastalLevelSlider').value);
@@ -2647,7 +2643,6 @@ function runCoastalSusceptibility() {{
         '<div class="stat-row"><span><span style="display:inline-block;width:10px;height:10px;background:' + c.color + ';border:1px solid #333;margin-right:6px;"></span>' + c.name + '</span><span>' + c.area_km2 + ' km&sup2; (' + c.pct + '%)</span></div>').join('');
       box.innerHTML = rows +
         (d.mangroves ? '<div class="stat-row"><span>Mangrove area in AOI</span><span>' + d.mangroves.mangrove_area_km2 + ' km&sup2;</span></div>' : '') +
-        '<p class="note">Factors: ' + d.factors_used.join(', ').replace(/_/g, ' ') + '. ' + d.method + '</p>' +
         '<button class="secondary" onclick="showCoastalSuscOnMap()">Show on map</button> ' +
         '<button class="secondary" onclick="downloadCoastalSuscMap()">Download static map (PNG)</button>';
       showCoastalSuscOnMap();
@@ -2713,13 +2708,8 @@ function runCoastalFloodDynamic() {{
         (result.compound_event ? '<div class="stat-row" style="font-weight:600;"><span>Compound event</span><span>' +
           result.compound_rain_mm_hr + ' mm/hr rain over ' + result.compound_duration_hr +
           'h, WITH real ocean backwater</span></div>' : '') +
-        '<p class="note">' + result.anchor_basis + '</p>' +
-        (result.astronomical_tide ? '<p class="note">Astronomical tide: ' + result.astronomical_tide.phase_meaning + '. Tide at the surge peak ' + result.astronomical_tide.tide_at_surge_peak_m + ' m; highest total level ' + result.astronomical_tide.max_total_level_m + ' m above mean sea level.</p>' : '') +
-        (result.tide_combination_note ? '<p class="note">Tidal range: ' + result.tide_combination_note + '</p>' : '') +
-        (result.wave_runup ? '<p class="note">Wave run-up: +' + result.wave_runup.runup_m + ' m (' + result.wave_runup.wave_basis + ', foreshore slope ' + result.wave_runup.foreshore_slope_used + ')</p>' : '') +
-        '<p class="note">' + result.method + '</p>' +
         '<p><a href="/coastal-dyn/' + d.job_id + '/mapbox3d" target="_blank">Open real 3D animated surge view &rarr;</a></p>';
-    }}, 'Running real dynamic GTSR-driven physics (CPU) -- this can take a few real minutes...');
+    }}, 'Running the surge simulation (a few minutes)...');
   }});
 }}
 
@@ -2739,7 +2729,7 @@ function runCoastalFloodPreview() {{
     window_days: 5,
   }};
   document.getElementById('coastalPreviewBtn').disabled = true;
-  box.innerHTML = '<p class="note">Building fast animated preview (real GTSR series + static bathtub per frame, instant)...</p>';
+  box.innerHTML = '<p class="note">Building the preview...</p>';
   fetch('/area/coastal-flood-instant-preview', {{
     method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify(req)
   }}).then(r => r.json()).then(d => {{
@@ -2757,8 +2747,6 @@ function runCoastalFloodPreview() {{
       '<div class="stat-row"><span>Anchor peak water level</span><span>' + d.anchor_peak_water_level_m + ' m</span></div>' +
       '<div class="stat-row"><span>Peak frame flooded area</span><span>' + peakArea.toFixed(3) + ' km&sup2;</span></div>' +
       '<div class="stat-row"><span>Peak frame max depth</span><span>' + peakDepth.toFixed(2) + ' m</span></div>' +
-      '<p class="note">' + d.anchor_basis + '</p>' +
-      '<p class="note">' + d.method + '</p>' +
       '<button class="secondary" onclick="showCoastalPreviewOnMap()">Show animated preview on map</button>';
   }});
 }}
@@ -2990,7 +2978,7 @@ function renderBoundaryList() {{
   const el = document.getElementById('boundaryList');
   if (!el) return;
   updateBoundaryMarkers();
-  if (!boundaryItems.length) {{ el.innerHTML = '<p class="note">No inflows/outflows -- pluvial-only run.</p>'; return; }}
+  if (!boundaryItems.length) {{ el.innerHTML = '<p class="note">No inflows or outflows added.</p>'; return; }}
   el.innerHTML = boundaryItems.map(b => {{
     const isInflow = b.type === 'inflow';
     const siteInfo = b.lon != null
@@ -3056,14 +3044,14 @@ let glofEventsList = [];
 function showGlofHistoricalEvents() {{
   const box = document.getElementById('glofEventsBox');
   if (!currentGeoJSON) {{ box.innerHTML = '<p class="note">Draw/select an area first.</p>'; return; }}
-  box.innerHTML = '<p class="note">Looking up documented events...</p>';
+  box.innerHTML = '<p class="note">Searching...</p>';
   Promise.all([
     fetch('/glof/historical-events', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify({{geometry: currentGeoJSON, radius_km: 100}})}}).then(r => r.json()),
     fetch('/glof/popov-validation').then(r => r.json()).catch(() => null)
   ]).then(([d, v]) => {{
     if (d.error) {{ box.innerHTML = '<p class="note">' + d.error + '</p>'; return; }}
     glofEventsList = d.events;
-    if (!d.events.length) {{ box.innerHTML = '<p class="note">No documented event within ' + d.radius_km + ' km. (Absence of a record is not absence of an outburst.)</p>'; return; }}
+    if (!d.events.length) {{ box.innerHTML = '<p class="note">No documented event within ' + d.radius_km + ' km.</p>'; return; }}
     const rows = d.events.map((e, i) => {{
       const bits = [];
       if (e.peak_discharge_m3s != null) bits.push(Math.round(e.peak_discharge_m3s).toLocaleString() + ' m&sup3;/s');
@@ -3078,7 +3066,7 @@ function showGlofHistoricalEvents() {{
     if (v && v.by_type) {{
       val = '<p class="note"><b>How good is the Popov formula?</b> Popov / documented peak discharge, median (events): ' + Object.entries(v.by_type).map(([k, s]) => k + ' ' + s.ratio_median.toFixed(1) + '&times; (' + s.n + ')').join('; ') + '. Ice-dammed lakes, most of Pakistan\\'s events, are badly overestimated, on very few events.</p>';
     }}
-    box.innerHTML = '<p class="note">' + d.events.length + ' event(s) within ' + d.radius_km + ' km. Catalogue: ' + c.pakistan_events + ' Pakistan events, only ' + c.pakistan_with_volume + ' with a volume and ' + c.pakistan_with_peak_discharge + ' with a peak discharge. ' + d.source + '</p>' + rows + val;
+    box.innerHTML = '<p class="note">' + d.events.length + ' event(s) within ' + d.radius_km + ' km</p>' + rows;
   }});
 }}
 function useGlofEvent(i) {{
@@ -3114,7 +3102,7 @@ function findNearbyHydrolakes() {{
   const resultBox = document.getElementById('glofHydrolakesResult');
   const picker = document.getElementById('glofHydrolakesPicker');
   if (!currentGeoJSON) {{ resultBox.innerHTML = '<p class="note">Draw/select an area first.</p>'; return; }}
-  resultBox.innerHTML = '<p class="note">Searching real HydroLAKES data near this AOI...</p>';
+  resultBox.innerHTML = '<p class="note">Searching...</p>';
   picker.style.display = 'none';
   fetch('/area/hydrolakes-nearby', {{
     method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify({{geometry: currentGeoJSON}})
@@ -3148,19 +3136,19 @@ function applyGlofScenario() {{
   const body = {{}};
   if (src === 'volume') {{
     const v = parseFloat(document.getElementById('glofVolumeM3').value);
-    if (!v || v <= 0) {{ box.innerHTML = '<p class="note">Enter a real lake volume first.</p>'; return; }}
+    if (!v || v <= 0) {{ box.innerHTML = '<p class="note">Enter the lake volume.</p>'; return; }}
     body.volume_m3 = v;
   }} else if (src === 'area') {{
     const a = parseFloat(document.getElementById('glofAreaKm2').value);
-    if (!a || a <= 0) {{ box.innerHTML = '<p class="note">Enter a real lake area first.</p>'; return; }}
+    if (!a || a <= 0) {{ box.innerHTML = '<p class="note">Enter the lake area.</p>'; return; }}
     body.area_m2 = a * 1e6;
   }} else if (src === 'hydrolakes') {{
     const picker = document.getElementById('glofHydrolakesPicker');
-    if (!picker.value) {{ box.innerHTML = '<p class="note">Click "Find nearby real lakes" and pick one first.</p>'; return; }}
+    if (!picker.value) {{ box.innerHTML = '<p class="note">Find nearby lakes and pick one.</p>'; return; }}
     body.hydrolakes_id = parseInt(picker.value);
   }} else if (src === 'pmd') {{
     const picker = document.getElementById('glofPmdPicker');
-    if (!picker.value) {{ box.innerHTML = '<p class="note">Click "Find nearby inventory lakes" and pick one first.</p>'; return; }}
+    if (!picker.value) {{ box.innerHTML = '<p class="note">Find nearby lakes and pick one.</p>'; return; }}
     body.pmd_lake_id = parseInt(picker.value);
   }} else {{
     body.lake_key = src;
@@ -3171,7 +3159,7 @@ function applyGlofScenario() {{
       body.breach_height_m = parseFloat(document.getElementById('glofBreachHeightM').value);
     }}
   }}
-  box.innerHTML = '<p class="note">Computing real GLOF breach discharge...</p>';
+  box.innerHTML = '<p class="note">Computing...</p>';
   fetch('/glof/discharge', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify(body)}})
     .then(r => r.json()).then(d => {{
       if (d.error) {{ box.innerHTML = '<p class="note">' + d.error + '</p>'; return; }}
@@ -3179,12 +3167,10 @@ function applyGlofScenario() {{
       let siteLat = null, siteLon = null;
       if (d.downstream_lat != null) {{
         siteLat = d.downstream_lat; siteLon = d.downstream_lon;
-        siteNote = '<p class="note">Draw your AOI around <b>' + d.downstream_lat.toFixed(3) + '&deg;N, ' +
-          d.downstream_lon.toFixed(3) + '&deg;E</b> (the real downstream community), then click "Detect all rivers automatically" below to site this inflow -- or add it as a manual inflow if detection misses it.</p>';
+        siteNote = '<p class="note">Draw your area around <b>' + d.downstream_lat.toFixed(3) + '&deg;N, ' + d.downstream_lon.toFixed(3) + '&deg;E</b>, then detect rivers.</p>';
       }} else if (d.lake_lat != null) {{
         siteLat = d.lake_lat; siteLon = d.lake_lon;
-        siteNote = '<p class="note">The real lake itself is at <b>' + d.lake_lat.toFixed(3) + '&deg;N, ' +
-          d.lake_lon.toFixed(3) + '&deg;E</b> -- draw your AOI somewhere real and downstream of it (HydroLAKES has no documented downstream community for this lake, unlike the curated Shishper preset), then site this inflow manually or via "Detect all rivers automatically".</p>';
+        siteNote = '<p class="note">The lake is at <b>' + d.lake_lat.toFixed(3) + '&deg;N, ' + d.lake_lon.toFixed(3) + '&deg;E</b>. Draw your area downstream of it.</p>';
       }}
       if (siteLat != null) {{
         siteNote += '<button class="secondary" onclick="findBasinNearGlofSite(' + siteLon + ',' + siteLat + ')">Find real basin near this site &rarr;</button><div id="glofBasinBox"></div>';
@@ -3203,13 +3189,10 @@ function applyGlofScenario() {{
       box.innerHTML =
         '<div class="stat-row"><span>Peak discharge</span><span>' + d.peak_discharge_m3s + ' m&sup3;/s</span></div>' +
         '<div class="stat-row"><span>Volume used</span><span>' + Math.round(d.volume_m3).toLocaleString() + ' m&sup3;</span></div>' +
-        '<p class="note">' + d.method + (d.note ? ' ' + d.note : '') + '</p>' +
         renderGlofBand(d.empirical_band) +
         siteNote +
-        '<p class="note">Added as a new inflow (Peak=' + d.peak_discharge_m3s + ' m&sup3;/s, Duration=' + d.suggested_duration_hr +
-        'h) with a real GLOF-shaped hydrograph (fast rise, slow recession) in the Boundary conditions list above -- edit its site/edge there.</p>' +
-        '<button class="secondary" onclick="useGlofDischargeInTier2(' + d.peak_discharge_m3s + ')">Preview instant flood extent (Tier 2, no siting needed) &rarr;</button>' +
-        '<p class="note" style="margin-top:4px;">Unlike the Tier 3 run above, Tier 2\\'s HAND-based preview needs no downstream siting -- just this real peak discharge applied to whatever AOI is currently drawn.</p>' +
+        '<p class="note">Added to Boundary conditions.</p>' +
+        '<button class="secondary" onclick="useGlofDischargeInTier2(' + d.peak_discharge_m3s + ')">Preview instant extent</button>' +
         '<button class="secondary" style="margin-top:6px;" onclick="downloadGlofPdf()">Export PDF summary</button>';
     }});
 }}
@@ -3581,7 +3564,7 @@ function findBasinNearGlofSite(lon, lat) {{
 
 function runGlacierBaseline() {{
   const box = document.getElementById('glacierBaselineBox');
-  box.innerHTML = '<p class="note">Querying real GLIMS glacier inventory (Earth Engine)...</p>';
+  box.innerHTML = '<p class="note">Loading glacier outlines...</p>';
   fetch('/glacier/baseline', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify({{geometry: currentGeoJSON}})}})
     .then(r => r.json()).then(d => {{
       if (d.error) {{ box.innerHTML = '<p class="note">' + d.error + '</p>'; return; }}
@@ -3589,7 +3572,7 @@ function runGlacierBaseline() {{
         '<div class="stat-row"><span>Real glaciers (GLIMS)</span><span>' + d.n_glaciers + '</span></div>' +
         '<div class="stat-row"><span>Total glacier area</span><span>' + d.total_area_km2 + ' km&sup2;</span></div>' +
         (d.thumbnail_url ? '<img src="' + d.thumbnail_url + '" style="width:100%;border-radius:6px;margin-top:6px;">' : '') +
-        '<p class="note">' + d.method + ' (reference date ' + d.reference_date + ')</p>';
+        '';
     }});
 }}
 
@@ -3611,9 +3594,9 @@ function runItsliveVelocity() {{
           (r.flag_caution ? '<p class="note"><b>' + r.flag_caution + '.</b></p>' : '') +
           (r.thumbnail ? '<img src="/itslive/thumb/' + r.thumbnail + '" style="width:100%;border-radius:6px;margin-top:6px;">' : '') +
           '<table style="width:100%;margin-top:8px;font-size:11.5px;"><tr style="text-align:left;color:var(--ink-2);"><th>Pair date</th><th>Sensor</th><th>Window</th><th style="text-align:right;">Median m/yr</th><th style="text-align:right;">Valid</th></tr>' + rows + '</table>' +
-          '<p class="note">' + r.method + ' ' + r.source + '.</p>' + (r.errors && r.errors.length ? '<p class="note">Skipped: ' + r.errors.join('; ') + '</p>' : '') +
+          (r.errors && r.errors.length ? '<p class="note">Skipped: ' + r.errors.join('; ') + '</p>' : '') +
           (lakeKey ? '<button class="secondary" style="margin-top:8px;" onclick="previewGlofFromGlacier(\\'' + lakeKey + '\\')">Preview this as a GLOF scenario &rarr;</button>' : '');
-      }}, 'Fetching ITS_LIVE pairs and measuring glacier speed (first run downloads a few granules)...');
+      }}, 'Measuring glacier speed...');
     }});
 }}
 
@@ -3648,11 +3631,8 @@ function runGlacierDisplacement() {{
         '<p class="note" style="margin-top:6px;"><b>Velocity (cm/day)</b></p>' +
         (result.velocity_thumbnail_url ? '<img src="' + result.velocity_thumbnail_url + '" style="width:100%;border-radius:6px;">' : '') +
         '<table style="width:100%;margin-top:8px;font-size:12px;"><tr style="text-align:left;color:var(--ink-2);"><th>Month</th><th>Ascending</th><th>Descending</th></tr>' + monthlyRows + '</table>' +
-        '<p class="note">' + result.method + '</p>' +
-        (bc ? '<p class="note">' + bc.method + '</p>' : '') +
-        (lakeKey ? '<button class="secondary" style="margin-top:8px;" onclick="previewGlofFromGlacier(\\'' + lakeKey + '\\')">Preview this as a GLOF scenario &rarr;</button>' +
-          '<p class="note" style="margin-top:4px;">The real displacement/velocity numbers above are context to help you judge -- this doesn\\'t auto-decide a GLOF is imminent, it jumps to the same real Popov (1991) breach-discharge estimator using this lake\\'s own real documented data.</p>' : '');
-    }}, 'Running real ascending+descending Sentinel-1 SAR offset-tracking (Earth Engine) -- this genuinely takes several real minutes...');
+        (lakeKey ? '<button class="secondary" style="margin-top:8px;" onclick="previewGlofFromGlacier(\\'' + lakeKey + '\\')">Preview this as a GLOF scenario &rarr;</button>' : '');
+    }}, 'Running the analysis (a few minutes)...');
   }});
 }}
 
@@ -4520,6 +4500,8 @@ def _app_page(mode):
     links = [("instant", "/instant", "Instant"), ("physics", "/app", "Physics"), ("glof", "/glof", "GLOF"), ("coastal", "/coastal", "Coastal")]
     nav = '<div class="hdr-nav">' + "".join('<a href="%s"%s>%s</a>' % (u, ' class="on"' if k == mode else "", n) for k, u, n in links) + "</div>"
     html = html.replace("<!--MODENAV-->", nav, 1)
+    if mode == "glof":
+        html = html.replace(">Run flood model</button>", ">Run GLOF flood</button>", 1)
     html = html.replace("<title>%s</title>" % MODEL_NAME, "<title>%s</title>" % cfg["title"], 1)
     if cfg["welcome"]:
         html = re.sub(r'(<div class="wl">\s*<h2>[^<]*</h2>\s*)<ul>.*?</ul>', lambda m: m.group(1) + "<ul>" + cfg["welcome"] + "</ul>", html, count=1, flags=re.S)
