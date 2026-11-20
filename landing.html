@@ -501,6 +501,7 @@ footer .sp{margin-left:auto}
     <a href="#depth" data-go>Depth</a>
     <a href="#caps" data-go>Capabilities</a>
     <a href="#modes" data-go>Modes</a>
+    <a href="#manual" data-go>User manual</a>
     <a class="btn p" href="/instant">SAILAB Instant</a>
   </nav>
 </header>
@@ -569,6 +570,7 @@ footer .sp{margin-left:auto}
         <a class="btn p" id="open" href="/app">SAILAB Physics <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
         <a class="btn" id="openInstant" href="/instant">SAILAB Instant</a>
         <a class="btn" href="#y2022" data-go>Why it exists</a>
+        <a class="btn" href="/manual" target="_blank" rel="noopener">User manual (PDF)</a>
       </div>
     </div>
     <div class="ticker" aria-hidden="true"><div class="tr"><span>LISFLOOD-FP 2D shallow-water</span><span>GPU solver</span><span>30 m SRTM terrain</span><span>Google Open Buildings</span><span>ESA WorldCover roughness</span><span>ERA5-Land and IMERG rainfall curves</span><span>Huizinga et al. depth-damage</span><span>Loss in PKR</span><span>LISFLOOD-FP 2D shallow-water</span><span>GPU solver</span><span>30 m SRTM terrain</span><span>Google Open Buildings</span><span>ESA WorldCover roughness</span><span>ERA5-Land and IMERG rainfall curves</span><span>Huizinga et al. depth-damage</span><span>Loss in PKR</span></div></div>
@@ -840,10 +842,45 @@ footer .sp{margin-left:auto}
   <div class="m-count micro" id="mCount">Modes</div>
 </section>
 
+<!-- ============================ USER MANUAL ============================ -->
+<section id="manual" class="paper">
+<style>
+#manual{padding:clamp(56px,9vw,120px) var(--gut)}
+#manual .in{max-width:var(--wide);margin:0 auto;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(28px,5vw,72px);align-items:center}
+#manual h2{font-family:var(--disp);font-weight:800;font-size:clamp(30px,4.4vw,56px);line-height:1.04;margin:10px 0 18px;letter-spacing:-.5px}
+#manual p{font-size:clamp(15px,1.25vw,18px);line-height:1.6;color:var(--fg2);max-width:60ch;margin:0 0 14px}
+#manual ul{list-style:none;padding:0;margin:18px 0 26px;display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;max-width:62ch}
+#manual li{font-size:14.5px;color:var(--fg2);padding-left:20px;position:relative}
+#manual li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:9px;border-radius:50%;background:var(--rescue)}
+#manual .cta{display:flex;gap:12px;flex-wrap:wrap}
+#manual .mcover{display:block;border-radius:10px;overflow:hidden;box-shadow:0 24px 60px rgba(11,47,67,.35),0 2px 8px rgba(11,47,67,.25);transform:rotate(1.2deg);transition:transform .35s var(--spring);max-width:380px;justify-self:center}
+#manual .mcover:hover{transform:rotate(0) translateY(-4px)}
+#manual .mcover img{display:block;width:100%;height:auto}
+@media(max-width:860px){#manual .in{grid-template-columns:1fr}#manual ul{grid-template-columns:1fr}#manual .mcover{max-width:280px}}
+</style>
+<div class="in">
+  <div>
+    <span class="micro">User manual</span>
+    <h2>Learn SAILAB, step by step.</h2>
+    <p>A complete guide with screenshots of every screen: choosing an area, running a flood, reading depth, damage and loss, testing protection, and using the glacial-lake and coastal modes.</p>
+    <ul>
+      <li>Walkthrough of every mode</li><li>Illustrated, numbered screens</li>
+      <li>How each result is worked out</li><li>Limits, messages and fixes</li>
+    </ul>
+    <div class="cta">
+      <a class="btn p" href="/manual" target="_blank" rel="noopener">Open the user manual</a>
+      <a class="btn" href="/manual.pdf" download>Download PDF</a>
+    </div>
+  </div>
+  <a class="mcover" href="/manual" target="_blank" rel="noopener" aria-label="Open the SAILAB user manual"><img src="/landing-assets/img/manual-cover.jpg" alt="SAILAB User Manual, cover"></a>
+</div>
+</section>
+
 <footer>
   <div class="tex-layer" style="--tex-bg:#0B2F43;--wash:url(/landing-assets/img/wash-prussian.jpg);--tp:60% 50%" aria-hidden="true"><i></i></div>
   <div class="in">
     <span class="micro">SAILAB v__APP_VERSION__</span>
+    <span class="micro"><a href="/manual" target="_blank" rel="noopener" style="text-decoration:underline">User manual</a></span>
     <span class="micro">Satellite imagery: NASA Earth Observatory / USGS Landsat · Footage: Pexels</span>
     <span class="micro sp">AI Geo Navigators (Pvt) Ltd · Islamabad</span>
   </div>

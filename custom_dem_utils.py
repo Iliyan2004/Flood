@@ -14,7 +14,13 @@ import rasterio
 from rasterio.crs import CRS
 from rasterio.warp import calculate_default_transform, reproject, Resampling, transform_bounds
 
-from global_dem_utils import utm_epsg_for_lonlat
+import math
+
+
+def utm_epsg_for_lonlat(lon, lat):
+    """UTM zone EPSG code for a point (a metric CRS, so the solver always gets a cell size in metres)."""
+    zone = int(math.floor((lon + 180) / 6) % 60) + 1
+    return (32600 if lat >= 0 else 32700) + zone
 
 CUSTOM_DEM_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "custom_dems")
 os.makedirs(CUSTOM_DEM_DIR, exist_ok=True)

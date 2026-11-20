@@ -15,7 +15,7 @@ RUNFILE_VERSION = 1
 REQUEST_FIELDS = (
     "geometry", "rain_mm_hr", "duration_hr", "rainfall_series", "include_buildings", "friction", "cfl",
     "infiltration_mm_hr", "use_soil_infiltration", "use_green_ampt", "use_channel_conditioning", "amc",
-    "manning_scale", "inflows", "outflows", "use_global_dem", "custom_dem_id", "enable_arf", "storm_center_lon",
+    "manning_scale", "inflows", "outflows", "custom_dem_id", "enable_arf", "storm_center_lon",
     "storm_center_lat", "predict_storm_motion",
 )
 

@@ -1,0 +1,80 @@
+{
+ "A_manchar_edge": {
+  "obs_frac": 0.4857740337715114,
+  "SAILAB": {
+   "AUC": 0.538,
+   "PSS": 0.155,
+   "HSS": 0.152
+  },
+  "ANUGA": {
+   "AUC": 0.53,
+   "PSS": 0.166,
+   "HSS": 0.164
+  },
+  "SFINCS": {
+   "AUC": 0.521,
+   "PSS": 0.0,
+   "HSS": 0.0
+  },
+  "TELEMAC-2D": {
+   "AUC": 0.537,
+   "PSS": 0.172,
+   "HSS": 0.169
+  },
+  "Terrain only (-elevation)": {
+   "AUC": 0.57
+  }
+ },
+ "B_north_dadu": {
+  "obs_frac": 0.5053507728894173,
+  "SAILAB": {
+   "AUC": 0.734,
+   "PSS": 0.204,
+   "HSS": 0.205
+  },
+  "ANUGA": {
+   "AUC": 0.739,
+   "PSS": 0.237,
+   "HSS": 0.238
+  },
+  "SFINCS": {
+   "AUC": 0.74,
+   "PSS": 0.0,
+   "HSS": 0.0
+  },
+  "TELEMAC-2D": {
+   "AUC": 0.739,
+   "PSS": 0.241,
+   "HSS": 0.242
+  },
+  "Terrain only (-elevation)": {
+   "AUC": 0.752
+  }
+ },
+ "C_shikarpur": {
+  "obs_frac": 0.5091826842358956,
+  "SAILAB": {
+   "AUC": 0.431,
+   "PSS": 0.016,
+   "HSS": 0.016
+  },
+  "ANUGA": {
+   "AUC": 0.431,
+   "PSS": 0.03,
+   "HSS": 0.03
+  },
+  "SFINCS": {
+   "AUC": 0.467,
+   "PSS": 0.0,
+   "HSS": 0.0
+  },
+  "TELEMAC-2D": {
+   "AUC": 0.44,
+   "PSS": 0.029,
+   "HSS": 0.029
+  },
+  "Terrain only (-elevation)": {
+   "AUC": 0.44
+  }
+ }
+}

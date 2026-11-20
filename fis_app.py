@@ -32,7 +32,7 @@ from dotenv import load_dotenv
 
 from polygon_utils import (polygon_geometry_hash, load_polygon_from_upload,
                             polygon_area_km2, crop_dem_to_polygon)
-from global_dem_utils import (fetch_global_dem_mosaic, in_pakistan_srtm_coverage)
+import limits_utils
 from hand_utils import (pluvial_ponding_depth, compute_hand, discharge_to_inundation, save_hand_result, load_hand_result,
                          build_inundation_library)
 from pluvial_utils import assess_pluvial_risk
@@ -130,14 +130,18 @@ os.makedirs(AREA3D_BUILDINGS_CACHE, exist_ok=True)
 # something that was investigated on its own -- see CLAUDE.md.
 import data_paths
 PAKISTAN_DEM = data_paths.get("PAKISTAN_DEM")
-# Real WGS84 bounding box of PAKISTAN_DEM (computed once via rasterio
-# transform_bounds against its real EPSG:32642 extent) -- an AOI inside
-# this box uses the fast local file; anything outside it is handled by
-# fetch_global_dem_mosaic below, which is what makes this app work
-# anywhere on Earth rather than Pakistan-only.
+# Real WGS84 bounding box of PAKISTAN_DEM (computed once via rasterio transform_bounds against its real EPSG:32642 extent).
+# SAILAB covers Pakistan only: there is no online or global terrain source (the Copernicus fallback was removed, Nov 2026).
 PAKISTAN_SRTM_BOUNDS_WGS84 = (59.695013, 23.468104, 80.812387, 37.542288)
-GLOBAL_DEM_CACHE = os.path.join(BASE_DIR, "global_dem_cache")
-os.makedirs(GLOBAL_DEM_CACHE, exist_ok=True)
+
+
+def in_pakistan_srtm_coverage(bbox, srtm_bounds_wgs84):
+    """bbox and srtm_bounds_wgs84 are both (minx, miny, maxx, maxy) in WGS84."""
+    minx, miny, maxx, maxy = bbox
+    sminx, sminy, smaxx, smaxy = srtm_bounds_wgs84
+    return sminx <= minx and sminy <= miny and maxx <= smaxx and maxy <= smaxy
+
+
 # Tier 0/2 HAND cache -- keyed by (AOI geometry, DEM source), so scrubbing
 # the instant-flood discharge slider over the SAME drawn area only ever
 # pays for the flow-direction/depression-fill/HAND computation once, not
@@ -183,6 +187,33 @@ def _require_access_token():
     return Response("<h3 style='font-family:sans-serif'>SAILAB: access token required</h3>"
                     "<p style='font-family:sans-serif'>Open this address once with <code>?token=...</code> appended.</p>",
                     status=401, mimetype="text/html")
+
+
+@app.before_request
+def _require_aoi_in_pakistan():
+    """SAILAB covers Pakistan only: any request that carries an area ("geometry") must lie entirely inside the Pakistan outline."""
+    if request.method != "POST" or not request.is_json:
+        return None
+    body = request.get_json(silent=True)
+    geom = body.get("geometry") if isinstance(body, dict) else None
+    if isinstance(geom, dict) and geom.get("type") in ("Polygon", "MultiPolygon"):
+        ok, msg = limits_utils.check_in_pakistan(geom)
+        if not ok:
+            return jsonify({"error": msg, "outside_pakistan": True}), 400
+    return None
+
+
+@app.route("/pakistan-outline.geojson")
+def pakistan_outline_geojson():
+    """The Pakistan outline, used by the maps to hide everything outside the country and to limit panning."""
+    return jsonify(limits_utils.outline_geojson())
+
+
+@app.route("/limits.json")
+def limits_json():
+    return jsonify({"bounds": list(limits_utils.PAKISTAN_BOUNDS), "max_run_minutes": limits_utils.MAX_RUN_SECONDS / 60.0,
+                    "contact": limits_utils.CONTACT})
+
 RUN_STATE = {}
 RUN_STATE_LOCK = threading.Lock()
 
@@ -270,18 +301,6 @@ MODEL_FULL_NAME = "Simulation &amp; Analytics for Inundation, Loss, Assets &amp;
 MODEL_TAGLINE = "From rainfall to risk, modeled."
 
 
-class GlobalDemNotEnabled(Exception):
-    """Raised when an AOI falls outside the local Pakistan SRTM and the
-    caller hasn't explicitly opted in to fetching the open-source global
-    DEM (Copernicus GLO-30, an external network fetch) -- per explicit
-    user instruction, this is opt-in ("use the open source if the user
-    asks for that"), not an automatic silent fallback. Callers surface
-    this distinctly (a `needs_global_dem_consent` flag in the JSON error)
-    so the UI can offer an explicit "yes, fetch it" action rather than
-    just showing a generic failure."""
-    pass
-
-
 # Bump this whenever a change alters what a run computes for the SAME inputs
 # (a new always-on terrain/physics conditioning, a bug fix in the model...), so
 # cached results from before the change are not served as if still valid.
@@ -295,29 +314,16 @@ def pipeline_signature():
     return f"v{PIPELINE_VERSION}:{dams_utils.data_signature()}"
 
 
-def current_dem_source(geom_wgs84=None, allow_global=False, custom_dem_id=None):
-    """Picks the right DEM for an AOI. `geom_wgs84` is optional (the
-    generic "/dem-source" status display calls this with none, and just
-    wants the default local source's label) -- every real run/crop call
-    site passes its own AOI geometry.
+def current_dem_source(geom_wgs84=None, custom_dem_id=None):
+    """Picks the terrain for an AOI. `geom_wgs84` is optional (the "/dem-source" status display calls this with none and just wants the
+    label of the default source).
 
-    - AOI inside the real Pakistan-wide SRTM's own coverage -> that file
-      directly (fast, no network -- the actual downloaded DEM this app
-      has on disk).
-    - AOI outside it -> requires `allow_global=True` (an explicit user
-      opt-in, threaded from a `use_global_dem` request field) before
-      fetching an on-demand Copernicus DEM GLO-30 mosaic for just that
-      AOI's bounding box (global_dem_utils.fetch_global_dem_mosaic),
-      cached to disk by a hash of the rounded bbox so repeated requests
-      over the same area don't re-fetch. Without that opt-in, raises
-      GlobalDemNotEnabled rather than silently reaching out to an
-      external open-source dataset -- see CLAUDE.md.
-    - Pakistan SRTM missing from disk -> raises FileNotFoundError (the old
-      silent fallback to a small Bahawalpur sample was removed).
+    - A user-uploaded elevation model (custom_dem_utils) overrides the Pakistan SRTM, but only where it fully covers the area.
+    - Otherwise the Pakistan-wide SRTM on disk. An area outside Pakistan raises ValueError: SAILAB covers Pakistan only and never
+      fetches terrain from the internet.
+    - Pakistan SRTM missing from disk -> FileNotFoundError (there is no silent fallback to other terrain).
     """
     if custom_dem_id:
-        # A user-uploaded elevation model (custom_dem_utils) overrides the Pakistan SRTM, but only
-        # where it actually covers the area -- a partial cover would silently give NODATA edges.
         cpath = custom_dem_utils.path_for(custom_dem_id)
         if cpath is None:
             raise ValueError("the uploaded elevation model was not found on this server; upload it again")
@@ -325,38 +331,16 @@ def current_dem_source(geom_wgs84=None, allow_global=False, custom_dem_id=None):
             raise ValueError("the uploaded elevation model does not fully cover the selected area")
         return cpath, "Custom DEM (uploaded)"
     if geom_wgs84 is not None:
+        ok, msg = limits_utils.check_in_pakistan(geom_wgs84)
+        if not ok:
+            raise ValueError(msg)
         bbox = shapely_shape(geom_wgs84).bounds  # (minx, miny, maxx, maxy)
-        if os.path.exists(PAKISTAN_DEM) and in_pakistan_srtm_coverage(bbox, PAKISTAN_SRTM_BOUNDS_WGS84):
-            return PAKISTAN_DEM, "Pakistan-wide SRTM (uploaded)"
-        if not allow_global:
-            raise GlobalDemNotEnabled(
-                "This area is outside the downloaded Pakistan SRTM's coverage. "
-                "Enable \"Use open-source global DEM\" to fetch real Copernicus DEM "
-                "GLO-30 elevation data (AWS Open Data, free, ~30m) for this area.")
-        return _resolve_global_dem(bbox), "Global (Copernicus DEM GLO-30, on-demand, ~30m)"
+        if not (os.path.exists(PAKISTAN_DEM) and in_pakistan_srtm_coverage(bbox, PAKISTAN_SRTM_BOUNDS_WGS84)):
+            raise ValueError("No terrain data is available for this area: SAILAB covers Pakistan only.")
+        return PAKISTAN_DEM, "Pakistan-wide SRTM"
     if os.path.exists(PAKISTAN_DEM):
-        return PAKISTAN_DEM, "Pakistan-wide SRTM (uploaded)"
-    raise FileNotFoundError(
-        f"The Pakistan SRTM DEM was not found at {PAKISTAN_DEM} -- update PAKISTAN_DEM in fis_app.py "
-        f"if the data has moved. (The old small Bahawalpur sample fallback was removed deliberately, "
-        f"so a wrong path can no longer silently run on the wrong terrain.)")
-
-
-def _resolve_global_dem(bbox_wgs84):
-    """Cached wrapper around fetch_global_dem_mosaic -- keyed by the
-    rounded bbox (0.001 degree, ~100m) so re-requesting the same AOI (a
-    cache hit on the flood-run cache itself, or just re-opening Tab 1)
-    doesn't re-fetch Copernicus tiles every time."""
-    minx, miny, maxx, maxy = bbox_wgs84
-    key = hashlib.sha256(f"{minx:.3f},{miny:.3f},{maxx:.3f},{maxy:.3f}".encode()).hexdigest()[:16]
-    out_path = os.path.join(GLOBAL_DEM_CACHE, f"{key}.tif")
-    if not os.path.exists(out_path):
-        tmp_path = out_path + f".tmp{uuid.uuid4().hex}"
-        fetch_global_dem_mosaic(bbox_wgs84, tmp_path)
-        os.replace(tmp_path, out_path)
-    return out_path
-
-
+        return PAKISTAN_DEM, "Pakistan-wide SRTM"
+    raise FileNotFoundError(f"The Pakistan SRTM DEM was not found at {PAKISTAN_DEM} -- update the path in data_paths.py if the data has moved.")
 
 
 PAGE = f"""<!doctype html>
@@ -730,10 +714,7 @@ body.view-hidden #viewShowBtn {{ display:block; }}
         <div id="areaInfo" style="display:none;">
           <div class="stat-row"><span>Area</span><span id="areaKm2">-</span></div>
         </div>
-        <label class="phys-off" style="display:flex;align-items:center;gap:6px;margin-top:8px;font-weight:normal;">
-          <input type="checkbox" id="useGlobalDem" style="width:auto;">
-          Use open-source global DEM (Copernicus DEM GLO-30, AWS, free) for areas outside the downloaded Pakistan SRTM
-        </label>
+        <div id="areaLimitNote" class="note" style="display:none;color:#d9822b;margin-top:6px;"></div>
         <details style="margin:8px 0;"><summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);">Own elevation model or saved run</summary>
         <div style="margin-top:10px;">
           <label style="font-weight:600;">Your elevation model (GeoTIFF)</label>
@@ -747,9 +728,6 @@ body.view-hidden #viewShowBtn {{ display:block; }}
           <div id="runFileBox"></div>
         </div>
         </details>
-        <div id="globalDemPrompt" style="display:none;">
-          <p class="note" style="color:#d9822b;"></p>
-        </div>
       </div>
 
       <div class="panel-section phys-off">
@@ -1511,12 +1489,6 @@ const MAP_STYLES = {{
   satellite: 'mapbox://styles/mapbox/satellite-streets-v12',
   streets: 'mapbox://styles/mapbox/streets-v12',
 }};
-function applyGlobeFog() {{
-  map.setFog({{
-    color: 'rgb(20,26,38)', 'high-color': 'rgb(10,14,24)',
-    'horizon-blend': 0.03, 'space-color': 'rgb(3,5,10)', 'star-intensity': 0.4,
-  }});
-}}
 function setMapLayer(kind) {{
   document.getElementById('layerSat').classList.toggle('active', kind === 'satellite');
   document.getElementById('layerStreets').classList.toggle('active', kind === 'streets');
@@ -1537,6 +1509,7 @@ function setMapLayer(kind) {{
   map.once('style.load', () => {{
     map.addControl(draw, 'top-left');
     if (savedData.features.length) draw.set(savedData);
+    ensurePakistanMask();
     ensureBoundaryMarkerLayer();
     ensureDamsLayer();
     updateBoundaryMarkers();
@@ -1687,18 +1660,39 @@ function exportMapPng(mapInstance, baseName) {{
   mapInstance.triggerRepaint();
 }}
 
+const PAKISTAN_BOUNDS = [[60.0, 22.8], [80.2, 38.0]];   // SAILAB covers Pakistan only: the map cannot be panned away from it
 const map = new mapboxgl.Map({{
   container: 'map',
-  style: MAP_STYLES.satellite,  // real satellite imagery on the globe, not a plain vector map
-  center: [69.3451, 30.3753],
-  zoom: 1.5,          // zoomed out to a whole-Earth view by default, not straight into Pakistan
-  projection: 'globe',
+  style: MAP_STYLES.satellite,
+  bounds: PAKISTAN_BOUNDS,
+  fitBoundsOptions: {{padding: 10}},
+  maxBounds: PAKISTAN_BOUNDS,
+  minZoom: 4,
   preserveDrawingBuffer: true
 }});
+
+// Hide everything outside Pakistan: a solid cover over the basemap with the country cut out, plus a thin border line.
+let pakistanOutline = null;
+async function ensurePakistanMask() {{
+  try {{
+    if (!pakistanOutline) pakistanOutline = await fetch('/pakistan-outline.geojson').then(r => r.json());
+    if (map.getSource('pk-mask')) return;
+    const ring = pakistanOutline.geometry.type === 'Polygon' ? pakistanOutline.geometry.coordinates[0] : pakistanOutline.geometry.coordinates[0][0];
+    const world = [[-179.9, -85], [179.9, -85], [179.9, 85], [-179.9, 85], [-179.9, -85]];
+    map.addSource('pk-mask', {{type: 'geojson', data: {{type: 'Feature', properties: {{}}, geometry: {{type: 'Polygon', coordinates: [world, ring]}}}}}});
+    map.addSource('pk-border', {{type: 'geojson', data: {{type: 'Feature', properties: {{}}, geometry: {{type: 'LineString', coordinates: ring}}}}}});
+    const firstDraw = (map.getStyle().layers.find(l => l.id.indexOf('gl-draw') === 0) || {{}}).id;
+    map.addLayer({{id: 'pk-mask', type: 'fill', source: 'pk-mask', paint: {{'fill-color': '#0b1118', 'fill-opacity': 1}}}}, firstDraw);
+    map.addLayer({{id: 'pk-border', type: 'line', source: 'pk-border', paint: {{'line-color': '#4fd1c5', 'line-width': 1.2, 'line-opacity': 0.9}}}}, firstDraw);
+    // the basemap's own labels draw above the cover, so only keep the labels that lie inside Pakistan
+    const inside = {{type: 'Polygon', coordinates: [ring]}};
+    map.getStyle().layers.filter(l => l.type === 'symbol').forEach(l => {{
+      try {{ const f = map.getFilter(l.id); map.setFilter(l.id, f ? ['all', f, ['within', inside]] : ['within', inside]); }} catch (e) {{}}
+    }});
+  }} catch (e) {{ console.log('Pakistan mask not drawn:', e); }}
+}}
 map.once('style.load', () => {{
-  // The initial view is always the satellite globe -- setMapLayer() re-
-  // applies this same fog (or clears it back to flat mercator) on switch.
-  applyGlobeFog();
+  ensurePakistanMask();
   ensureBoundaryMarkerLayer();
   ensureDamsLayer();
 }});
@@ -1783,7 +1777,7 @@ function geoSetBox(lon, lat, km) {{
   draw.getAll().features.forEach(other => {{ if (other.geometry.type === 'Polygon') draw.delete(other.id); }});
   draw.add({{type: 'Feature', properties: {{}}, geometry}});
   fetch('/area/polygon', {{method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{geometry}})}})
-    .then(r => r.json()).then(a => setArea(geometry, a.area_km2));
+    .then(r => r.json()).then(a => acceptArea(geometry, a));
   map.fitBounds([[lon - dn, lat - dl], [lon + dn, lat + dl]], {{padding: 80, duration: 1500}});
 }}
 
@@ -1794,7 +1788,7 @@ function geoGoToTehsil(tehsilId, displayName) {{
     draw.add({{type:'Feature', properties:{{}}, geometry: d.geometry}});
     fetch('/area/polygon', {{
       method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{geometry: d.geometry}})
-    }}).then(r => r.json()).then(a => setArea(d.geometry, a.area_km2));
+    }}).then(r => r.json()).then(a => acceptArea(d.geometry, a));
     const bounds = new mapboxgl.LngLatBounds();
     const coords = d.geometry.type === 'Polygon' ? d.geometry.coordinates[0] : d.geometry.coordinates[0][0];
     coords.forEach(c => bounds.extend(c));
@@ -1844,7 +1838,7 @@ function useBasinAsAOI(hybasId) {{
     draw.add({{type:'Feature', properties:{{}}, geometry: d.geometry}});
     fetch('/area/polygon', {{
       method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{geometry: d.geometry}})
-    }}).then(r => r.json()).then(a => setArea(d.geometry, a.area_km2));
+    }}).then(r => r.json()).then(a => acceptArea(d.geometry, a));
     const bounds = new mapboxgl.LngLatBounds();
     const coords = d.geometry.type === 'Polygon' ? d.geometry.coordinates[0] : d.geometry.coordinates[0][0];
     coords.forEach(c => bounds.extend(c));
@@ -1876,7 +1870,7 @@ geoInput.addEventListener('input', () => {{
   if (q.length < 2) {{ geoFeatures = []; geoRender(); return; }}
   geoDebounce = setTimeout(() => {{
     const placesUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${{encodeURIComponent(q)}}.json` +
-      `?access_token=${{encodeURIComponent(MAPBOX_TOKEN)}}&limit=8&bbox=60.87,23.63,77.84,37.13&proximity=${{map.getCenter().lng.toFixed(4)}},${{map.getCenter().lat.toFixed(4)}}`;
+      `?access_token=${{encodeURIComponent(MAPBOX_TOKEN)}}&limit=8&country=pk&bbox=60.87,23.63,77.84,37.13&proximity=${{map.getCenter().lng.toFixed(4)}},${{map.getCenter().lat.toFixed(4)}}`;
     const tehsilUrl = `/tehsils/search?q=${{encodeURIComponent(q)}}`;
     Promise.all([
       fetch(placesUrl).then(r => r.json()).catch(() => ({{features: []}})),
@@ -1990,6 +1984,24 @@ function setArea(geojsonGeometry, areaKm2) {{
   showTier(2);
 }}
 
+// An area was rejected (outside Pakistan) or accepted; a too-large area is shown but cannot be run.
+function acceptArea(geom, a) {{
+  const note = document.getElementById('areaLimitNote');
+  if (a.error) {{
+    draw.getAll().features.forEach(f => {{ if (f.geometry.type === 'Polygon') draw.delete(f.id); }});
+    currentGeoJSON = null;
+    document.getElementById('areaInfo').style.display = 'none';
+    ["runBtn", "detectBoundariesBtn", "instantFloodBtn", "designStormBtn", "idfDesignBtn", "coastalBtn", "coastalPreviewBtn", "coastalDynBtn", "glofEventsBtn", "coastalSuscBtn", "glofBtn", "srmBtn", "srmHydroBtn", "meltBtn", "meltCalBtn", "geomorphBtn", "spillwayBtn", "damFailureBtn", "glacierBaselineBtn", "glacierDispBtn", "itsliveBtn", "batchRunBtn", "aalRunBtn", "watchAreaBtn"].forEach(id => {{ const el = document.getElementById(id); if (el) el.disabled = true; }});
+    note.style.display = 'block'; note.textContent = a.error;
+    return;
+  }}
+  setArea(geom, a.area_km2);
+  if (a.run_ok === false) {{
+    document.getElementById('runBtn').disabled = true;
+    note.style.display = 'block'; note.textContent = a.run_note;
+  }} else {{ note.style.display = 'none'; note.textContent = ''; }}
+}}
+
 // ---- each tier shows its own real Mapbox 3D visualization, per its own
 // capabilities: Tier 2 shows the real HAND-based flood overlay for
 // whatever discharge is currently set; Tier 3 shows the real animated
@@ -2003,7 +2015,7 @@ function loadTier3D(n) {{
   if (n === 2) {{
     fetch('/area/instant-flood-mapbox3d', {{
       method:'POST', headers:{{'Content-Type':'application/json'}},
-      body: JSON.stringify({{geometry: currentGeoJSON, discharge_m3s: parseFloat(document.getElementById('instantDischarge').value) || 0, use_global_dem: document.getElementById('useGlobalDem').checked}})
+      body: JSON.stringify({{geometry: currentGeoJSON, discharge_m3s: parseFloat(document.getElementById('instantDischarge').value) || 0}})
     }}).then(r => r.text()).then(html => {{ if (myToken === tier3dToken) {{ frame.removeAttribute('src'); frame.srcdoc = html; }} }});
   }} else if (n === 3) {{
     if (currentRunId) {{ frame.removeAttribute('srcdoc'); frame.src = '/runs/' + currentRunId + '/mapbox_3d.html'; }}
@@ -2341,7 +2353,6 @@ async function runBatchReturnPeriods() {{
     use_soil_infiltration: document.getElementById('useSoilInfiltration').checked,
     use_green_ampt: document.getElementById('useGreenAmpt').checked,
     amc: parseFloat(document.getElementById('amc').value),
-    use_global_dem: document.getElementById('useGlobalDem').checked,
   }};
   for (const rp of periods) {{
     const head = periods.indexOf(rp) + 1 + ' of ' + periods.length + ' &middot; ' + rp + '-year storm';
@@ -2430,7 +2441,6 @@ async function runAALCompute() {{
     use_soil_infiltration: document.getElementById('useSoilInfiltration').checked,
     use_green_ampt: document.getElementById('useGreenAmpt').checked,
     amc: parseFloat(document.getElementById('amc').value),
-    use_global_dem: document.getElementById('useGlobalDem').checked,
   }};
   let hadError = false;
   for (const rp of periods) {{
@@ -2606,7 +2616,7 @@ function runCoastalFlood() {{
   const preset = document.getElementById('coastalSurgePreset').value;
   const targetYear = document.getElementById('coastalTargetYear').value;
   const req = {{
-    geometry: currentGeoJSON, use_global_dem: document.getElementById('useGlobalDem').checked,
+    geometry: currentGeoJSON,
     return_period_years: parseInt(document.getElementById('coastalReturnPeriod').value),
     target_year: targetYear ? parseInt(targetYear) : null,
     custom_surge_m: preset ? parseFloat(preset) : null,
@@ -2619,7 +2629,7 @@ function runCoastalFlood() {{
   }}).then(r => r.json()).then(d => {{
     if (d.error) {{
       box.innerHTML = '<p class="note">' + d.error + '</p>';
-      if (d.needs_global_dem_consent) showGlobalDemPrompt(d.error);
+      
       return;
     }}
     lastCoastalResult = d; lastCoastalRequest = req;
@@ -2652,7 +2662,7 @@ function fetchCoastalLibrary() {{
   document.getElementById('coastalLevelSlider').disabled = true; document.getElementById('coastalLevelMapBtn').disabled = true;
   const tok = currentGeoJSON;
   fetch('/area/coastal-level-library', {{method:'POST', headers:{{'Content-Type':'application/json'}},
-    body: JSON.stringify({{geometry: currentGeoJSON, use_global_dem: document.getElementById('useGlobalDem').checked}})}})
+    body: JSON.stringify({{geometry: currentGeoJSON}})}})
     .then(r => r.json()).then(d => {{
       if (tok !== currentGeoJSON) return;
       if (d.error) {{ box.innerHTML = '<p class="note">' + d.error + '</p>'; return; }}
@@ -2685,16 +2695,16 @@ function showCoastalLevelOnMap() {{
   const L = parseFloat(document.getElementById('coastalLevelSlider').value);
   const frame = document.getElementById('view3dFrame');
   fetch('/area/coastal-flood-mapbox3d', {{method:'POST', headers:{{'Content-Type':'application/json'}},
-    body: JSON.stringify({{geometry: currentGeoJSON, custom_surge_m: L, use_global_dem: document.getElementById('useGlobalDem').checked}})}})
+    body: JSON.stringify({{geometry: currentGeoJSON, custom_surge_m: L}})}})
     .then(r => r.text()).then(html => {{ frame.removeAttribute('src'); frame.srcdoc = html; }});
 }}
 function runCoastalSusceptibility() {{
   const box = document.getElementById('coastalSuscBox');
   box.innerHTML = '<p class="note">Computing...</p>';
-  const req = {{geometry: currentGeoJSON, use_global_dem: document.getElementById('useGlobalDem').checked}};
+  const req = {{geometry: currentGeoJSON}};
   fetch('/area/coastal-susceptibility', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify(req)}})
     .then(r => r.json()).then(d => {{
-      if (d.error) {{ box.innerHTML = '<p class="note">' + d.error + '</p>'; if (d.needs_global_dem_consent) showGlobalDemPrompt(d.error); return; }}
+      if (d.error) {{ box.innerHTML = '<p class="note">' + d.error + '</p>'; return; }}
       lastCoastalSuscRequest = req;
       let rows = d.classes.slice().reverse().map(c =>
         '<div class="stat-row"><span><span style="display:inline-block;width:10px;height:10px;background:' + c.color + ';border:1px solid #333;margin-right:6px;"></span>' + c.name + '</span><span>' + c.area_km2 + ' km&sup2; (' + c.pct + '%)</span></div>').join('');
@@ -2731,7 +2741,7 @@ function runCoastalFloodDynamic() {{
   const preset = document.getElementById('coastalSurgePreset').value;
   const targetYear = document.getElementById('coastalTargetYear').value;
   const req = {{
-    geometry: currentGeoJSON, use_global_dem: document.getElementById('useGlobalDem').checked,
+    geometry: currentGeoJSON,
     return_period_years: parseInt(document.getElementById('coastalReturnPeriod').value),
     target_year: targetYear ? parseInt(targetYear) : null,
     custom_surge_m: preset ? parseFloat(preset) : null,
@@ -2776,7 +2786,7 @@ function runCoastalFloodPreview() {{
   const preset = document.getElementById('coastalSurgePreset').value;
   const targetYear = document.getElementById('coastalTargetYear').value;
   const req = {{
-    geometry: currentGeoJSON, use_global_dem: document.getElementById('useGlobalDem').checked,
+    geometry: currentGeoJSON,
     return_period_years: parseInt(document.getElementById('coastalReturnPeriod').value),
     target_year: targetYear ? parseInt(targetYear) : null,
     custom_surge_m: preset ? parseFloat(preset) : null,
@@ -2793,7 +2803,7 @@ function runCoastalFloodPreview() {{
     document.getElementById('coastalPreviewBtn').disabled = false;
     if (d.error) {{
       box.innerHTML = '<p class="note">' + d.error + '</p>';
-      if (d.needs_global_dem_consent) showGlobalDemPrompt(d.error);
+      
       return;
     }}
     lastCoastalPreviewRequest = req;
@@ -2878,13 +2888,6 @@ function runNbsRecommend() {{
   }});
 }}
 
-function showGlobalDemPrompt(msg) {{
-  const el = document.getElementById('globalDemPrompt');
-  el.style.display = 'block';
-  el.querySelector('p').textContent = msg;
-  document.getElementById('useGlobalDem').parentElement.style.outline = '2px solid #d9822b';
-}}
-
 // Tier 0/2's own "precomputed inundation-extent library per discharge
 // level" -- fetched ONCE per AOI and cached here, so dragging the
 // discharge slider afterward interpolates instantly client-side instead
@@ -2898,7 +2901,7 @@ function fetchInstantFloodLibrary() {{
   if (!currentGeoJSON) return;
   fetch('/area/instant-flood-library', {{
     method:'POST', headers:{{'Content-Type':'application/json'}},
-    body: JSON.stringify({{geometry: currentGeoJSON, use_global_dem: document.getElementById('useGlobalDem').checked}})
+    body: JSON.stringify({{geometry: currentGeoJSON}})
   }}).then(r => r.json()).then(d => {{
     if (d.error || !d.library || !d.library.length) return;  // silent -- slider still works, just without instant preview
     instantFloodLibrary = d.library;
@@ -2954,11 +2957,11 @@ function runInstantFlood() {{
   box.innerHTML = '<p class="note">Computing HAND + rating curve...</p>';
   fetch('/area/instant-flood', {{
     method:'POST', headers:{{'Content-Type':'application/json'}},
-    body: JSON.stringify({{geometry: currentGeoJSON, discharge_m3s: parseFloat(document.getElementById('instantDischarge').value), use_global_dem: document.getElementById('useGlobalDem').checked}})
+    body: JSON.stringify({{geometry: currentGeoJSON, discharge_m3s: parseFloat(document.getElementById('instantDischarge').value)}})
   }}).then(r => r.json()).then(d => {{
     if (d.error) {{
       box.innerHTML = '<p class="note">' + d.error + '</p>';
-      if (d.needs_global_dem_consent) showGlobalDemPrompt(d.error);
+      
       return;
     }}
     box.innerHTML =
@@ -3261,13 +3264,13 @@ function computeSnowmelt() {{
   fetch('/area/snowmelt-discharge', {{
     method: 'POST', headers: {{'Content-Type': 'application/json'}},
     body: JSON.stringify({{
-      geometry: currentGeoJSON, use_global_dem: document.getElementById('useGlobalDem').checked,
+      geometry: currentGeoJSON,
       snow_line_elev_m: parseFloat(document.getElementById('srmSnowLine').value),
       ddf_mm_per_c_per_day: parseFloat(document.getElementById('srmDdf').value),
       lapse_rate_c_per_m: parseFloat(document.getElementById('srmLapseRate').value) / 1000.0,
     }})
   }}).then(r => r.json()).then(d => {{
-    if (d.error) {{ box.innerHTML = '<p class="note">' + d.error + (d.needs_global_dem_consent ? ' Enable "Use open-source global DEM" above.' : '') + '</p>'; return; }}
+    if (d.error) {{ box.innerHTML = '<p class="note">' + d.error + '' + '</p>'; return; }}
     box.innerHTML =
       '<div class="stat-row"><span>Real snowmelt discharge</span><span>' + d.discharge_m3s + ' m&sup3;/s</span></div>' +
       '<div class="stat-row"><span>Snow-covered area (&ge; snow line)</span><span>' + d.snow_covered_area_km2 + ' km&sup2;</span></div>' +
@@ -3286,7 +3289,7 @@ function computeSnowmeltHydrograph() {{
   fetch('/area/snowmelt-hydrograph', {{
     method: 'POST', headers: {{'Content-Type': 'application/json'}},
     body: JSON.stringify({{
-      geometry: currentGeoJSON, use_global_dem: document.getElementById('useGlobalDem').checked,
+      geometry: currentGeoJSON,
       snow_line_elev_m: parseFloat(document.getElementById('srmSnowLine').value),
       ddf_mm_per_c_per_day: parseFloat(document.getElementById('srmDdf').value),
       lapse_rate_c_per_m: parseFloat(document.getElementById('srmLapseRate').value) / 1000.0,
@@ -3578,9 +3581,9 @@ function computeGeomorphology() {{
   box.innerHTML = '<p class="note">Checking real GLiM bedrock lithology + DEM slope...</p>';
   fetch('/area/geomorphology', {{
     method: 'POST', headers: {{'Content-Type': 'application/json'}},
-    body: JSON.stringify({{geometry: currentGeoJSON, use_global_dem: document.getElementById('useGlobalDem').checked}})
+    body: JSON.stringify({{geometry: currentGeoJSON}})
   }}).then(r => r.json()).then(d => {{
-    if (d.error) {{ box.innerHTML = '<p class="note">' + d.error + (d.needs_global_dem_consent ? ' Enable "Use open-source global DEM" above.' : '') + '</p>'; return; }}
+    if (d.error) {{ box.innerHTML = '<p class="note">' + d.error + '' + '</p>'; return; }}
     const susColor = {{negligible:'#2ecc71', low:'#8fd14f', moderate:'#f2d94e', high:'#c81e1e'}}[d.susceptibility] || '#8f7a63';
     box.innerHTML =
       (d.susceptibility ? '<div class="stat-row" style="font-weight:600;"><span>Landslide / debris-flow susceptibility</span><span style="color:' + susColor + ';text-transform:uppercase;">' + d.susceptibility + '</span></div>' :
@@ -3734,7 +3737,7 @@ function onDrawChange(e) {{
     fetch('/area/polygon', {{
       method: 'POST', headers: {{'Content-Type': 'application/json'}},
       body: JSON.stringify({{geometry: f.geometry}})
-    }}).then(r => r.json()).then(d => setArea(f.geometry, d.area_km2));
+    }}).then(r => r.json()).then(d => acceptArea(f.geometry, d));
   }}, 400);
 }}
 
@@ -3863,7 +3866,7 @@ function uploadShape() {{
   fetch('/area/upload', {{method:'POST', body: fd}})
     .then(r => r.json()).then(d => {{
       if (d.error) {{ alert(d.error); return; }}
-      setArea(d.geometry, d.area_km2);
+      acceptArea(d.geometry, d);
       draw.getAll().features.forEach(other => {{ if (other.geometry.type === 'Polygon') draw.delete(other.id); }});
       draw.add({{type:'Feature', properties:{{}}, geometry: d.geometry}});
       const bounds = new mapboxgl.LngLatBounds();
@@ -3996,7 +3999,6 @@ function runModel() {{
   // Peak rainfall/Duration fields with ZERO indication the intended
   // real data never took effect -- exactly the kind of "ran a totally
   // different, unintended storm with no warning" bug this app never
-  // allows elsewhere (see e.g. the needs_global_dem_consent gate).
   const csvFile = document.getElementById('rainfallCsvFile');
   if (csvFile.files.length > 0 && !uploadedRainfallSeries) {{
     const proceed = confirm(
@@ -4027,7 +4029,6 @@ function runModel() {{
       amc: parseFloat(document.getElementById('amc').value),
       inflows: boundaryItems.filter(b => b.type === 'inflow' && b.included).map(boundaryItemToRequest),
       outflows: boundaryItems.filter(b => b.type === 'outflow' && b.included).map(boundaryItemToRequest),
-      use_global_dem: document.getElementById('useGlobalDem').checked,
       custom_dem_id: window.customDemId || null,
       manning_scale: window.manningScale || 1.0,
       enable_arf: document.getElementById('enableArf').checked,
@@ -4039,7 +4040,7 @@ function runModel() {{
     if (d.error) {{
       document.getElementById('statusNote').textContent = 'Error: ' + d.error;
       document.getElementById('runBtn').disabled = false;
-      if (d.needs_global_dem_consent) showGlobalDemPrompt(d.error);
+      
       return;
     }}
     currentRunId = d.run_id;
@@ -4091,7 +4092,7 @@ function loadRunFile() {{
     setv('infiltrationMmHr', q.infiltration_mm_hr); setv('amc', q.amc); if (typeof updateAmcLabel === 'function') updateAmcLabel();
     setc('includeBuildings', q.include_buildings); setc('useSoilInfiltration', q.use_soil_infiltration);
     setc('useGreenAmpt', q.use_green_ampt); setc('useChannelConditioning', q.use_channel_conditioning);
-    setc('useGlobalDem', q.use_global_dem); setc('enableArf', q.enable_arf);
+    setc('enableArf', q.enable_arf);
     window.manningScale = q.manning_scale || 1.0;
     window.customDemId = q.custom_dem_id || null;
     uploadedRainfallSeries = q.rainfall_series || null;
@@ -4102,7 +4103,7 @@ function loadRunFile() {{
     draw.getAll().features.forEach(other => {{ if (other.geometry.type === 'Polygon') draw.delete(other.id); }});
     draw.add({{type:'Feature', properties:{{}}, geometry: q.geometry}});
     fetch('/area/polygon', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify({{geometry: q.geometry}})}})
-      .then(r => r.json()).then(a => setArea(q.geometry, a.area_km2));
+      .then(r => r.json()).then(a => acceptArea(q.geometry, a));
     const bounds = new mapboxgl.LngLatBounds();
     const coords = q.geometry.type === 'Polygon' ? q.geometry.coordinates[0] : q.geometry.coordinates[0][0];
     coords.forEach(c => bounds.extend(c));
@@ -4502,7 +4503,7 @@ fetch('/dem-source').then(r => r.json()).then(d => {{
       draw.deleteAll();
       draw.add({{type: 'Feature', properties: {{}}, geometry: d.aoi}});
       fetch('/area/polygon', {{method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{geometry: d.aoi}})}})
-        .then(r => r.json()).then(a => setArea(d.aoi, a.area_km2));
+        .then(r => r.json()).then(a => acceptArea(d.aoi, a));
       const xs = d.aoi.coordinates[0].map(p => p[0]), ys = d.aoi.coordinates[0].map(p => p[1]);
       map.fitBounds([[Math.min.apply(null, xs), Math.min.apply(null, ys)], [Math.max.apply(null, xs), Math.max.apply(null, ys)]], {{padding: 80, duration: 800}});
       const cb = document.getElementById('includeBuildings'); if (cb) cb.checked = true;
@@ -4531,6 +4532,24 @@ def index():
     resp = Response(_landing_html(), mimetype="text/html")
     resp.headers["Cache-Control"] = "no-cache"
     return resp
+
+
+MANUAL_PDF = os.path.join(BASE_DIR, "SAILAB_User_Manual.pdf")
+
+
+@app.route("/manual")
+def user_manual():
+    """The illustrated user manual, shown in the browser's own PDF viewer."""
+    if not os.path.exists(MANUAL_PDF):
+        return Response("The user manual is not installed on this server yet.", status=404, mimetype="text/plain")
+    return send_file(MANUAL_PDF, mimetype="application/pdf", download_name="SAILAB_User_Manual.pdf", as_attachment=False, max_age=3600)
+
+
+@app.route("/manual.pdf")
+def user_manual_download():
+    if not os.path.exists(MANUAL_PDF):
+        return Response("The user manual is not installed on this server yet.", status=404, mimetype="text/plain")
+    return send_file(MANUAL_PDF, mimetype="application/pdf", download_name="SAILAB_User_Manual.pdf", as_attachment=True, max_age=3600)
 
 
 @app.route("/landing-assets/<path:rel>")
@@ -4696,7 +4715,13 @@ def import_get(imp_id):
 def area_polygon():
     geom = request.json["geometry"]
     area_km2 = polygon_area_km2(geom)
-    return jsonify({"area_km2": area_km2})
+    return jsonify(_area_limits_info(geom, area_km2))
+
+
+def _area_limits_info(geom, area_km2):
+    cells = limits_utils.estimate_cells(geom)
+    chk = limits_utils.check_physics_size(cells, 4.0)      # the shortest standard run: a 2 h storm plus the 2 h drain-down
+    return {"area_km2": area_km2, "est_cells": cells, "run_ok": chk["ok"], "run_note": chk.get("message"), "max_area_km2_4h": chk["max_area_km2"]}
 
 
 @app.route("/area/upload", methods=["POST"])
@@ -4710,7 +4735,10 @@ def area_upload():
         geom, area_km2 = load_polygon_from_upload(path)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-    return jsonify({"geometry": geom, "area_km2": area_km2})
+    ok, msg = limits_utils.check_in_pakistan(geom)
+    if not ok:
+        return jsonify({"error": msg, "outside_pakistan": True}), 400
+    return jsonify({"geometry": geom, **_area_limits_info(geom, area_km2)})
 
 
 @app.route("/area/rainfall-csv", methods=["POST"])
@@ -4864,12 +4892,9 @@ def area_instant_flood_mapbox3d():
     body = request.json
     geom = body["geometry"]
     discharge_m3s = float(body.get("discharge_m3s", 50.0))
-    allow_global = bool(body.get("use_global_dem", False))
     try:
-        hand_result, dem_label, _ = _resolve_hand_result(geom, allow_global)
+        hand_result, dem_label, _ = _resolve_hand_result(geom)
         depth_grid, _ = discharge_to_inundation(hand_result, discharge_m3s)
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
     except Exception as e:
         return jsonify({"error": f"instant-flood 3D failed: {e}"}), 400
 
@@ -4894,7 +4919,7 @@ def area_instant_flood_mapbox3d():
     return Response(html, mimetype="text/html")
 
 
-def _resolve_hand_result(geom, allow_global):
+def _resolve_hand_result(geom):
     """Shared by /area/instant-flood and /area/instant-flood-library: the
     HAND computation (flow direction/accumulation/depression-fill) is the
     expensive part and is identical regardless of which discharge value(s)
@@ -4902,7 +4927,7 @@ def _resolve_hand_result(geom, allow_global):
     (hand_cache/, keyed by AOI geometry + resolved DEM source)."""
     tmp_tif = os.path.join(AOI3D_CACHE, f"instanthand_{uuid.uuid4().hex}.tif")
     try:
-        dem_source, dem_label = current_dem_source(geom, allow_global=allow_global)
+        dem_source, dem_label = current_dem_source(geom)
         hand_key = polygon_geometry_hash({"geometry": geom, "dem": dem_source})
         hand_cache_path = os.path.join(HAND_CACHE, f"{hand_key}.pkl")
 
@@ -4955,9 +4980,8 @@ def area_instant_flood_library():
     server round-trip per drag tick."""
     body = request.json
     geom = body["geometry"]
-    allow_global = bool(body.get("use_global_dem", False))
     try:
-        hand_result, dem_label, hand_cache_path = _resolve_hand_result(geom, allow_global)
+        hand_result, dem_label, hand_cache_path = _resolve_hand_result(geom)
         library_path = hand_cache_path.replace(".pkl", ".library.json")
         if os.path.exists(library_path):
             with open(library_path) as f:
@@ -4968,8 +4992,6 @@ def area_instant_flood_library():
             with open(_tmp_lib, "w") as f:
                 json.dump(library, f)
             os.replace(_tmp_lib, library_path)
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
     except Exception as e:
         return jsonify({"error": f"instant-flood library failed: {e}"}), 400
 
@@ -4995,7 +5017,6 @@ def area_instant_flood_overlay():
     from PIL import Image
     body = request.json
     geom = body["geometry"]
-    allow_global = bool(body.get("use_global_dem", False))
     custom_dem_id = body.get("custom_dem_id") or None
     rain_mm_hr = max(0.0, float(body.get("rain_mm_hr", 10.0)))
     duration_hr = max(0.1, float(body.get("duration_hr", 3.0)))
@@ -5003,13 +5024,13 @@ def area_instant_flood_overlay():
     area_km2 = polygon_area_km2(geom)
     discharge = float(body["discharge_m3s"]) if body.get("discharge_m3s") not in (None, "") else runoff_c * rain_mm_hr * area_km2 / 3.6
     try:
-        hand_result, dem_label, hand_cache_path = _resolve_hand_result(geom, allow_global)
+        hand_result, dem_label, hand_cache_path = _resolve_hand_result(geom)
         header_path = hand_cache_path.replace(".pkl", ".header.json")
         if os.path.exists(header_path):
             with open(header_path) as f:
                 header = json.load(f)
         else:
-            dem_source, _ = current_dem_source(geom, allow_global=allow_global, custom_dem_id=custom_dem_id)
+            dem_source, _ = current_dem_source(geom, custom_dem_id=custom_dem_id)
             tmp = os.path.join(AOI3D_CACHE, f"ovh_{uuid.uuid4().hex}.dem.ascii")
             try:
                 header, _, _ = crop_dem_to_polygon(dem_source, geom, tmp)
@@ -5030,8 +5051,6 @@ def area_instant_flood_overlay():
             depth = surrogate_utils.predict_depth(raw, header, rain_mm_hr, duration_hr, float(body.get("friction", 0.05)),
                                                   float(body.get("infiltration_mm_hr", 5.0)), valid=raw > -9000)
             learned_used = surrogate_utils.model_name()
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -5091,27 +5110,24 @@ def area_instant_flood():
     (global-flood-prediction-research.md): a near-instant (no LISFLOOD-FP
     run) discharge -> inundation-extent lookup, using HAND (Height Above
     Nearest Drainage) computed from whatever DEM this AOI resolves to
-    (Pakistan SRTM or the on-demand global Copernicus mosaic -- see
+    (the Pakistan SRTM -- see
     current_dem_source). This is deliberately a cheap approximation (see
     hand_utils.py's own docstring) -- Tier 3 (the real /run endpoint,
-    already wired to the same global DEM resolution) is still the
+    already wired to the same terrain resolution) is still the
     authoritative result; this exists to make "instant, anywhere" possible
     at all, the same tradeoff every real product in this space makes."""
     body = request.json
     geom = body["geometry"]
     discharge_m3s = float(body.get("discharge_m3s", 50.0))
-    allow_global = bool(body.get("use_global_dem", False))
 
     try:
-        hand_result, dem_label, _ = _resolve_hand_result(geom, allow_global)
+        hand_result, dem_label, _ = _resolve_hand_result(geom)
         total_cells = hand_result["shape"][0] * hand_result["shape"][1]
         depth_grid, _ = discharge_to_inundation(hand_result, discharge_m3s)
         cellsize_m = hand_result["cellsize_m"]
         wet_cells = int((depth_grid > 0.05).sum())
         area_km2 = wet_cells * (cellsize_m ** 2) / 1e6
         max_depth = float(depth_grid.max())
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
     except Exception as e:
         return jsonify({"error": f"instant-flood lookup failed: {e}"}), 400
 
@@ -5126,14 +5142,14 @@ def area_instant_flood():
     })
 
 
-def _resolve_coastal_dem(geom, allow_global):
+def _resolve_coastal_dem(geom):
     """Real DEM crop for the coastal analysis, reusing the exact same
     current_dem_source/crop_dem_to_polygon pipeline every other DEM-
     consuming route in this app already uses (Pakistan SRTM, or the
-    opt-in global Copernicus mosaic outside its coverage)."""
+    uploaded DEM)."""
     tmp_path = os.path.join(AOI3D_CACHE, f"coastal_{uuid.uuid4().hex}.dem.ascii")
     try:
-        dem_source, dem_label = current_dem_source(geom, allow_global=allow_global)
+        dem_source, dem_label = current_dem_source(geom)
         header, active_cells, total_cells = crop_dem_to_polygon(
             dem_source, geom, tmp_path)
         _, dem_arr = _read_ascii(tmp_path)
@@ -5205,7 +5221,7 @@ def _pick_coastal_hvar_edge(header, dem, nodata):
 
 
 def run_coastal_dynamic_flood(geom, return_period_years=None, target_year=None, custom_surge_m=None,
-                               anchor_mode="static", window_days=5, allow_global=False, combine_tide=False,
+                               anchor_mode="static", window_days=5, combine_tide=False,
                                include_wave_runup=False, rain_mm_hr=0.0, duration_hr=0.0,
                                water_level_source="khan", extra_slr_m=0.0, tide_phase=None):
     """Real dynamic coastal storm-surge run: a genuine LISFLOOD-FP physics
@@ -5258,7 +5274,7 @@ def run_coastal_dynamic_flood(geom, return_period_years=None, target_year=None, 
     job_dir = os.path.join(COASTAL_DYN_CACHE, uuid.uuid4().hex)
     os.makedirs(job_dir, exist_ok=True)
     dem_path = os.path.join(job_dir, "aoi.dem.ascii")
-    dem_source, dem_label = current_dem_source(geom, allow_global=allow_global)
+    dem_source, dem_label = current_dem_source(geom)
     header, active_cells, total_cells = crop_dem_to_polygon(
         dem_source, geom, dem_path)
     _, dem = _read_ascii(dem_path)
@@ -5438,6 +5454,9 @@ def area_coastal_flood_dynamic():
     if not gtsr_available():
         return jsonify({"error": "Real GTSR dynamic surge data is not available on this server -- "
                                   "use the static coastal method instead.", "gtsr_available": False}), 400
+    size = limits_utils.check_physics_size(limits_utils.estimate_cells(geom), int(body.get("window_days", 3)) * 24.0 + 2.0)
+    if not size["ok"]:
+        return jsonify({"error": size["message"], "too_large": True}), 400
     job_id = _start_climate_job(
         run_coastal_dynamic_flood, geom=geom,
         return_period_years=body.get("return_period_years"),
@@ -5445,8 +5464,7 @@ def area_coastal_flood_dynamic():
         custom_surge_m=body.get("custom_surge_m"),
         anchor_mode=body.get("anchor_mode", "static"),
         window_days=int(body.get("window_days", 3)),
-        allow_global=bool(body.get("use_global_dem", False)),
-        combine_tide=bool(body.get("combine_tide", False)),
+                combine_tide=bool(body.get("combine_tide", False)),
         include_wave_runup=bool(body.get("include_wave_runup", False)),
         rain_mm_hr=float(body.get("rain_mm_hr", 0.0)), duration_hr=float(body.get("duration_hr", 0.0)),
         water_level_source=body.get("water_level_source", "khan"), extra_slr_m=float(body.get("extra_slr_m") or 0.0),
@@ -5498,15 +5516,12 @@ def area_coastal_flood():
     dynamic storm-surge) method."""
     body = request.json
     geom = body["geometry"]
-    allow_global = bool(body.get("use_global_dem", False))
     return_period_years = body.get("return_period_years")
     target_year = body.get("target_year")
     custom_surge_m = body.get("custom_surge_m")
 
     try:
-        header, dem, dem_label = _resolve_coastal_dem(geom, allow_global)
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
+        header, dem, dem_label = _resolve_coastal_dem(geom)
     except Exception as e:
         return jsonify({"error": f"DEM crop failed: {e}"}), 400
 
@@ -5562,9 +5577,8 @@ def area_coastal_flood_mapbox3d():
     3D view already uses (build_mapbox_flood_scene)."""
     body = request.json
     geom = body["geometry"]
-    allow_global = bool(body.get("use_global_dem", False))
     try:
-        header, dem, _ = _resolve_coastal_dem(geom, allow_global)
+        header, dem, _ = _resolve_coastal_dem(geom)
     except Exception as e:
         return Response(f"<p style='color:#d03b3b;font-family:sans-serif;padding:20px;'>{e}</p>",
                         mimetype="text/html")
@@ -5598,10 +5612,10 @@ def area_coastal_flood_mapbox3d():
     return Response(html, mimetype="text/html")
 
 
-def _coastal_susceptibility_for(geom, allow_global):
+def _coastal_susceptibility_for(geom):
     """Shared by the susceptibility JSON / 3D / PNG routes: DEM crop + the weighted index (see
     coastal_layers_utils.coastal_susceptibility for the factors, weights and their stated limits)."""
-    header, dem, dem_label = _resolve_coastal_dem(geom, allow_global)
+    header, dem, dem_label = _resolve_coastal_dem(geom)
     valid = dem != -9999
     poly = shapely_shape(geom)
     coastal, reason = is_plausibly_coastal(dem, valid, poly.centroid.y)
@@ -5615,9 +5629,7 @@ def _coastal_susceptibility_for(geom, allow_global):
 def area_coastal_susceptibility():
     body = request.json
     try:
-        header, dem, valid, dem_label, susc = _coastal_susceptibility_for(body["geometry"], bool(body.get("use_global_dem", False)))
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
+        header, dem, valid, dem_label, susc = _coastal_susceptibility_for(body["geometry"])
     except Exception as e:
         return jsonify({"error": str(e)}), 400
     rows = coastal_layers.susceptibility_summary(susc["classes"], valid, header["cellsize"])
@@ -5640,7 +5652,7 @@ def area_coastal_susceptibility_mapbox3d():
     body = request.json
     geom = body["geometry"]
     try:
-        header, dem, valid, _, susc = _coastal_susceptibility_for(geom, bool(body.get("use_global_dem", False)))
+        header, dem, valid, _, susc = _coastal_susceptibility_for(geom)
     except Exception as e:
         return Response(f"<p style='color:#d03b3b;font-family:sans-serif;padding:20px;'>{e}</p>", mimetype="text/html")
     idx = np.where(valid & np.isfinite(susc["index"]), susc["index"], -9999.0)
@@ -5672,7 +5684,7 @@ def area_coastal_susceptibility_map_png():
     body = request.json
     geom = body["geometry"]
     try:
-        header, dem, valid, dem_label, susc = _coastal_susceptibility_for(geom, bool(body.get("use_global_dem", False)))
+        header, dem, valid, dem_label, susc = _coastal_susceptibility_for(geom)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
     cls = np.where(susc["classes"] > 0, susc["classes"].astype(int) - 1, -2)
@@ -5714,9 +5726,7 @@ def area_coastal_level_library():
     geom = body["geometry"]
     key = hashlib.sha1((json.dumps(geom, sort_keys=True) + "|lib").encode()).hexdigest()
     try:
-        header, dem, dem_label = _resolve_coastal_dem(geom, bool(body.get("use_global_dem", False)))
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
+        header, dem, dem_label = _resolve_coastal_dem(geom)
     except Exception as e:
         return jsonify({"error": f"DEM crop failed: {e}"}), 400
     valid = dem != -9999
@@ -5752,7 +5762,7 @@ def run_susceptibility_map_png(run_id):
                      as_attachment=request.args.get("download") == "1")
 
 
-def _coastal_instant_preview(geom, allow_global, anchor_mode="static", return_period_years=None,
+def _coastal_instant_preview(geom, anchor_mode="static", return_period_years=None,
                               target_year=None, custom_surge_m=None, window_days=5, n_frames=12,
                               water_level_source="khan", extra_slr_m=0.0, tide_phase=None):
     """Real, fast ANIMATED coastal preview -- the coastal equivalent of
@@ -5776,7 +5786,7 @@ def _coastal_instant_preview(geom, allow_global, anchor_mode="static", return_pe
     the tide+surge combination (both real options on the dynamic run) are
     deliberately not included here, to keep this a small, fast, additive
     preview rather than a second full feature surface to keep in sync."""
-    header, dem, dem_label = _resolve_coastal_dem(geom, allow_global)
+    header, dem, dem_label = _resolve_coastal_dem(geom)
     nodata = header.get("nodata_value", -9999.0)
     valid_mask = dem != nodata
 
@@ -5864,16 +5874,13 @@ def area_coastal_flood_instant_preview():
     by the sibling -mapbox3d route below."""
     body = request.json
     geom = body["geometry"]
-    allow_global = bool(body.get("use_global_dem", False))
     try:
         preview = _coastal_instant_preview(
-            geom, allow_global, anchor_mode=body.get("anchor_mode", "static"),
+            geom, anchor_mode=body.get("anchor_mode", "static"),
             return_period_years=body.get("return_period_years"), target_year=body.get("target_year"),
             custom_surge_m=body.get("custom_surge_m"), window_days=int(body.get("window_days", 5)),
             water_level_source=body.get("water_level_source", "khan"), extra_slr_m=float(body.get("extra_slr_m") or 0.0),
             tide_phase=(body.get("tide_phase") or None))
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 400
     return jsonify({
@@ -5896,10 +5903,9 @@ def area_coastal_flood_instant_preview_mapbox3d():
     LISFLOOD-FP per-timestep output."""
     body = request.json
     geom = body["geometry"]
-    allow_global = bool(body.get("use_global_dem", False))
     try:
         preview = _coastal_instant_preview(
-            geom, allow_global, anchor_mode=body.get("anchor_mode", "static"),
+            geom, anchor_mode=body.get("anchor_mode", "static"),
             return_period_years=body.get("return_period_years"), target_year=body.get("target_year"),
             custom_surge_m=body.get("custom_surge_m"), window_days=int(body.get("window_days", 5)),
             water_level_source=body.get("water_level_source", "khan"), extra_slr_m=float(body.get("extra_slr_m") or 0.0),
@@ -6468,17 +6474,14 @@ def area_snowmelt_discharge():
         return jsonify({"error": "provide a real snow-line elevation (m)"}), 400
     ddf = float(body.get("ddf_mm_per_c_per_day", srm_utils.DEFAULT_DDF_MM_PER_C_PER_DAY))
     lapse_rate = float(body.get("lapse_rate_c_per_m", srm_utils.DEFAULT_LAPSE_RATE_C_PER_M))
-    allow_global = bool(body.get("use_global_dem", False))
 
     tmp_ascii = os.path.join(AOI3D_CACHE, f"snowmelt_{uuid.uuid4().hex}.dem.ascii")
     try:
-        dem_source, dem_label = current_dem_source(geom, allow_global=allow_global)
+        dem_source, dem_label = current_dem_source(geom)
         header, active_cells, total_cells = crop_dem_to_polygon(
             dem_source, geom, tmp_ascii)
         _, dem = _read_ascii(tmp_ascii)
         nodata = header.get("nodata_value", -9999.0)
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
     finally:
         try:
             os.remove(tmp_ascii)
@@ -6617,12 +6620,10 @@ def area_snowmelt_hydrograph():
     lapse = float(body.get("lapse_rate_c_per_m", srm_utils.DEFAULT_LAPSE_RATE_C_PER_M))
     tmp_ascii = os.path.join(AOI3D_CACHE, f"snowmelt_h_{uuid.uuid4().hex}.dem.ascii")
     try:
-        dem_source, dem_label = current_dem_source(geom, allow_global=bool(body.get("use_global_dem", False)))
+        dem_source, dem_label = current_dem_source(geom)
         header, _a, _t = crop_dem_to_polygon(dem_source, geom, tmp_ascii)
         _, dem = _read_ascii(tmp_ascii)
         nodata = header.get("nodata_value", -9999.0)
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
     finally:
         try:
             os.remove(tmp_ascii)
@@ -6712,7 +6713,6 @@ def area_geomorphology():
     cropped -- no async job needed."""
     body = request.json
     geom = body["geometry"]
-    allow_global = bool(body.get("use_global_dem", False))
 
     if not geomorphology_utils.glim_pakistan_available():
         return jsonify({"error": "Real GLiM lithology data is not available on this server -- see "
@@ -6720,13 +6720,11 @@ def area_geomorphology():
 
     tmp_ascii = os.path.join(AOI3D_CACHE, f"geomorph_{uuid.uuid4().hex}.dem.ascii")
     try:
-        dem_source, dem_label = current_dem_source(geom, allow_global=allow_global)
+        dem_source, dem_label = current_dem_source(geom)
         header, active_cells, total_cells = crop_dem_to_polygon(
             dem_source, geom, tmp_ascii)
         _, dem = _read_ascii(tmp_ascii)
         nodata = header.get("nodata_value", -9999.0)
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
     finally:
         try:
             os.remove(tmp_ascii)
@@ -9022,16 +9020,13 @@ def run():
     inflows_req = body.get("inflows", [])
     outflows_req = body.get("outflows", [])
 
-    allow_global = bool(body.get("use_global_dem", False))
     custom_dem_id = body.get("custom_dem_id") or None
     try:
         manning_scale = max(0.2, min(5.0, float(body.get("manning_scale", 1.0) or 1.0)))
     except (TypeError, ValueError):
         return jsonify({"error": "manning_scale must be a number"}), 400
     try:
-        dem_source_for_key, _ = current_dem_source(geom, allow_global=allow_global, custom_dem_id=custom_dem_id)
-    except GlobalDemNotEnabled as e:
-        return jsonify({"error": str(e), "needs_global_dem_consent": True}), 400
+        dem_source_for_key, _ = current_dem_source(geom, custom_dem_id=custom_dem_id)
     except Exception as e:
         return jsonify({"error": f"No terrain data for this area: {e}"}), 400
     key = polygon_geometry_hash({"geometry": geom, "rain": rain_mm_hr, "dur": duration_hr,
@@ -9060,8 +9055,14 @@ def run():
             RUN_STATE[run_id] = {"status": "done", "stage": "done", "summary": summary, "elapsed": summary.get("wall_clock_seconds", 0)}
         return jsonify({"run_id": run_id, "cached": True})
 
+    size = limits_utils.check_physics_size(limits_utils.estimate_cells(geom),
+                                           limits_utils.sim_hours_for_request(duration_hr, inflows_req, rainfall_series))
+    if not size["ok"]:
+        return jsonify({"error": size["message"], "too_large": True, "est_minutes": round(size["est_seconds"] / 60.0),
+                        "max_area_km2": size["max_area_km2"]}), 400
+
     os.makedirs(run_dir, exist_ok=True)
-    dem_source, _ = current_dem_source(geom, allow_global=allow_global, custom_dem_id=custom_dem_id)
+    dem_source, _ = current_dem_source(geom, custom_dem_id=custom_dem_id)
     dem_ascii_path = os.path.join(run_dir, "aoi.dem.ascii")
     try:
         header, active_cells, total_cells = crop_dem_to_polygon(

@@ -1,0 +1,44 @@
+@page { size: A4; margin: 24mm 21mm 24mm 21mm;
+  @top-left { content: string(runhead); font: 7.6pt "Nimbus Sans", sans-serif; color: #777; }
+  @top-right { content: "Draft v0.2 · preprint, not peer reviewed"; font: 7.6pt "Nimbus Sans", sans-serif; color: #777; }
+  @bottom-center { content: counter(page); font: 8pt "Nimbus Sans", sans-serif; color: #555; } }
+@page :first { @top-left { content: ""; } @top-right { content: ""; } }
+html { font-family: "Bitstream Charter", "Liberation Serif", serif; font-size: 9.9pt; line-height: 1.42; color: #1b1b1b; hyphens: auto; }
+body { margin: 0; }
+h1.title { font: 700 19pt/1.22 "Nimbus Sans", sans-serif; text-align: left; margin: 0 0 9pt; color: #14284b; letter-spacing: -0.2pt; }
+.authors { font: 10.4pt "Nimbus Sans", sans-serif; margin: 0 0 3pt; color: #222; }
+.authors sup { font-size: 7pt; }
+.affil { font: 8.2pt/1.35 "Nimbus Sans", sans-serif; color: #555; margin: 0; }
+.status { font: 8.4pt "Nimbus Sans", sans-serif; color: #7a3b00; background: #fff4e5; border-left: 3pt solid #e08a1e; padding: 4pt 7pt; margin: 10pt 0 8pt; }
+.abstract { margin: 8pt 0 6pt; padding: 8pt 11pt; background: #f2f5fa; border-top: 1.4pt solid #1d4e89; font-size: 9.3pt; line-height: 1.4; }
+.abstract h2 { font: 700 8.6pt "Nimbus Sans", sans-serif; text-transform: uppercase; letter-spacing: 0.7pt; margin: 0 0 4pt; color: #1d4e89; }
+.keywords { font-size: 8.6pt; margin: 6pt 0 12pt; color: #333; }
+h2 { font: 700 12.4pt/1.25 "Nimbus Sans", sans-serif; color: #14284b; margin: 17pt 0 5pt; string-set: runhead content(); break-after: avoid; }
+h3 { font: 700 10.2pt/1.3 "Nimbus Sans", sans-serif; color: #1d4e89; margin: 11pt 0 3pt; break-after: avoid; }
+h2 .n, h3 .n { color: #8a97ab; margin-right: 2pt; font-weight: 600; }
+p { margin: 0 0 6.2pt; text-align: justify; orphans: 3; widows: 3; }
+ul, ol { margin: 0 0 6.5pt 0; padding-left: 15pt; } li { margin: 0 0 2.4pt; text-align: justify; }
+a { color: #1d4e89; text-decoration: none; }
+figure { margin: 9pt 0 10pt; text-align: center; break-inside: avoid; }
+figure img { max-width: 100%; }
+figcaption { font: 8.1pt/1.36 "Nimbus Sans", sans-serif; color: #333; text-align: left; margin-top: 4pt; }
+figcaption b { color: #14284b; }
+table { border-collapse: collapse; width: 100%; margin: 4pt 0 2pt; font: 8.1pt/1.3 "Nimbus Sans", sans-serif; }
+table.t caption { caption-side: top; text-align: left; font: 8.1pt/1.36 "Nimbus Sans", sans-serif; color: #333; margin-bottom: 4pt; }
+table.t caption b { color: #14284b; }
+thead th { border-top: 1.1pt solid #14284b; border-bottom: 0.7pt solid #14284b; padding: 3pt 5pt; text-align: left; font-weight: 700; color: #14284b; vertical-align: bottom; }
+tbody td { padding: 2.6pt 5pt; border-bottom: 0.3pt solid #d6dbe3; vertical-align: top; }
+tbody tr:last-child td { border-bottom: 1.1pt solid #14284b; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.hl td { background: #eef3fb; font-weight: 600; }
+.tablewrap { break-inside: avoid; margin: 8pt 0 9pt; }
+.tnote { font: 7.6pt/1.35 "Nimbus Sans", sans-serif; color: #555; margin: 2pt 0 0; text-align: left; }
+.eq { display: flex; align-items: center; margin: 5pt 0 6pt; break-inside: avoid; }
+.eq .m { flex: 1; text-align: center; } .eq .m img { max-width: 92%; vertical-align: middle; } .eq .t { width: 26pt; text-align: right; font: 9.4pt "Nimbus Sans", sans-serif; color: #333; }
+.box { font: 8.5pt/1.4 "Nimbus Sans", sans-serif; border: 0.8pt solid #c8d1de; background: #fafbfd; padding: 6pt 9pt; margin: 7pt 0 9pt; break-inside: avoid; }
+.box b.h { color: #14284b; }
+.todo { color: #b3261e; background: #fdeceb; font: 8pt "Nimbus Sans", sans-serif; padding: 0 3pt; border-radius: 2pt; }
+.refs { font-size: 8.6pt; line-height: 1.34; padding-left: 0; list-style: none; } .refs li { padding-left: 17pt; text-indent: -17pt; margin: 0 0 3.2pt; text-align: left; }
+.small { font-size: 8.6pt; } code { font: 8.4pt "DejaVu Sans Mono", monospace; background: #f1f3f6; padding: 0 2pt; }
+.pagebreak { break-before: page; }
+sup.fn { font-size: 6.8pt; }

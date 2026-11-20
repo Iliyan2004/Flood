@@ -1,0 +1,141 @@
+{
+ "runs": [
+  {
+   "km": 3,
+   "ncols": 110,
+   "nrows": 109,
+   "cells": 11990,
+   "device": "gpu",
+   "ok": true,
+   "total_wall_s": 3.7,
+   "solver_wall_s": 2.7,
+   "peak_rss_mb": 155.0,
+   "load_avg_at_start": 30.2
+  },
+  {
+   "km": 3,
+   "ncols": 110,
+   "nrows": 109,
+   "cells": 11990,
+   "device": "cpu",
+   "ok": true,
+   "total_wall_s": 3.6,
+   "solver_wall_s": 2.8,
+   "peak_rss_mb": 133.0,
+   "load_avg_at_start": 29.6
+  },
+  {
+   "km": 6,
+   "ncols": 218,
+   "nrows": 217,
+   "cells": 47306,
+   "device": "gpu",
+   "ok": true,
+   "total_wall_s": 5.4,
+   "solver_wall_s": 4.6,
+   "peak_rss_mb": 166.0,
+   "load_avg_at_start": 29.8
+  },
+  {
+   "km": 6,
+   "ncols": 218,
+   "nrows": 217,
+   "cells": 47306,
+   "device": "cpu",
+   "ok": true,
+   "total_wall_s": 8.4,
+   "solver_wall_s": 7.5,
+   "peak_rss_mb": 138.0,
+   "load_avg_at_start": 29.4
+  },
+  {
+   "km": 12,
+   "ncols": 435,
+   "nrows": 432,
+   "cells": 187920,
+   "device": "gpu",
+   "ok": true,
+   "total_wall_s": 8.6,
+   "solver_wall_s": 7.4,
+   "peak_rss_mb": 211.0,
+   "load_avg_at_start": 29.5
+  },
+  {
+   "km": 12,
+   "ncols": 435,
+   "nrows": 432,
+   "cells": 187920,
+   "device": "cpu",
+   "ok": true,
+   "total_wall_s": 29.7,
+   "solver_wall_s": 28.5,
+   "peak_rss_mb": 176.0,
+   "load_avg_at_start": 28.9
+  },
+  {
+   "km": 23,
+   "ncols": 833,
+   "nrows": 829,
+   "cells": 690557,
+   "device": "gpu",
+   "ok": true,
+   "total_wall_s": 17.7,
+   "solver_wall_s": 16.0,
+   "peak_rss_mb": 351.0,
+   "load_avg_at_start": 27.8
+  },
+  {
+   "km": 23,
+   "ncols": 833,
+   "nrows": 829,
+   "cells": 690557,
+   "device": "cpu",
+   "ok": true,
+   "total_wall_s": 112.2,
+   "solver_wall_s": 110.6,
+   "peak_rss_mb": 259.0,
+   "load_avg_at_start": 28.5
+  },
+  {
+   "km": 35,
+   "ncols": 1266,
+   "nrows": 1261,
+   "cells": 1596426,
+   "device": "gpu",
+   "ok": true,
+   "total_wall_s": 44.0,
+   "solver_wall_s": 40.6,
+   "peak_rss_mb": 614.0,
+   "load_avg_at_start": 29.1
+  },
+  {
+   "km": 46,
+   "ncols": 1664,
+   "nrows": 1656,
+   "cells": 2755584,
+   "device": "gpu",
+   "ok": true,
+   "total_wall_s": 70.8,
+   "solver_wall_s": 66.8,
+   "peak_rss_mb": 951.0,
+   "load_avg_at_start": 31.7
+  },
+  {
+   "km": 58,
+   "ncols": 2098,
+   "nrows": 2089,
+   "cells": 4382722,
+   "device": "gpu",
+   "ok": true,
+   "total_wall_s": 103.2,
+   "solver_wall_s": 98.5,
+   "peak_rss_mb": 1423.0,
+   "load_avg_at_start": 29.0
+  }
+ ],
+ "machine": {
+  "gpu": "NVIDIA GB10 (compute 12.1), driver 580.178.04, CUDA 13.0",
+  "cpu_cores": 20,
+  "note": "shared server; other users' jobs were running (load average shown per run)"
+ }
+}

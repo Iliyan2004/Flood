@@ -200,7 +200,27 @@ const $ = id => document.getElementById(id);
 const BASE = 'mapbox://styles/mapbox/satellite-streets-v12';
 let geom = null, label = '', scen = null, scenKey = 'moderate', areaToken = 0, ovToken = 0, ovTimer = null, lastOv = null, is3D = false;
 
-const map = new mapboxgl.Map({ container: 'map', style: BASE, center: [69.3, 30.4], zoom: 4.8, preserveDrawingBuffer: true });
+const PK_BOUNDS = [[60.0, 22.8], [80.2, 38.0]];   // SAILAB covers Pakistan only
+const map = new mapboxgl.Map({ container: 'map', style: BASE, bounds: PK_BOUNDS, fitBoundsOptions: { padding: 10 }, maxBounds: PK_BOUNDS, minZoom: 4, preserveDrawingBuffer: true });
+let pkOutline = null;
+async function ensurePakistanMask() {   // hide everything outside Pakistan and draw its border
+  try {
+    if (!pkOutline) pkOutline = await fetch('/pakistan-outline.geojson').then(r => r.json());
+    if (map.getSource('pk-mask')) return;
+    const ring = pkOutline.geometry.type === 'Polygon' ? pkOutline.geometry.coordinates[0] : pkOutline.geometry.coordinates[0][0];
+    const world = [[-179.9, -85], [179.9, -85], [179.9, 85], [-179.9, 85], [-179.9, -85]];
+    map.addSource('pk-mask', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [world, ring] } } });
+    map.addSource('pk-border', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: ring } } });
+    const firstDraw = (map.getStyle().layers.find(l => l.id.indexOf('gl-draw') === 0) || {}).id;
+    map.addLayer({ id: 'pk-mask', type: 'fill', source: 'pk-mask', paint: { 'fill-color': '#0b1118', 'fill-opacity': 1 } }, firstDraw);
+    map.addLayer({ id: 'pk-border', type: 'line', source: 'pk-border', paint: { 'line-color': '#4fd1c5', 'line-width': 1.2, 'line-opacity': 0.9 } }, firstDraw);
+    // the basemap's own labels draw above the cover, so only keep the labels that lie inside Pakistan
+    const inside = { type: 'Polygon', coordinates: [ring] };
+    map.getStyle().layers.filter(l => l.type === 'symbol').forEach(l => {
+      try { const f = map.getFilter(l.id); map.setFilter(l.id, f ? ['all', f, ['within', inside]] : ['within', inside]); } catch (e) {}
+    });
+  } catch (e) { console.log('Pakistan mask not drawn:', e); }
+}
 map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-right');
 const draw = new MapboxDraw({ displayControlsDefault: false });
 map.addControl(draw);
@@ -302,7 +322,10 @@ $('wSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { const l
 $('barSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { const ll = parseLatLon($('barSearch').value); if (ll && ll.inPakistan) { $('barHits').style.display = 'none'; usePick({ kind: 'place', name: fmtCoord(ll.lat, ll.lon), lon: ll.lon, lat: ll.lat, km: 1 }); } } });
 
 // ---------- area ----------
-async function setArea(g, name) {
+function notice(msg) { busy(msg); clearTimeout(notice.t); notice.t = setTimeout(() => busy(), 10000); }
+async function setArea(g, name) {   // returns false when the area is refused (outside Pakistan)
+  const chk = await fetch('/area/polygon', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ geometry: g }) }).then(r => r.json()).catch(() => ({}));
+  if (chk.error) { draw.getAll().features.forEach(f => draw.delete(f.id)); notice(chk.error); return false; }
   const my = ++areaToken; geom = g; label = name || 'Your area'; lastOv = null; clearOverlay();
   draw.getAll().features.forEach(f => draw.delete(f.id));
   map.fitBounds(boundsOf(g), { padding: { top: 90, bottom: 60, left: 380, right: 120 }, duration: 1400, pitch: is3D ? 60 : 0 });
@@ -315,6 +338,7 @@ async function setArea(g, name) {
     scen = sc; applyScenario(scenKey === 'custom' ? 'moderate' : scenKey, false);
     await refreshOverlay(my);
   } catch (e) { $('sNote').className = 'err'; $('sNote').textContent = 'Failed: ' + e; busy(); }
+  return true;
 }
 function applyScenario(k, refresh) {
   scenKey = k; document.querySelectorAll('#pChips .chip').forEach(x => x.classList.toggle('on', x.dataset.s === k));
@@ -332,7 +356,7 @@ function paintOverlay(ov) {
   map.addSource('flood', { type: 'image', url: ov.image, coordinates: ov.coordinates });
   map.addLayer({ id: 'flood', type: 'raster', source: 'flood', paint: { 'raster-opacity': 0.92, 'raster-resampling': 'linear', 'raster-fade-duration': 150 } });
 }
-map.on('style.load', () => { if (lastOv) paintOverlay(lastOv); if (is3D) enableTerrain(); });
+map.on('style.load', () => { ensurePakistanMask(); if (lastOv) paintOverlay(lastOv); if (is3D) enableTerrain(); });
 function scheduleOverlay(d) { clearTimeout(ovTimer); const my = areaToken; ovTimer = setTimeout(() => refreshOverlay(my), d); }
 async function refreshOverlay(my) {
   if (!geom) return; const tok = ++ovToken;
@@ -369,8 +393,8 @@ const onDraw = () => {
   clearTimeout(onDraw.t); onDraw.t = setTimeout(() => setAreaKeepDrawing(last.geometry), 400);
 };
 async function setAreaKeepDrawing(g) {   // keep the drawn outline on the map
-  const keep = JSON.parse(JSON.stringify(g)); await setArea(g, 'Drawn area');
-  draw.add({ type: 'Feature', properties: {}, geometry: keep });
+  const keep = JSON.parse(JSON.stringify(g)); const ok = await setArea(g, 'Drawn area');
+  if (ok) draw.add({ type: 'Feature', properties: {}, geometry: keep });
 }
 map.on('draw.create', onDraw); map.on('draw.update', onDraw);
 
